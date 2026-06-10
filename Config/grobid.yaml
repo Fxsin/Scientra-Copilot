@@ -1,0 +1,36 @@
+# Docker
+docker_image: "lfoppiano/grobid:0.8.1"
+docker_container: "scientra_grobid"
+host_port: 18070
+container_port: 8070
+
+grobid_base_url: "http://localhost:18070"
+health_endpoint: "/api/isalive"
+process_fulltext_endpoint: "/api/processFulltextDocument"
+
+request:
+  consolidateHeader: 0
+  consolidateCitations: 0
+  includeRawCitations: 0
+  includeRawAffiliations: 0
+
+grobid_max_workers: 1
+grobid_request_interval_seconds: 2
+grobid_timeout_seconds: 120
+
+timeout:
+  connect: 10
+  read: 120
+  total: 600
+
+retry:
+  max_attempts: 4
+  wait_seconds: 10
+  backoff_seconds:
+    - 10
+    - 30
+    - 60
+
+batch:
+  concurrency: 1
+  inter_request_sleep: 2

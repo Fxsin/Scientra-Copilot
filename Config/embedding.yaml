@@ -1,0 +1,19 @@
+embedding_model: "BAAI/bge-m3"
+embedding_dimension: 1024
+device: "auto"
+
+chunking:
+  chunk_size: 800
+  chunk_overlap: 150
+  min_chunk_size: 200
+
+lancedb:
+  path: "04_VectorDB/lancedb"
+  tables:
+    metadata: "metadata_embeddings"
+    summary: "summary_embeddings"
+    chunks: "chunk_embeddings"
+
+tags:
+  use_assigned_tags_only: true
+  include_candidate_tags: false

@@ -1,0 +1,444 @@
+dictionary_version: "2026-06-08.v2"
+description: "Default Scientra Copilot tag dictionary. Add or edit tag rules here, not in tag_engine.py."
+defaults:
+  weight: 1.0
+  min_score: 1.0
+
+tags:
+  Cry:
+    synonyms:
+      - Cry toxin
+      - Cry protein
+      - Cry family
+      - Cry1
+      - Cry2
+      - Cry3
+      - Cry4
+      - Cry11
+      - Cry1A
+      - Cry1Ab
+      - Cry1Ac
+      - Cry2A
+      - Cry2Ab
+      - Cry3A
+      - Cry3Ba
+      - Cry4A
+      - Cry4B
+      - Cry11A
+      - Bacillus thuringiensis Cry
+    include_patterns:
+      - '\bCry(?:1|2|3|4|11)[A-Za-z0-9]*(?:\s+(?:toxin|protein|family))?\b'
+      - '\bCry\s+(?:toxin|protein|family)s?\b'
+      - '\bBacillus\s+thuringiensis\s+Cry(?:1|2|3|4|11)?[A-Za-z0-9]*\b'
+    exclude_patterns:
+      - '\bCryo\b'
+      - '\bcryo[- ]?EM\b'
+      - '\bcryo[- ]?electron\s+microscopy\b'
+      - '\bcryogenic\b'
+      - '\bcrystal(s)?\b'
+      - '\bcrystalline\b'
+      - '\bcrystallization\b'
+      - '\bcrystallisation\b'
+      - '\bcryopreservation\b'
+      - '\bCRISPR(?:[-/ ]Cas9)?\b'
+      - '\bCas9\b'
+      - '\bgenome\s+editing\b'
+      - '\bcry\s+(for|out|baby|wolf)\b'
+      - '\b(no|not|without|absence|lack|do\s+not|does\s+not|did\s+not)\b.{0,80}\bCry(?:1|2|3|4|11)?[A-Za-z0-9]*\b'
+      - '\bCry(?:1|2|3|4|11)?[A-Za-z0-9]*\b.{0,80}\b(no|not|without|absence|lack|do\s+not|does\s+not|did\s+not)\b'
+    weight: 1.0
+    min_score: 3.0
+    assignment_requires_sections:
+      - title
+    candidate_only_sections:
+      - abstract
+      - introduction
+      - methods
+      - references
+
+  Vip3:
+    synonyms:
+      - Vip3
+      - Vip3A
+      - Vip3Aa
+      - vegetative insecticidal protein 3
+      - vegetative insecticidal proteins
+    include_patterns:
+      - '\bVip3[A-Za-z0-9]*\b'
+      - '\bvegetative\s+insecticidal\s+protein\s*3[A-Za-z0-9]*\b'
+    exclude_patterns: []
+    weight: 1.0
+    min_score: 1.0
+
+  Cyt:
+    synonyms:
+      - Cyt toxin
+      - Cyt protein
+      - Cyt1
+      - Cyt1A
+      - Cyt2
+      - Cyt2A
+      - cytolytic toxin
+    include_patterns:
+      - '\bCyt(?:1|2)[A-Za-z0-9]*(?:\s+(?:toxin|protein))?\b'
+      - '\bCyt\s+(?:toxin|protein)s?\b'
+      - '\bcytolytic\s+(toxin|protein)s?\b'
+    exclude_patterns:
+      - '\bcytotoxic\b'
+      - '\bcytoskeletal\b'
+      - '\bcytology\b'
+      - '\bcytosol\b'
+    weight: 1.0
+    min_score: 1.0
+
+  Mpp:
+    synonyms:
+      - Mpp
+      - Mpp toxin
+      - Mpp protein
+    include_patterns:
+      - '\bMpp[0-9A-Za-z]*\b'
+    exclude_patterns:
+      - '\bMPP\+\b'
+      - '\bmaximum\s+power\s+point\b'
+    weight: 1.0
+    min_score: 1.0
+
+  Tpp:
+    synonyms:
+      - Tpp
+      - Tpp toxin
+      - Tpp protein
+    include_patterns:
+      - '\bTpp[0-9A-Za-z]*\b'
+    exclude_patterns:
+      - '\bthiamine\s+pyrophosphate\b'
+      - '\bTPP\b(?=.*mitochondr)'
+    weight: 1.0
+    min_score: 1.0
+
+  Tc:
+    synonyms:
+      - Tc
+      - Tc toxin
+      - toxin complex
+      - toxin complex protein
+    include_patterns:
+      - '\bTc[0-9A-Za-z]*\s+(toxin|protein|complex)\b'
+      - '\btoxin\s+complex(es)?\b'
+    exclude_patterns:
+      - '\btechnetium\b'
+      - '\bT\s*cell\b'
+    weight: 1.0
+    min_score: 1.0
+
+  Px:
+    synonyms:
+      - Px
+      - Plutella xylostella
+      - diamondback moth
+    include_patterns:
+      - '\bPlutella\s+xylostella\b'
+      - '\bdiamondback\s+moth\b'
+      - '\bP\.\s*xylostella\b'
+    exclude_patterns: []
+    weight: 1.0
+    min_score: 1.0
+
+  Of:
+    synonyms:
+      - Of
+      - Ostrinia furnacalis
+      - Asian corn borer
+    include_patterns:
+      - '\bOstrinia\s+furnacalis\b'
+      - '\bAsian\s+corn\s+borer\b'
+      - '\bO\.\s*furnacalis\b'
+    exclude_patterns:
+      - '\bof\b'
+    weight: 1.0
+    min_score: 1.0
+
+  Sf:
+    synonyms:
+      - Sf
+      - Spodoptera frugiperda
+      - fall armyworm
+      - Sf9
+      - Sf21
+    include_patterns:
+      - '\bSpodoptera\s+frugiperda\b'
+      - '\bfall\s+armyworm\b'
+      - '\bS\.\s*frugiperda\b'
+      - '\bSf(9|21)\b'
+    exclude_patterns:
+      - '\bSan\s+Francisco\b'
+    weight: 1.0
+    min_score: 1.0
+
+  Ae:
+    synonyms:
+      - Ae
+      - Aedes aegypti
+      - Aedes
+    include_patterns:
+      - '\bAedes\s+aegypti\b'
+      - '\bAe\.\s*aegypti\b'
+    exclude_patterns:
+      - '\badverse\s+event(s)?\b'
+    weight: 1.0
+    min_score: 1.0
+
+  Cx:
+    synonyms:
+      - Cx
+      - Culex
+      - Culex quinquefasciatus
+    include_patterns:
+      - '\bCulex\b'
+      - '\bCulex\s+quinquefasciatus\b'
+      - '\bCx\.\s*quinquefasciatus\b'
+    exclude_patterns:
+      - '\bcx\b(?=.*clinical)'
+    weight: 1.0
+    min_score: 1.0
+
+  An:
+    synonyms:
+      - An
+      - Anopheles
+      - Anopheles gambiae
+    include_patterns:
+      - '\bAnopheles\b'
+      - '\bAnopheles\s+gambiae\b'
+      - '\bAn\.\s*gambiae\b'
+    exclude_patterns:
+      - '\ban\b'
+    weight: 1.0
+    min_score: 1.0
+
+  Binding:
+    synonyms:
+      - binding
+      - bind
+      - binds
+      - binding affinity
+      - toxin binding
+    include_patterns:
+      - '\bbind(s|ing)?\b'
+      - '\bbinding\s+affinity\b'
+      - '\btoxin\s+binding\b'
+    exclude_patterns: []
+    weight: 1.0
+    min_score: 1.0
+
+  Receptor:
+    synonyms:
+      - receptor
+      - receptor binding
+      - cadherin
+      - aminopeptidase N
+      - APN
+      - alkaline phosphatase
+      - ALP
+      - ABC transporter
+    include_patterns:
+      - '\breceptor(s)?\b'
+      - '\bcadherin(s)?\b'
+      - '\baminopeptidase\s+N\b'
+      - '\bAPN\b'
+      - '\balkaline\s+phosphatase\b'
+      - '\bALP\b'
+      - '\bABC\s+transporter(s)?\b'
+    exclude_patterns: []
+    weight: 1.0
+    min_score: 1.0
+
+  PM:
+    synonyms:
+      - peritrophic membrane
+      - peritrophic matrix
+      - insect midgut PM
+    include_patterns:
+      - '\bperitrophic\s+(membrane|matrix)\b'
+      - '\binsect\s+midgut\s+PM\b'
+      - '\bPM\b(?=.{0,80}\b(midgut|larva|larvae|insect|peritrophic)\b)'
+      - '\b(midgut|larva|larvae|insect|peritrophic)\b.{0,80}\bPM\b'
+    exclude_patterns:
+      - '\b\d+(?:\.\d+)?\s*pM\b'
+      - '\bpM\b(?=\s*(?:toxin|protein|competitor|binding|concentration|solution|buffer|nM|mM|uM|µM|μM|mol|molar))'
+      - '\bpico\s*molar\b'
+      - '\bpicomolar\b'
+      - '\bplasma\s+membrane\b'
+      - '\bplant\s+material\b'
+      - '\bparticulate\s+matter\b'
+      - '\bpost\s+meridiem\b'
+      - '\b(no|not|without|absence|lack|do\s+not|does\s+not|did\s+not)\b.{0,80}\bperitrophic\s+(membrane|matrix)\b'
+      - '\bperitrophic\s+(membrane|matrix)\b.{0,80}\b(no|not|without|absence|lack|do\s+not|does\s+not|did\s+not)\b'
+    weight: 1.0
+    min_score: 2.5
+    assignment_requires_sections:
+      - title
+      - results
+      - discussion
+    candidate_only_sections:
+      - abstract
+      - introduction
+      - methods
+      - references
+
+  Oligomer:
+    synonyms:
+      - oligomer
+      - oligomerization
+      - pore formation
+      - pore-forming
+    include_patterns:
+      - '\boligomer(s|ization)?\b'
+      - '\bpore[- ]forming\b'
+      - '\bpore\s+formation\b'
+    exclude_patterns: []
+    weight: 1.0
+    min_score: 1.0
+
+  Immune:
+    synonyms:
+      - immune
+      - immunity
+      - immune response
+      - innate immunity
+      - antimicrobial peptide
+    include_patterns:
+      - '\bimmune\s+response\b'
+      - '\binnate\s+immunity\b'
+      - '\bantimicrobial\s+peptide(s)?\b'
+      - '\bdefensin(s)?\b'
+    exclude_patterns: []
+    weight: 1.0
+    min_score: 1.0
+
+  Microbiota:
+    synonyms:
+      - microbiota
+      - microbiome
+      - gut microbiota
+      - gut microbiome
+      - gut bacteria
+      - gut flora
+      - gut bacterial community
+      - gut microbial community
+      - microbiota-mediated
+      - microbiome-mediated
+    include_patterns:
+      - '\b(?:microbiota|microbiome|gut\s+bacteria|gut\s+flora|gut\s+microbial\s+communit(?:y|ies))\b(?=.{0,160}\b(?:insect|larval\s+gut|midgut|dysbiosis|immune\s+response)\b)'
+      - '\b(?:insect|larval\s+gut|midgut|dysbiosis|immune\s+response)\b.{0,160}\b(?:microbiota|microbiome|gut\s+bacteria|gut\s+flora|gut\s+microbial\s+communit(?:y|ies))\b'
+      - '\bgut\s+microbiot(a|e)\b'
+      - '\bgut\s+microbiome\b'
+      - '\bgut\s+bacteria\b'
+      - '\bgut\s+flora\b'
+      - '\bgut\s+(microbial|bacterial)\s+communit(y|ies)\b'
+    exclude_patterns: []
+    weight: 1.0
+    min_score: 4.0
+    assignment_requires_sections:
+      - title
+      - results
+      - discussion
+    candidate_only_sections:
+      - abstract
+      - introduction
+      - methods
+      - references
+
+  Resistance:
+    synonyms:
+      - resistance
+      - resistant
+      - Bt resistance
+      - cross-resistance
+    include_patterns:
+      - '\bresistan(ce|t)\b'
+      - '\bBt\s+resistance\b'
+      - '\bcross[- ]resistance\b'
+    exclude_patterns: []
+    weight: 1.0
+    min_score: 1.0
+
+  RNAi:
+    synonyms:
+      - RNAi
+      - RNA interference
+      - dsRNA
+      - gene silencing
+    include_patterns:
+      - '\bRNAi\b'
+      - '\bRNA\s+interference\b'
+      - '\bdsRNA\b'
+      - '\bgene\s+silencing\b'
+    exclude_patterns: []
+    weight: 1.0
+    min_score: 1.0
+
+  CRISPR:
+    synonyms:
+      - CRISPR
+      - CRISPR-Cas9
+      - Cas9
+      - genome editing
+    include_patterns:
+      - '\bCRISPR(?:[- ]Cas9)?\b'
+      - '\bCas9\b'
+      - '\bgenome\s+editing\b'
+    exclude_patterns: []
+    weight: 1.0
+    min_score: 1.0
+
+  LigandBlot:
+    synonyms:
+      - ligand blot
+      - ligand blotting
+      - ligand-blot
+      - ligand-blotting
+    include_patterns:
+      - '\bligand[- ]blot(ting)?\b'
+    exclude_patterns: []
+    weight: 1.0
+    min_score: 1.0
+
+  SPR:
+    synonyms:
+      - SPR
+      - surface plasmon resonance
+    include_patterns:
+      - '\bsurface\s+plasmon\s+resonance\b'
+      - '\bSPR\b'
+    exclude_patterns:
+      - '\bspring\b'
+    weight: 1.0
+    min_score: 1.0
+
+  MST:
+    synonyms:
+      - MST
+      - microscale thermophoresis
+    include_patterns:
+      - '\bmicroscale\s+thermophoresis\b'
+      - '\bMST\b'
+    exclude_patterns:
+      - '\bmountain\s+standard\s+time\b'
+    weight: 1.0
+    min_score: 1.0
+
+  AlphaFold:
+    synonyms:
+      - AlphaFold
+      - AlphaFold2
+      - AF2
+      - protein structure prediction
+    include_patterns:
+      - '\bAlphaFold2?\b'
+      - '\bAF2\b'
+      - '\bprotein\s+structure\s+prediction\b'
+    exclude_patterns: []
+    weight: 1.0
+    min_score: 1.0

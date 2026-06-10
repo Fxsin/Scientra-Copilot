@@ -1,0 +1,23 @@
+workflow_version: "0.1.0"
+
+runtime:
+  python: "python"
+  continue_on_paper_failure: true
+
+paths:
+  state_sqlite: "05_Index/workflow_state.sqlite"
+  report: "05_Index/workflow_test_report.md"
+
+grobid:
+  base_url: "http://localhost:18070"
+  health_endpoint: "/api/isalive"
+  docker_container: "scientra_grobid"
+  startup_timeout_seconds: 60
+
+policy:
+  direct_pdf_agent_access: forbidden
+  direct_raw_text_agent_access: forbidden
+  direct_tei_agent_access: forbidden
+  direct_lancedb_agent_access: forbidden
+  workflow_database_mutation: allowed_only_for_workflow_state_and_engine_outputs
+  llm_calls: summary_engine_only

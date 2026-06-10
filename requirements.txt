@@ -1,0 +1,28 @@
+# Scientra Copilot Dependencies
+# Generated from verified working installation (Python 3.11+)
+
+# Core
+fastapi>=0.100
+uvicorn>=0.23
+typer>=0.9
+pydantic>=2.0
+pyyaml>=6.0
+loguru>=0.7
+requests>=2.28
+
+# Vector & Embedding
+lancedb>=0.4
+pyarrow>=12.0
+sentence-transformers>=2.2
+torch>=2.0
+transformers>=4.30
+huggingface-hub>=0.16
+numpy>=1.24
+
+# Optional: GROBID Docker management
+# docker>=6.0
+
+# Development
+# pytest>=7.0
+# pytest-asyncio>=0.21
+# ruff>=0.1

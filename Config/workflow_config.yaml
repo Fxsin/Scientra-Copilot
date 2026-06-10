@@ -1,0 +1,96 @@
+workflow_version: "2026-06-08.v1"
+description: "Scientra Copilot workflow configuration."
+
+paths:
+  root: "."
+  inbox_dir: "00_Inbox"
+  pdf_dir: "01_PDF"
+  metadata_dir: "02_Metadata"
+  summary_dir: "03_Summary"
+  vector_db_dir: "04_VectorDB/lancedb"
+  index_dir: "05_Index"
+  workflow_dir: "07_Workflows"
+  log_dir: "07_Workflows/logs"
+  report_dir: "07_Workflows/reports"
+  state_path: "07_Workflows/workflow_state.json"
+  failure_path: "07_Workflows/workflow_failures.jsonl"
+
+runtime:
+  python: "python"
+  python_no_bytecode: true
+  stop_on_failure: true
+  continue_on_optional_failure: true
+  default_timeout_seconds: 3600
+
+steps:
+  import_pdf:
+    enabled: true
+    description: "Copy incoming PDFs into 01_PDF."
+
+  parse:
+    enabled: true
+    description: "PDF -> GROBID parse -> metadata JSON and raw_text."
+    command:
+      module: null
+      script: "Scripts/pdf_parser.py"
+      args:
+        - "--check-grobid"
+    timeout_seconds: 7200
+
+  metadata:
+    enabled: true
+    description: "Generate metadata.yaml using DOI, Crossref, PubMed, and rules."
+    command:
+      module: null
+      script: "Scripts/metadata_extractor.py"
+      args: []
+    timeout_seconds: 3600
+
+  tag:
+    enabled: true
+    description: "Assign configured tags through Tag Engine."
+    command:
+      module: "scientra.Scripts.retag"
+      script: null
+      args:
+        - "--all"
+    timeout_seconds: 1800
+
+  summary:
+    enabled: true
+    description: "Generate summary.md with Summary Agent (default) or Summary Engine (legacy)."
+    mode: "agent"
+    fallback_mode: "direct_api"
+    command:
+      module: "scientra.summary_agent"
+      script: null
+      args:
+        - "--all"
+    timeout_seconds: 7200
+    optional: false
+
+  embedding:
+    enabled: true
+    description: "Build BGE-M3 embeddings for metadata, summary, and chunk levels."
+    command:
+      module: "scientra.embedding_engine"
+      script: null
+      args:
+        - "index"
+    timeout_seconds: 7200
+
+  lancedb:
+    enabled: true
+    description: "Verify LanceDB index report after embedding."
+    builtin: "verify_lancedb"
+
+  index_update:
+    enabled: true
+    description: "Write workflow index report."
+    builtin: "index_update"
+
+policy:
+  agent_entrypoint: "literature_query"
+  agent_pdf_access: "forbidden"
+  agent_direct_lancedb_access: "forbidden"
+  workflow_regenerates_embedding_only_when_inputs_change: true

@@ -1,0 +1,37 @@
+schema_version: "2026-06-08.v1"
+description: "Default Scientra Copilot tag ontology. Tags are configurable and must not be hard-coded in the engine."
+
+categories:
+  TOXIN:
+    - Cry
+    - Vip3
+    - Cyt
+    - Mpp
+    - Tpp
+    - Tc
+
+  HOST:
+    - Px
+    - Of
+    - Sf
+    - Ae
+    - Cx
+    - An
+
+  MECHANISM:
+    - Binding
+    - Receptor
+    - PM
+    - Oligomer
+    - Immune
+    - Microbiota
+    - Resistance
+
+  METHOD:
+    - RNAi
+    - CRISPR
+    - LigandBlot
+    - SPR
+    - MST
+    - AlphaFold
+
