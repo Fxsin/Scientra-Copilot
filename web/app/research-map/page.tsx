@@ -1,6 +1,9 @@
 "use client";
 
 import { ResearchMapView } from "@/components/research-map-view";
+import { DemoBanner } from "@/components/demo-banner";
+import { useApiWithFallback } from "@/lib/use-api";
+import { getResearchMap } from "@/lib/api";
 import {
   mockTopics,
   mockHotTopics,
@@ -8,7 +11,7 @@ import {
 } from "@/lib/data/researchIntelligenceMock";
 import type { ResearchMapResponse } from "@/lib/types";
 
-function buildMockResearchMapData(): ResearchMapResponse {
+function buildMockData(): ResearchMapResponse {
   const mature_topics = mockTopics.map((t) => ({
     cluster_id: t.id,
     name: t.name,
@@ -97,6 +100,15 @@ function buildMockResearchMapData(): ResearchMapResponse {
 }
 
 export default function ResearchMapPage() {
-  const data = buildMockResearchMapData();
-  return <ResearchMapView data={data} />;
+  const { data, isDemo } = useApiWithFallback(
+    getResearchMap,
+    buildMockData(),
+  );
+
+  return (
+    <>
+      <DemoBanner show={isDemo} />
+      <ResearchMapView data={data} />
+    </>
+  );
 }

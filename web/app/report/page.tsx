@@ -1,5 +1,6 @@
 "use client";
 
+import { DemoBanner } from "@/components/demo-banner";
 import {
   Printer,
   Download,
@@ -91,6 +92,8 @@ export default function ReportPage() {
           </button>
         </div>
       </div>
+
+      <DemoBanner />
 
       {/* Executive Summary */}
       <Section icon={Star} title="Executive Summary" color="text-yellow-600">

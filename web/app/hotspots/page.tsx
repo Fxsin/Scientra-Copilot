@@ -8,6 +8,7 @@ import {
   Beaker,
   Lightbulb,
 } from "lucide-react";
+import { DemoBanner } from "@/components/demo-banner";
 import {
   mockHotspots,
   type HotspotItem,
@@ -52,6 +53,8 @@ export default function HotspotsPage() {
           Research topics with the highest recent activity and growth potential.
         </p>
       </div>
+
+      <DemoBanner />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {mockHotspots.map((hs) => (

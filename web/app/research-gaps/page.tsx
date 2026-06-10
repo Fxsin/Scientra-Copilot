@@ -1,5 +1,6 @@
 "use client";
 
+import { DemoBanner } from "@/components/demo-banner";
 import {
   SearchCheck,
   AlertCircle,
@@ -33,6 +34,8 @@ export default function ResearchGapsPage() {
           current literature.
         </p>
       </div>
+
+      <DemoBanner />
 
       <div className="space-y-4">
         {mockResearchGaps.map((gap) => (

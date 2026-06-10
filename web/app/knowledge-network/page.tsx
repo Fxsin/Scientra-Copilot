@@ -10,12 +10,19 @@ import {
 import { NetworkToolbar } from "@/components/network-toolbar";
 import { NetworkLegend } from "@/components/network-legend";
 import { NetworkNodeDetail } from "@/components/network-node-detail";
+import { DemoBanner } from "@/components/demo-banner";
+import { useApiWithFallback } from "@/lib/use-api";
+import { getKnowledgeNetwork } from "@/lib/api";
 import {
   getNetworkData,
   getResearchGapsByNode,
   type NetworkMode,
 } from "@/lib/data/researchIntelligenceMock";
-import type { NetworkNode, NetworkLink } from "@/lib/types";
+import type { NetworkNode, NetworkLink, KnowledgeNetworkResponse } from "@/lib/types";
+
+function buildMockData() {
+  return getNetworkData("concept");
+}
 
 export default function KnowledgeNetworkPage() {
   const [mode, setMode] = useState<NetworkMode>("concept");
@@ -31,23 +38,44 @@ export default function KnowledgeNetworkPage() {
   const [edgeDensity, setEdgeDensity] = useState<EdgeDensity>("medium");
   const [labelMode, setLabelMode] = useState<LabelMode>("important");
 
-  // Switch mode derived from toolbar — KISS: just a state variable
-  const rawData = getNetworkData(mode);
+  // API-first for concept network
+  const { data: apiNetworkData, isDemo } = useApiWithFallback(
+    getKnowledgeNetwork,
+    { nodes: [], links: [], stats: { node_count: 0, link_count: 0, paper_count: 0, toxin_count: 0, host_count: 0, mechanism_count: 0, method_count: 0 } },
+  );
 
-  // Convert RINetworkNode to NetworkNode
+  // Use mock for non-concept modes (no API yet)
+  const mockData = getNetworkData(mode);
+  const rawData = isDemo ? mockData : {
+    nodes: apiNetworkData.nodes.map((n) => ({
+      id: n.id,
+      label: n.label,
+      type: n.type as "Concept" | "Method" | "Finding" | "Paper",
+      color: n.color,
+      size: n.count ?? 8,
+      entityId: n.id,
+      entityType: "concept" as const,
+    })),
+    links: apiNetworkData.links.map((l) => ({
+      source: typeof l.source === "string" ? l.source : (l.source as NetworkNode).id,
+      target: typeof l.target === "string" ? l.target : (l.target as NetworkNode).id,
+      type: l.type,
+      weight: l.weight,
+      label: l.label,
+    })),
+  };
+
   const nodes: NetworkNode[] = rawData.nodes.map((n) => ({
     id: n.id,
     label: n.label,
-    type:
-      n.type === "Finding"
-        ? "mechanism"
-        : (n.type.toLowerCase() as NetworkNode["type"]),
+    type: n.type === "Finding"
+      ? "mechanism"
+      : (n.type.toLowerCase() as NetworkNode["type"]),
     color: n.color,
-    count: n.size,
+    count: "size" in n ? n.size : 8,
     tags: [],
   }));
 
-  // Convert links
   const links: NetworkLink[] = rawData.links.map((l) => ({
     source: l.source,
     target: l.target,
@@ -56,9 +84,8 @@ export default function KnowledgeNetworkPage() {
     label: l.label,
   }));
 
-  // Find linked gaps for the selected node
   const selectedRINode = selectedNode
-    ? rawData.nodes.find((n) => n.id === selectedNode.id) ?? null
+    ? mockData.nodes.find((n) => n.id === selectedNode.id) ?? null
     : null;
   const linkedGaps = selectedRINode
     ? getResearchGapsByNode(selectedRINode)
@@ -98,6 +125,8 @@ export default function KnowledgeNetworkPage() {
           evidence, and contradictions.
         </p>
       </div>
+
+      <DemoBanner show={isDemo} />
 
       <NetworkToolbar
         search={search}

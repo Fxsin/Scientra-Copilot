@@ -1,12 +1,32 @@
 "use client";
 
 import { Library, BookOpen, Users, Calendar } from "lucide-react";
+import { DemoBanner } from "@/components/demo-banner";
+import { useApiWithFallback } from "@/lib/use-api";
+import { getStats } from "@/lib/api";
 import {
   mockResearchPapers,
   type ResearchPaper,
 } from "@/lib/data/researchIntelligenceMock";
+import type { StatsResponse } from "@/lib/types";
+
+function buildMockStats(): StatsResponse {
+  return {
+    paper_count: mockResearchPapers.length,
+    metadata_embedding_count: 5,
+    summary_embedding_count: 5,
+    chunk_embedding_count: 12,
+    tag_distribution: { Cry1Ac: 3, Vip3Aa: 2, "Receptor binding": 4 },
+    year_distribution: { "2024": 2, "2025": 1, "2007": 1, "2022": 1 },
+  };
+}
 
 export default function LibraryPage() {
+  const { data: stats, isDemo } = useApiWithFallback(
+    getStats,
+    buildMockStats(),
+  );
+
   return (
     <div className="space-y-6">
       <div>
@@ -19,12 +39,18 @@ export default function LibraryPage() {
         </p>
       </div>
 
+      <DemoBanner show={isDemo} />
+
       <div className="grid grid-cols-3 gap-4">
-        <StatBadge label="Papers" value={mockResearchPapers.length} />
+        <StatBadge
+          label="Papers"
+          value={isDemo ? mockResearchPapers.length : stats.paper_count}
+        />
         <StatBadge label="Topics" value={25} />
         <StatBadge label="Gaps" value={6} />
       </div>
 
+      {/* Always show mock papers — real paper list needs a list/search API */}
       <div className="space-y-3">
         {mockResearchPapers.map((paper) => (
           <PaperCard key={paper.id} paper={paper} />
