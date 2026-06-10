@@ -8,171 +8,207 @@
 </p>
 
 <p align="center">
-  Transform scientific literature into structured knowledge, research maps, semantic search, and agent-ready workflows.
+Transform scientific literature into structured knowledge, research maps, semantic retrieval systems, and agent-ready workflows.
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.11+-blue.svg">
   <img src="https://img.shields.io/badge/license-MIT-green.svg">
-  <img src="https://img.shields.io/badge/version-v0.2.0-orange.svg">
+  <img src="https://img.shields.io/badge/status-active%20development-orange.svg">
 </p>
 
 ---
 
 # What is Scientra Copilot?
 
-Scientra Copilot is an AI-powered research discovery platform that transforms scientific papers into a structured, searchable, and agent-consumable knowledge system.
+Scientra Copilot is an AI-powered research discovery platform designed for researchers, engineers, and AI agents.
 
-Unlike traditional reference managers, Scientra focuses on:
+Unlike traditional reference managers that focus on storing PDFs and citations, Scientra transforms scientific literature into a structured, searchable, and machine-readable knowledge system.
 
-* Knowledge Extraction
-* Research Mapping
-* Semantic Retrieval
-* AI Agent Integration
-* Research Discovery
+The goal is simple:
 
-It helps researchers move from **collecting papers** to **understanding research landscapes and discovering new ideas**.
+> Move researchers from collecting papers to understanding knowledge and discovering ideas.
+
+Scientra automatically processes research papers, extracts structured information, generates summaries, builds semantic indexes, and exposes the resulting knowledge through APIs and Agent SDKs.
+
+Whether you are a scientist building a literature database, an AI engineer creating research agents, or a student exploring a new field, Scientra provides a unified foundation for literature-driven research.
 
 ---
 
-# Architecture
+# Why Scientra?
 
-```mermaid
-flowchart LR
+Most literature tools solve only one piece of the workflow:
 
-subgraph Literature_Ingestion
-PDF["📄 PDFs"]
-GROBID["🔍 GROBID"]
-META["📋 Metadata"]
-TAG["🏷️ Tags"]
-SUM["📝 Summary Agent"]
-end
+| Tool             | Primary Focus                                                 |
+| ---------------- | ------------------------------------------------------------- |
+| Zotero           | Reference Management                                          |
+| EndNote          | Citation Management                                           |
+| Mendeley         | Library Organization                                          |
+| ResearchRabbit   | Literature Exploration                                        |
+| NotebookLM       | Document Q&A                                                  |
+| Scientra Copilot | Knowledge Extraction + Research Discovery + Agent Integration |
 
-subgraph Knowledge_Layer
-EMB["🧠 BGE-M3 Embedding"]
-DB["🗄️ LanceDB"]
-MAP["🗺️ Research Map"]
-GRAPH["🕸️ Knowledge Explorer"]
-end
+Scientra is designed as a complete research knowledge platform rather than a PDF storage system.
 
-subgraph Agent_Layer
-API["🔌 Query API"]
-SDK["🤖 Agent SDK"]
-COPILOT["🚀 Scientra Copilot"]
-end
+---
 
-PDF --> GROBID
-GROBID --> META
-META --> TAG
-TAG --> SUM
+# Architecture Overview
 
-SUM --> EMB
-EMB --> DB
-
-DB --> MAP
-DB --> GRAPH
-
-MAP --> API
-GRAPH --> API
-
-API --> SDK
-SDK --> COPILOT
+```text
+PDF Papers
+    ↓
+GROBID Parsing
+    ↓
+Metadata Extraction
+    ↓
+Knowledge Tagging
+    ↓
+AI Summarization
+    ↓
+BGE-M3 Embeddings
+    ↓
+LanceDB Knowledge Store
+    ↓
+Query API
+    ↓
+Agent SDK
+    ↓
+Scientra Copilot
 ```
 
 ---
 
-# Core Features
+# Core Capabilities
 
-## 📄 Literature Pipeline
+## 📄 Literature Processing Pipeline
+
+Automatically converts raw scientific PDFs into structured research assets.
+
+Features:
 
 * PDF ingestion
 * GROBID parsing
 * Metadata extraction
-* Automatic tagging
-* AI-assisted summaries
+* DOI recognition
+* Structured summaries
 * Incremental processing
+* Resume-from-failure workflow
 
 ---
 
-## 🧠 Knowledge Layer
+## 🏷️ Knowledge Extraction
 
-* Knowledge Explorer
-* Related Papers Engine
-* Research Map
-* Cluster Discovery
-* Semantic Retrieval
-* Multi-level Embeddings
+Scientra transforms papers into searchable knowledge.
 
----
+Current extraction layers:
 
-## 🤖 Agent Layer
+* Metadata
+* Tags
+* Summaries
+* Evidence Chunks
+* Embeddings
 
-* Query API
-* Agent SDK
-* AI Copilot
-* Context Pack Generation
-* Agent-safe Retrieval
-* Citation-grounded Responses
+Future layers:
+
+* Topic Extraction
+* Citation Networks
+* Research Evolution Tracking
 
 ---
 
-## 🔍 Search
+## 🧠 Semantic Retrieval
 
-Supports:
+Three-level retrieval architecture:
+
+* Metadata Search
+* Summary Search
+* Chunk-Level Evidence Search
+
+Supported modes:
 
 * Keyword Search
 * Vector Search
 * Hybrid Search
-* Tag Filtering
-* Metadata Filtering
-* Evidence Retrieval
+
+Powered by:
+
+* BGE-M3
+* LanceDB
 
 ---
 
-# Screenshots
+## 🗺️ Research Discovery
 
-## Dashboard
+Scientra goes beyond document retrieval.
 
-Track your literature collection, research activity, and knowledge statistics.
+Researchers can explore:
 
-![Dashboard](docs/screenshots/dashboard.png)
+* Related Papers
+* Knowledge Networks
+* Research Maps
+* Topic Clusters
+* Emerging Research Areas
+* Potential Research Gaps
 
----
-
-## Library
-
-Search and explore your literature knowledge base.
-
-![Library](docs/screenshots/library.png)
-
----
-
-## Knowledge Explorer
-
-Interactive knowledge networks connecting concepts, methods, topics, and papers.
-
-![Knowledge Explorer](docs/screenshots/network.png)
+The objective is not only to find papers but to understand the structure of a research field.
 
 ---
 
-## Research Map
+## 🤖 Agent-Ready Design
 
-Automatically identify:
+Scientra is designed from the beginning for AI agents.
 
-* Mature Topics
-* Emerging Topics
-* Research Gaps
-* Knowledge Clusters
+Agents never access:
 
-![Research Map](docs/screenshots/research_map.png)
+* Raw PDFs
+* Internal databases
+* Vector stores
+
+Instead they interact through:
+
+* Query API
+* Agent SDK
+* Context Packs
+* Citation-Grounded Evidence
+
+This architecture provides:
+
+* Traceability
+* Reproducibility
+* Safer retrieval
+* Model independence
 
 ---
 
-## AI Copilot
+# Current Modules
 
-Chat with your literature and retrieve evidence-backed answers.
+## Backend
 
-![AI Copilot](docs/screenshots/copilot.png)
+* PDF Engine
+* Metadata Engine
+* Tag Engine
+* Summary Agent
+* Embedding Engine
+* Query API
+* Agent SDK
+* Workflow Engine
+
+## Frontend
+
+* Dashboard
+* Library
+* Import Center
+* Knowledge Explorer
+* Research Map
+* AI Chat (Context Mode)
+
+## Infrastructure
+
+* GROBID
+* LanceDB
+* BGE-M3
+* FastAPI
+* SQLite
 
 ---
 
@@ -200,7 +236,7 @@ pip install -r requirements.txt
 
 ---
 
-## Start Everything
+## Start Scientra
 
 Windows:
 
@@ -214,9 +250,15 @@ PowerShell:
 powershell -ExecutionPolicy Bypass -File start_scientra_os.ps1
 ```
 
+This automatically starts:
+
+* GROBID
+* Query API
+* Web Frontend
+
 ---
 
-## Import Papers
+## Import Literature
 
 Place PDFs into:
 
@@ -228,6 +270,17 @@ Run:
 
 ```bash
 python workflow.py --all
+```
+
+The workflow will automatically:
+
+```text
+PDF
+→ Metadata
+→ Tags
+→ Summary
+→ Embedding
+→ Search Index
 ```
 
 ---
@@ -243,6 +296,7 @@ Scientra_Copilot/
 03_Summary/
 04_VectorDB/
 05_Index/
+
 06_API/
 07_Workflows/
 08_Agent_Interface/
@@ -260,7 +314,7 @@ agent_sdk.py
 
 # Use Cases
 
-Scientra Copilot is designed for researchers in:
+Scientra can be used in:
 
 * Life Sciences
 * Medicine
@@ -270,32 +324,31 @@ Scientra Copilot is designed for researchers in:
 * Chemistry
 * Environmental Science
 * Social Sciences
-* Any literature-driven research field
+
+and any research field that relies on literature analysis.
 
 ---
 
 # Roadmap
 
-## v0.2
+## Current
 
-* PDF Pipeline
+* PDF Processing Pipeline
+* Knowledge Extraction
+* Semantic Retrieval
+* Research Maps
 * Knowledge Explorer
-* Research Map
 * Agent SDK
 
-## v0.3
+## Upcoming
 
 * Topic Engine
 * AI Research Copilot
-* Advanced Knowledge Discovery
-
-## v0.4
-
 * Citation Extraction
 * Citation Network
 * Research Evolution Analysis
 
-## v1.0
+## Long-Term
 
 * Word Integration
 * Zotero Integration
@@ -310,27 +363,11 @@ Scientra Copilot is designed for researchers in:
 
 Scientra Copilot 是一个面向科研工作者的 AI 研究发现平台（AI-Powered Research Discovery Platform）。
 
-它不仅仅是一个文献管理工具，也不仅仅是一个 PDF 阅读器。
+与传统文献管理工具不同，Scientra 不仅关注 PDF 存储和文献引用管理，更关注将文献转化为结构化知识，并进一步支持 AI Agent 调用和科研发现。
 
-Scientra Copilot 的目标是：
+核心理念：
 
-> 将文献转化为知识，将知识转化为发现。
-
-核心流程：
-
-```text
-PDF
-↓
-Metadata
-↓
-Knowledge
-↓
-Research Map
-↓
-Agent
-↓
-Discovery
-```
+> 从文献到知识，从知识到发现。
 
 ---
 
@@ -347,24 +384,21 @@ Discovery
 ### 🧠 知识发现
 
 * Knowledge Explorer
-* Related Papers
 * Research Map
-* Research Gap Discovery
+* Related Papers
 * Semantic Search
+* Topic Discovery
 
 ### 🤖 Agent 调用
 
 * Query API
 * Agent SDK
-* AI Copilot
 * Context Pack
-* Agent-safe Retrieval
+* AI Copilot
 
 ---
 
-## 适用场景
-
-适用于：
+## 适用于
 
 * 生物学
 * 医学
@@ -374,7 +408,7 @@ Discovery
 * 环境科学
 * 社会科学
 
-以及任何依赖文献调研的科研领域。
+以及所有依赖文献调研的科研领域。
 
 ---
 
@@ -399,6 +433,6 @@ MIT License
 ---
 
 <p align="center">
-  <b>Scientra Copilot</b><br>
-  From Literature to Discovery.
+<b>Scientra Copilot</b><br>
+From Literature to Discovery.
 </p>
