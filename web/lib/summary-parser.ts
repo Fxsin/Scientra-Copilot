@@ -22,6 +22,82 @@ export interface ParsedSummary {
  * Everything not matching a known label goes into `others`.
  * The first Core Finding becomes the `takeaway`.
  */
+/**
+ * Clean a raw summary text into a readable 1-2 line snippet for card previews.
+ * Strips markdown, JSON artifacts, YAML frontmatter, field labels, and tool metadata.
+ */
+export function cleanSummarySnippet(raw: string | null | undefined, maxLen = 200): string | null {
+  if (!raw) return null;
+  let text = raw.trim();
+  if (!text) return null;
+
+  // ── 1. Detect JSON summary — extract first Core Finding text ──
+  if (text.startsWith("{") && text.endsWith("}")) {
+    try {
+      const obj = JSON.parse(text);
+      const cf = obj["Core Finding"] ?? obj["core_finding"] ?? obj["core_findings"];
+      if (Array.isArray(cf) && cf.length > 0) {
+        const first = cf[0];
+        text = typeof first === "string" ? first : (first.text ?? first.content ?? JSON.stringify(first));
+      }
+    } catch { /* not valid JSON, continue */ }
+  }
+
+  // ── 2. Strip YAML frontmatter ──
+  text = text.replace(/^---[\s\S]*?---\s*/g, "");
+
+  // ── 3. Remove tool metadata lines ──
+  const metaKeys = [
+    "summary_tool", "summary_date", "summary_agent", "prompt_version",
+    "generated_at", "model", "title:", "framework:", "paper_id:",
+    "Scientra Copilot Summary Agent",
+  ];
+  for (const key of metaKeys) {
+    text = text.replace(new RegExp(`^${key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}.*$`, "gmi"), "");
+  }
+
+  // ── 4. Extract first Core Finding ──
+  const coreRe = /\*\*Core Finding\*\*:?\s*/i;
+  const lines = text.split("\n");
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    if (coreRe.test(line)) {
+      let content = line.replace(coreRe, "").trim();
+      if (i + 1 < lines.length && lines[i + 1].trim() && !/^\*\*/.test(lines[i + 1])) {
+        content += " " + lines[i + 1].trim();
+      }
+      text = content;
+      break;
+    }
+  }
+
+  // ── 5. Strip all markdown bold labels ──
+  text = text.replace(/\*\*[^*]+\*\*:?\s*/g, "");
+
+  // ── 6. Strip field-name prefixes (text:, title:, etc.) ──
+  text = text.replace(/^"?text"?:\s*/gi, "");
+  text = text.replace(/^"?title"?:\s*/gi, "");
+  text = text.replace(/^"?content"?:\s*/gi, "");
+
+  // ── 7. Strip JSON/structural artifacts ──
+  text = text.replace(/[{}[\]\\]/g, "");
+  text = text.replace(/"([^"]{1,40})":\s*/g, "");  // "key":
+  text = text.replace(/^[-—–•·]\s*/g, "");
+
+  // ── 8. Strip leading/trailing quotes ──
+  text = text.replace(/^["']|["']$/g, "");
+
+  // ── 9. Collapse whitespace ──
+  text = text.replace(/\s+/g, " ").trim();
+
+  // ── 10. Truncate cleanly ──
+  if (text.length > maxLen) {
+    text = text.slice(0, maxLen).replace(/\s\S*$/, "") + "…";
+  }
+  return text || null;
+}
+
 export function parseAISummary(raw: string | null | undefined): ParsedSummary | null {
   if (!raw) return null;
 

@@ -197,23 +197,42 @@ def create_app(root: Path | None = None) -> FastAPI:
         page_size: int = 20,
         q: str | None = None,
         year: int | None = None,
+        year_start: int | None = None,
+        year_end: int | None = None,
         toxin: str | None = None,
         species: str | None = None,
         method: str | None = None,
         tag: str | None = None,
+        sort: str | None = None,
     ) -> dict[str, Any]:
         papers = _load_yaml_metadata(root)
-        # Filter
+
+        # ── Filters (AND logic) ──
+
         if q:
             q_lower = q.lower()
-            papers = [
-                p for p in papers
-                if q_lower in (p.get("title") or "").lower()
-                or q_lower in (p.get("abstract") or "").lower()
-                or any(q_lower in str(t).lower() for t in (p.get("tags") or []))
-            ]
-        if year:
+            filtered: list[dict[str, Any]] = []
+            for p in papers:
+                title = (p.get("title") or "").lower()
+                abstract = (p.get("abstract") or "").lower()
+                tags_text = " ".join(str(t).lower() for t in (p.get("tags") or []))
+                toxin_text = " ".join(str(t).lower() for t in (p.get("toxin") or []))
+                species_text = " ".join(str(s).lower() for s in (p.get("species") or []))
+                method_text = " ".join(str(m).lower() for m in (p.get("method") or []))
+                summary = (_load_summary_text(root, p.get("paper_id", "")) or "").lower()
+                combined = f"{title} {abstract} {tags_text} {toxin_text} {species_text} {method_text} {summary}"
+                if q_lower in combined:
+                    filtered.append(p)
+            papers = filtered
+
+        if year is not None:
             papers = [p for p in papers if p.get("year") == year]
+        else:
+            if year_start is not None:
+                papers = [p for p in papers if (p.get("year") or 0) >= year_start]
+            if year_end is not None:
+                papers = [p for p in papers if (p.get("year") or 9999) <= year_end]
+
         if toxin:
             papers = [p for p in papers if toxin.lower() in " ".join(str(t).lower() for t in (p.get("toxin") or []))]
         if species:
@@ -222,6 +241,15 @@ def create_app(root: Path | None = None) -> FastAPI:
             papers = [p for p in papers if method.lower() in " ".join(str(m).lower() for m in (p.get("method") or []))]
         if tag:
             papers = [p for p in papers if any(tag.lower() in str(t).lower() for t in (p.get("tags") or []))]
+
+        # ── Sort ──
+        if sort == "year_desc":
+            papers.sort(key=lambda p: p.get("year") or 0, reverse=True)
+        elif sort == "year_asc":
+            papers.sort(key=lambda p: p.get("year") or 0)
+        elif sort == "title":
+            papers.sort(key=lambda p: (p.get("title") or "").lower())
+        # default: relevance = keep original order (from YAML discovery)
 
         total = len(papers)
         start = (page - 1) * page_size
