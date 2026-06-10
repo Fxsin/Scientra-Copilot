@@ -159,12 +159,13 @@ def wait_for_url(url: str, label: str, timeout: float = 30.0) -> bool:
     return False
 
 
-def run_detached(cmd: list[str], cwd: Path | None = None) -> subprocess.Popen:
+def run_detached(cmd: list[str], cwd: Path | None = None, env: dict[str, str] | None = None) -> subprocess.Popen:
     """Start a subprocess and return the Popen handle without waiting."""
     log.info(f"  Starting: {' '.join(str(c) for c in cmd)}")
     return subprocess.Popen(
         cmd,
         cwd=str(cwd) if cwd else None,
+        env=env or dict(os.environ),
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
         creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
@@ -416,18 +417,32 @@ def is_scientra_api(port: int) -> bool:
 
 
 def start_api() -> bool:
-    """Start Scientra Copilot Query API."""
+    """Start Scientra Copilot Query API with full health verification."""
     global actual_api_port
     log_separator("Scientra Copilot Query API")
 
-    api_url = f"http://localhost:{actual_api_port}"
+    # Use 127.0.0.1 for reliability (avoids IPv6 localhost resolution issues)
+    api_url = f"http://127.0.0.1:{actual_api_port}"
     api_health = f"{api_url}{API_HEALTH_PATH}"
+    api_stats = f"{api_url}/stats"
 
     # Already running?
     if is_scientra_api(actual_api_port):
         log.info(f"  [OK] Scientra API already running at {api_health}")
-        _diag["services"]["api"] = {"status": "reused", "port": actual_api_port, "url": api_url}
-        return True
+        # Verify /stats works too
+        if http_ok(api_stats):
+            log.info(f"  [OK] API /stats verified: {api_stats}")
+            _diag["services"]["api"] = {"status": "reused", "port": actual_api_port, "url": api_url}
+            return True
+        else:
+            log.warning(f"  API /health is reachable but /stats is not responding. Restarting API...")
+            # Kill the broken API and restart
+            proc = get_process_on_port(actual_api_port)
+            if proc and sys.platform == "win32":
+                pid = proc.split("PID ")[-1].rstrip(")") if "PID" in proc else ""
+                if pid:
+                    subprocess.run(["taskkill", "/PID", pid, "/F"], capture_output=True, timeout=5)
+            time.sleep(2)
 
     # Port occupied by non-Scientra process?
     if is_port_in_use(actual_api_port):
@@ -435,7 +450,7 @@ def start_api() -> bool:
         log.error(
             f"  API port {actual_api_port} is occupied by {proc}, which is not a Scientra API service.\n"
             f"  Solutions:\n"
-            f"    1. Close the program using port {actual_api_port} (e.g. taskkill /PID <pid> /F on Windows).\n"
+            f"    1. Close the program using port {actual_api_port}.\n"
             f"    2. Use a different port:\n"
             f'       $env:SCIENTRA_API_PORT="{actual_api_port + 1}"\n'
             f"       python Scripts/start_all.py"
@@ -449,14 +464,54 @@ def start_api() -> bool:
         _diag["services"]["api"] = {"status": "failed", "reason": "run_api_server.py not found"}
         return False
 
-    run_detached([sys.executable, str(script), "--port", str(actual_api_port)])
-    if wait_for_url(api_health, "Query API", timeout=15.0):
-        _diag["services"]["api"] = {"status": "started", "port": actual_api_port, "url": api_url}
-        return True
+    log.info(f"  Starting API on port {actual_api_port}...")
+    proc = run_detached(
+        [sys.executable, str(script), "--port", str(actual_api_port), "--host", "0.0.0.0"],
+    )
 
-    log.error(f"  API did not start. Check logs in {LOGS_DIR}")
-    _diag["services"]["api"] = {"status": "failed", "reason": "Timeout waiting for API"}
-    return False
+    # Give the process a moment to start
+    time.sleep(1.5)
+
+    # Check if process died immediately
+    if proc.poll() is not None:
+        log.error(
+            f"  API process exited immediately (code {proc.returncode}).\n"
+            f"  Script: {script}\n"
+            f"  Port: {actual_api_port}\n"
+            f"  Try running manually to see errors:\n"
+            f"    python Scripts/run_api_server.py --port {actual_api_port}\n"
+            f"  Check Python dependencies: pip install fastapi uvicorn"
+        )
+        _diag["services"]["api"] = {"status": "failed", "reason": f"Process exited with code {proc.returncode}"}
+        return False
+
+    # Wait for /health
+    if not wait_for_url(api_health, "API /health", timeout=15.0):
+        log.error(
+            f"  API /health not reachable within 15s.\n"
+            f"  The process may have crashed. Check manually:\n"
+            f"    curl {api_health}\n"
+            f"  Or start manually:\n"
+            f"    python Scripts/run_api_server.py --port {actual_api_port}"
+        )
+        _diag["services"]["api"] = {"status": "failed", "reason": "Timeout waiting for /health"}
+        return False
+
+    log.info(f"  [OK] API /health verified: {api_health}")
+
+    # Wait for /stats (data endpoint)
+    if not wait_for_url(api_stats, "API /stats", timeout=10.0):
+        log.error(
+            f"  API /health is reachable but /stats failed.\n"
+            f"  The API may have started but data loading failed.\n"
+            f"  Check: curl {api_stats}"
+        )
+        _diag["services"]["api"] = {"status": "failed", "reason": "Timeout waiting for /stats"}
+        return False
+
+    log.info(f"  [OK] API /stats verified: {api_stats}")
+    _diag["services"]["api"] = {"status": "started", "port": actual_api_port, "url": api_url}
+    return True
 
 
 # ── Web Frontend ──
@@ -555,8 +610,14 @@ def start_web() -> bool:
             f"  To change the default, set $env:SCIENTRA_WEB_PORT before running."
         )
 
-    # Start Next.js
-    run_detached([npm, "run", "dev", "--", "-p", str(actual_web_port)], cwd=web_dir)
+    # Start Next.js with the correct API URL injected
+    api_base_url = f"http://127.0.0.1:{actual_api_port}"
+    web_env = dict(os.environ)
+    web_env["NEXT_PUBLIC_SCIENTRA_API_URL"] = api_base_url
+    web_env["NEXT_PUBLIC_SCIENTRA_API_PORT"] = str(actual_api_port)
+    log.info(f"  Web API Base URL: {api_base_url}")
+
+    run_detached([npm, "run", "dev", "--", "-p", str(actual_web_port)], cwd=web_dir, env=web_env)
 
     log.info("  Web frontend is compiling (Next.js/Turbopack). This may take 1-2 minutes on first run...")
     log.info("  Subsequent starts will be much faster.")
@@ -679,11 +740,16 @@ def main() -> int:
         if not ensure_grobid():
             errors.append(("GROBID", "Docker/GROBID unavailable"))
         if not start_api():
-            errors.append(("API", "Query API failed to start"))
+            errors.append(("API", "Query API failed to start — Web will NOT be started"))
 
+    # Only start Web if API is available (Web depends on API for data)
     if not args.api_only:
-        if not start_web():
-            errors.append(("Web", "Web frontend failed to start"))
+        if not errors:
+            if not start_web():
+                errors.append(("Web", "Web frontend failed to start"))
+        else:
+            log.warning("  Skipping Web start because API is not available.")
+            errors.append(("Web", "Skipped — API must be running first"))
 
     # ── Diagnostics report ──
     try:
@@ -708,15 +774,17 @@ def main() -> int:
 
     log_separator("ALL SERVICES READY")
     grobid_url = f"http://localhost:{actual_grobid_port}{GROBID_HEALTH_PATH}"
-    api_url = f"http://localhost:{actual_api_port}"
+    api_base = f"http://127.0.0.1:{actual_api_port}"
     web_url = f"http://localhost:{actual_web_port}"
-    log.info(f"  GROBID:   {grobid_url} ✅")
-    log.info(f"  API:      {api_url} ✅")
-    log.info(f"  Web:      {web_url} ✅")
+    log.info(f"  GROBID:        {grobid_url} ✅")
+    log.info(f"  API Health:    {api_base}/health ✅")
+    log.info(f"  API Stats:     {api_base}/stats ✅")
+    log.info(f"  Web:           {web_url} ✅")
+    log.info(f"  Web API URL:   {api_base}")
     if actual_web_port != WEB_PORT_START:
         log.info(f"  Note: Web port {WEB_PORT_START} was occupied; using port {actual_web_port} instead.")
-    log.info(f"  Log:      {LOG_FILE}")
-    log.info(f"  Diag:     {DIAG_REPORT}")
+    log.info(f"  Log:           {LOG_FILE}")
+    log.info(f"  Diag:          {DIAG_REPORT}")
     return 0
 
 

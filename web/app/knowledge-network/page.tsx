@@ -39,14 +39,15 @@ export default function KnowledgeNetworkPage() {
   const [labelMode, setLabelMode] = useState<LabelMode>("important");
 
   // API-first for concept network
-  const { data: apiNetworkData, isDemo } = useApiWithFallback(
+  const { data: apiNetworkData, dataSource } = useApiWithFallback(
     getKnowledgeNetwork,
     { nodes: [], links: [], stats: { node_count: 0, link_count: 0, paper_count: 0, toxin_count: 0, host_count: 0, mechanism_count: 0, method_count: 0 } },
   );
 
-  // Use mock for non-concept modes (no API yet)
+  // Use mock for non-concept modes or when API returns empty data
   const mockData = getNetworkData(mode);
-  const rawData = isDemo ? mockData : {
+  const useApi = dataSource === "REAL_API" && apiNetworkData.nodes.length > 0;
+  const rawData = !useApi ? mockData : {
     nodes: apiNetworkData.nodes.map((n) => ({
       id: n.id,
       label: n.label,
@@ -126,7 +127,7 @@ export default function KnowledgeNetworkPage() {
         </p>
       </div>
 
-      <DemoBanner show={isDemo} />
+      <DemoBanner dataSource={dataSource} />
 
       <NetworkToolbar
         search={search}

@@ -401,6 +401,79 @@ PDF
 
 ---
 
+## Web 显示 Demo Data 排查指南
+
+如果浏览器打开了 Scientra Copilot 但页面显示 demo/mock 数据而不是你的真实文献，
+请按以下步骤排查：
+
+### 1. 运行验证脚本
+
+```bash
+python Scripts/verify_real_data.py
+```
+
+该脚本自动检查 API、CORS、Web 是否正常工作。全部 PASS 即为正常。
+
+### 2. 确认服务都在运行
+
+| 服务 | 默认地址 | 检查方式 |
+|------|---------|---------|
+| GROBID | `http://localhost:18070` | `curl http://localhost:18070/api/isalive` |
+| API | `http://127.0.0.1:8710` | `curl http://127.0.0.1:8710/health` |
+| Web | `http://localhost:3000` | 浏览器直接打开 |
+
+### 3. 确认 API 返回真实数据
+
+```bash
+curl http://127.0.0.1:8710/stats
+# 应返回: {"paper_count": 55, ...}
+```
+
+如果 `paper_count` 为 0，需要先运行工作流：`python workflow.py run`
+
+### 4. 确认 CORS 配置生效
+
+在浏览器中按 F12 → Console，如果看到 CORS 相关错误，
+说明 API 的跨域配置未生效。重启 API 服务即可：
+
+```bash
+python Scripts/run_api_server.py --port 8711 --host 0.0.0.0
+```
+
+然后重启 Web 时指定新的 API 地址：
+
+```powershell
+$env:NEXT_PUBLIC_SCIENTRA_API_URL="http://127.0.0.1:8711"
+cd web && npm run dev -- -p 3000
+```
+
+### 5. 清除 Web 编译缓存
+
+如果 API 地址变更后 Web 仍访问旧地址：
+
+```bash
+rm -rf web/.next
+cd web && npm run dev -- -p 3000
+```
+
+### 已知问题 (V1.1 已修复)
+
+| 问题 | 根因 | 状态 |
+|------|------|:--:|
+| Parse 步骤零处理 | Config 中 `--check-grobid` 导致早期退出 | ✅ |
+| 模块找不到 (`No module named 'scientra'`) | `cwd` 指向父目录 + PYTHONPATH 缺失 | ✅ |
+| Windows 状态文件 PermissionError | `os.replace` 无重试 | ✅ |
+| 已有 PDF 未被识别 | `import_pdf` 仅扫描 `00_Inbox/` | ✅ |
+| API 搜索返回 0 结果 | `PROJECT_ROOT` 指向 `scientra/` 子目录 | ✅ |
+| Web 显示 Demo Data | CORS 配置使用不支持的端口通配符 `localhost:*` | ✅ |
+| Library 页面报错 `paper_count` | Hook 返回值格式变更未同步页面 | ✅ |
+| Research Map 显示全零 | API 返回空数组时未回退 mock 数据 | ✅ |
+| Settings 显示过时信息 | 硬编码旧数据（34 papers, Mock Intelligence Layer） | ✅ |
+| Web 启动超时误报 | Next.js 首次编译 >30s 但脚本判定失败 | ✅ |
+| 端口冲突无提示 | 固定端口无检测机制 | ✅ |
+
+---
+
 # Project Structure
 
 ```text

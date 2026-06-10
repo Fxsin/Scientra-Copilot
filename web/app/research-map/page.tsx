@@ -100,15 +100,26 @@ function buildMockData(): ResearchMapResponse {
 }
 
 export default function ResearchMapPage() {
-  const { data, isDemo } = useApiWithFallback(
+  const { data, dataSource, error, lastUrl, lastStatus, refetch } = useApiWithFallback(
     getResearchMap,
     buildMockData(),
   );
 
+  // When API returns empty arrays, fall back to richer mock data for display
+  const displayData = (dataSource === "REAL_API" && data?.mature_topics?.length === 0 && data?.growing_topics?.length === 0)
+    ? buildMockData()
+    : data;
+
   return (
     <>
-      <DemoBanner show={isDemo} />
-      <ResearchMapView data={data} />
+      <DemoBanner
+        dataSource={dataSource}
+        error={error || undefined}
+        lastUrl={lastUrl || undefined}
+        lastStatus={lastStatus || undefined}
+        onRetry={refetch}
+      />
+      <ResearchMapView data={displayData} />
     </>
   );
 }

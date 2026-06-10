@@ -12,9 +12,10 @@ import { sanitizeResult } from "./types";
 
 /* ── API base URL ── */
 
-const API_BASE_URL =
+export const API_BASE_URL =
   process.env.NEXT_PUBLIC_SCIENTRA_API_URL?.replace(/\/$/, "") ||
-  "http://localhost:8710";
+  `http://127.0.0.1:${process.env.NEXT_PUBLIC_SCIENTRA_API_PORT || "8710"}` ||
+  "http://127.0.0.1:8710";
 
 /* ── Error taxonomy ── */
 

@@ -2,6 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Settings, FlaskConical, Palette, Check } from "lucide-react";
+import { useApiWithFallback, updateGlobalDataSource } from "@/lib/use-api";
+import { getStats } from "@/lib/api";
+import { API_BASE_URL } from "@/lib/api";
+import type { StatsResponse } from "@/lib/types";
 
 /* ── Theme definitions ── */
 
@@ -88,9 +92,24 @@ const THEMES: ThemeInfo[] = [
 
 const STORAGE_KEY = "scientra-theme";
 
+const mockStats: StatsResponse = {
+  paper_count: 34,
+  metadata_embedding_count: 5,
+  summary_embedding_count: 5,
+  chunk_embedding_count: 12,
+  tag_distribution: {},
+  year_distribution: {},
+};
+
 export default function SettingsPage() {
   const [activeTheme, setActiveTheme] = useState<string>("");
   const [mounted, setMounted] = useState(false);
+
+  const { data: stats, dataSource } = useApiWithFallback(getStats, mockStats);
+
+  useEffect(() => {
+    updateGlobalDataSource(dataSource);
+  }, [dataSource]);
 
   // Read saved theme on mount
   useEffect(() => {
@@ -207,20 +226,20 @@ export default function SettingsPage() {
 
         <div className="border-t pt-3 space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Project</span>
-            <span className="font-medium">Bt Toxin Mode of Action</span>
+            <span className="text-muted-foreground">Papers Imported</span>
+            <span className="font-medium">{stats.paper_count}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Papers</span>
-            <span className="font-medium">34</span>
+            <span className="text-muted-foreground">Vectors Indexed</span>
+            <span className="font-medium">{stats.metadata_embedding_count}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Data Source</span>
-            <span className="font-medium">Mock Intelligence Layer</span>
+            <span className="font-medium">{dataSource === "REAL_API" ? "Real API" : dataSource}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Last Updated</span>
-            <span className="font-medium">2026-06-10</span>
+            <span className="text-muted-foreground">API Endpoint</span>
+            <span className="font-medium text-xs">{API_BASE_URL}</span>
           </div>
         </div>
       </div>
