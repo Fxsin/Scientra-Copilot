@@ -238,23 +238,139 @@ pip install -r requirements.txt
 
 ## Start Scientra
 
-Windows:
+### Quick Start
 
 ```bash
-start_scientra.bat
-```
-
-PowerShell:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File start_scientra.ps1
+python Scripts/start_all.py
 ```
 
 This automatically starts:
-
-* GROBID
+* GROBID (Docker)
 * Query API
 * Web Frontend
+* Opens browser to the Web UI
+
+> **Note:** The script now runs a preflight check before starting services.
+> If any issues are found, it displays clear error messages with solutions.
+
+### Custom Ports
+
+If the default ports (3000 for Web, 8710 for API, 18070 for GROBID) are occupied,
+configure custom ports via environment variables:
+
+**Windows PowerShell:**
+```powershell
+$env:SCIENTRA_WEB_PORT="3001"
+$env:SCIENTRA_API_PORT="8720"
+$env:SCIENTRA_GROBID_PORT="18071"
+python Scripts/start_all.py
+```
+
+**Linux/macOS:**
+```bash
+SCIENTRA_WEB_PORT=3001 SCIENTRA_API_PORT=8720 python Scripts/start_all.py
+```
+
+### Command Options
+
+```bash
+python Scripts/start_all.py              # Full startup (GROBID + API + Web)
+python Scripts/start_all.py --no-browser # Don't open browser automatically
+python Scripts/start_all.py --api-only   # Only GROBID + API, skip Web
+python Scripts/start_all.py --web-only   # Only Web frontend
+```
+
+### Startup Diagnostics
+
+Each run generates a diagnostics report at `reports/startup_diagnostics_report.md`
+containing port detection results, service status, and failure recommendations.
+
+### Common Issues
+
+<details>
+<summary><b>Web port 3000 is occupied</b></summary>
+
+Scientra Copilot auto-detects port conflicts and finds the next available port
+(3001, 3002, ...). You will see a message like:
+
+```
+Port 3000 is occupied. Using port 3001 instead.
+```
+
+To permanently change the default Web port:
+```powershell
+$env:SCIENTRA_WEB_PORT="3005"
+python Scripts/start_all.py
+```
+</details>
+
+<details>
+<summary><b>API port 8710 is occupied</b></summary>
+
+If port 8710 is occupied by a non-Scientra process, you will see an error
+with the process name and PID. Solutions:
+
+1. Close the conflicting program.
+2. Use a different port:
+```powershell
+$env:SCIENTRA_API_PORT="8720"
+python Scripts/start_all.py
+```
+</details>
+
+<details>
+<summary><b>GROBID port 18070 is occupied</b></summary>
+
+If port 18070 is occupied but the service is not GROBID, you will see an error.
+Solutions:
+
+1. Close the conflicting program.
+2. Use a different port:
+```powershell
+$env:SCIENTRA_GROBID_PORT="18071"
+python Scripts/start_all.py
+# Then create the GROBID container with the new port:
+docker run -d --name scientra_grobid -p 18071:8070 -p 18072:8071 lfoppiano/grobid:0.8.1
+```
+</details>
+
+<details>
+<summary><b>Docker Desktop is not running</b></summary>
+
+Error message:
+```
+Docker Desktop is installed but the Docker daemon is not running.
+Please open Docker Desktop and wait for it to fully start.
+```
+
+Open Docker Desktop from the Start Menu and wait for the whale icon to
+stop animating, then re-run `python Scripts/start_all.py`.
+</details>
+
+<details>
+<summary><b>Web frontend is slow on first run</b></summary>
+
+Next.js/Turbopack compiles the application on first run, which can take
+1-2 minutes. You will see:
+
+```
+Web frontend is compiling (Next.js/Turbopack). This may take 1-2 minutes on first run...
+```
+
+The startup script now waits up to 120 seconds. Subsequent starts are much faster.
+</details>
+
+<details>
+<summary><b>Browser doesn't open automatically</b></summary>
+
+If the browser doesn't open, you can manually visit the Web URL shown in the
+startup output. For example: `http://localhost:3000`
+
+Use `--no-browser` to skip auto-opening:
+```bash
+python Scripts/start_all.py --no-browser
+```
+</details>
 
 ---
 
