@@ -188,10 +188,35 @@ def start_web() -> bool:
 
     web_dir = PROJECT_ROOT / "web"
     if not (web_dir / "package.json").exists():
-        log.warning("  web/package.json not found. Skipping web frontend (not yet implemented).")
+        log.warning("  web/package.json not found. Skipping web frontend.")
         return True  # Not an error — web UI is optional
 
     npm = "npm.cmd" if sys.platform == "win32" else "npm"
+
+    # Auto-install npm dependencies if node_modules is missing
+    if not (web_dir / "node_modules").exists():
+        log.info("  Installing web dependencies (npm install)...")
+        try:
+            result = subprocess.run(
+                [npm, "install"],
+                cwd=str(web_dir),
+                capture_output=True,
+                text=True,
+                timeout=600,
+            )
+            if result.returncode != 0:
+                log.error(f"  npm install failed:\n{result.stderr[-500:]}")
+                return False
+            log.info("  [OK] npm install complete.")
+        except subprocess.TimeoutExpired:
+            log.error("  npm install timed out (>10 min).")
+            return False
+        except Exception as exc:
+            log.error(f"  npm install failed: {exc}")
+            return False
+    else:
+        log.info("  [OK] node_modules found. Skipping npm install.")
+
     run_detached([npm, "run", "dev"], cwd=web_dir)
     return wait_for_url(WEB_URL, "Web Frontend", timeout=30.0)
 

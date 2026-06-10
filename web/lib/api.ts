@@ -13,8 +13,8 @@ import { sanitizeResult } from "./types";
 /* ── API base URL ── */
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_LITERATURE_API_URL?.replace(/\/$/, "") ||
-  "http://localhost:8765";
+  process.env.NEXT_PUBLIC_SCIENTRA_API_URL?.replace(/\/$/, "") ||
+  "http://localhost:8710";
 
 /* ── Error taxonomy ── */
 
@@ -72,7 +72,7 @@ async function fetchJson<T>(
     console.error("[api] network_error", { url, error: msg });
     throw new ApiError({
       kind: "network_error",
-      message: `Cannot reach Literature_OS API at ${API_BASE_URL}.\nIs the server running? Run: python Scripts/run_api_server.py\n\nFrontend API Base URL: ${API_BASE_URL}`,
+      message: `Cannot reach Scientra Copilot API at ${API_BASE_URL}.\nIs the server running? Run: python Scripts/run_api_server.py\n\nFrontend API Base URL: ${API_BASE_URL}`,
       status: 0,
       url,
     });

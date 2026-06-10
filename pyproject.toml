@@ -1,6 +1,6 @@
 [project]
 name = "scientra"
-version = "0.2.0"
+version = "0.2.1"
 description = "Scientra Copilot — Your Literature, Structured. LLM-Powered Literature Knowledge OS for Researchers."
 readme = "README.md"
 license = {text = "MIT"}

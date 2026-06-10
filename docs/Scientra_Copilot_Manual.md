@@ -1,6 +1,6 @@
 # Scientra Copilot — 完整用户手册
 
-版本：v0.2.0 | 更新日期：2026-06-10
+版本：v0.2.1 | 更新日期：2026-06-10
 
 ---
 
@@ -114,10 +114,13 @@ PDF(数据源) → Metadata(元数据层) → Tag(标签层) → Summary(知识�
 git clone https://github.com/your-org/scientra-copilot.git
 cd scientra-copilot
 
-# 2. 安装依赖
+# 2. 安装 Python 依赖
 pip install -r requirements.txt
 
-# 3. 环境检查（验证所有依赖就绪）
+# 3. 安装 scientra 包（可编辑模式，必须执行）
+pip install -e .
+
+# 4. 环境检查（验证所有依赖就绪）
 python Scripts/setup_check.py
 ```
 
@@ -190,7 +193,7 @@ python workflow.py status                 # 查看处理状态
 ### 5.1 Python SDK
 
 ```python
-from agent_sdk import search, get_summary, get_evidence
+from scientra.sdk import search, get_summary, get_evidence
 
 # 混合搜索
 r = search("Vip3Aa receptor resistance in lepidopteran pests",
@@ -237,7 +240,7 @@ curl -X POST http://localhost:8710/v1/scientra/query \
 ### 6.1 本地模式
 
 ```python
-from agent_sdk import LiteratureAgentSDK
+from scientra.sdk import LiteratureAgentSDK
 sdk = LiteratureAgentSDK(mode="local")
 results = sdk.search("Vip3Aa receptor", query_type="hybrid_search", top_k=10)
 ```

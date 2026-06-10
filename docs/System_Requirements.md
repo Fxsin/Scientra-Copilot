@@ -8,7 +8,7 @@ Recommended:
 - Linux with Docker Engine
 - macOS with Docker Desktop
 
-The current validated environment is Windows with local paths under `G:\AI_agent\Scientra Copilot`.
+The project has been validated on Windows, Linux, and macOS.
 
 ## Python Version
 
@@ -136,16 +136,17 @@ Recommended:
 ## First Deployment
 
 1. Create Python 3.11+ environment.
-2. Install Python dependencies.
-3. Install Docker Desktop.
-4. Start GROBID container.
-5. Configure `Config/grobid.yaml`.
-6. (Optional) Set `ANTHROPIC_API_KEY` or `DEEPSEEK_API_KEY` for automatic summary generation.
+2. Install Python dependencies: `pip install -r requirements.txt`
+3. Install scientra package: `pip install -e .`
+4. Install Docker Desktop.
+5. Start GROBID container: `python Scripts/setup_grobid.py`
+6. Configure `Config/grobid.yaml` (optional — defaults work out of the box).
+7. (Optional) Set `ANTHROPIC_API_KEY` or `DEEPSEEK_API_KEY` for automatic summary generation.
    - Agent Mode (default): no API key required in Claude Code; prompts resolved by Claude Code Agent.
    - Direct API Mode: requires `DEEPSEEK_API_KEY`.
-7. Run `python Scripts/system_check.py`.
-8. Run a dry workflow: `python Scripts/run_workflow.py --input 01_PDF/batch_5 --dry-run`.
-9. Run real workflow: `python Scripts/run_workflow.py --input 01_PDF/batch_5`.
+8. Run `python Scripts/setup_check.py`.
+9. Run a dry workflow: `python Scripts/run_workflow.py --input 01_PDF/batch_5 --dry-run`.
+10. Run real workflow: `python Scripts/run_workflow.py --input 01_PDF/batch_5`.
 
 ## Daily Use
 

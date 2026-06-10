@@ -176,7 +176,7 @@ def check_ports() -> dict[str, Any]:
 
 def check_api_key() -> dict[str, Any]:
     keys_found: list[str] = []
-    for var in ["ANTHROPIC_API_KEY", "DEEPSEEK_API_KEY", "LITERATURE_OS_API_KEY"]:
+    for var in ["ANTHROPIC_API_KEY", "DEEPSEEK_API_KEY", "SCIENTRA_API_KEY"]:
         if os.environ.get(var):
             keys_found.append(var)
     if keys_found:

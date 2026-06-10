@@ -1,3 +1,3 @@
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 VERSION = __version__
-VERSION_TUPLE = (0, 2, 0)
+VERSION_TUPLE = (0, 2, 1)

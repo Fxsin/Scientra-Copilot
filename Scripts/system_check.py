@@ -12,8 +12,6 @@ from urllib.request import urlopen
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
-sys.path.insert(0, str(PROJECT_ROOT / "06_API"))
-sys.path.insert(0, str(PROJECT_ROOT / "08_Agent_Interface"))
 
 
 def run_system_check(root: str | Path = PROJECT_ROOT, load_bge: bool = True, summary_mode: str | None = None) -> dict[str, Any]:
