@@ -1,210 +1,404 @@
-# Scientra Copilot — Your Literature, Structured
+# Scientra Copilot
 
 <p align="center">
-  <b>LLM-Powered Literature Knowledge OS for Researchers</b><br>
-  <sub>PDF → GROBID → Metadata → Tags → Summary → Embedding → LanceDB → API → Your Agent</sub>
+  <h3 align="center">From Literature to Discovery</h3>
+  <p align="center">
+    AI-Powered Research Discovery Platform
+  </p>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/python-3.11+-blue.svg" alt="Python 3.11+">
-  <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License MIT">
-  <img src="https://img.shields.io/badge/version-0.2.0-orange.svg" alt="Version 0.2.0">
+  Transform scientific literature into structured knowledge, research maps, semantic search, and agent-ready workflows.
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/python-3.11+-blue.svg">
+  <img src="https://img.shields.io/badge/license-MIT-green.svg">
+  <img src="https://img.shields.io/badge/version-v0.2.0-orange.svg">
 </p>
 
 ---
 
-## What is Scientra Copilot?
+# What is Scientra Copilot?
 
-Scientra Copilot transforms raw PDFs into a **structured, searchable, AI-consumable knowledge base**. It's not a PDF manager — it's a literature operating system designed for the age of AI agents.
+Scientra Copilot is an AI-powered research discovery platform that transforms scientific papers into a structured, searchable, and agent-consumable knowledge system.
+
+Unlike traditional reference managers, Scientra focuses on:
+
+* Knowledge Extraction
+* Research Mapping
+* Semantic Retrieval
+* AI Agent Integration
+* Research Discovery
+
+It helps researchers move from **collecting papers** to **understanding research landscapes and discovering new ideas**.
+
+---
+
+# Architecture
 
 ```mermaid
 flowchart LR
-    PDF[📄 PDF] -->|GROBID| Parse[Parse]
-    Parse --> Meta[📋 Metadata]
-    Meta --> Tag[🏷️ Tag Engine]
-    Tag --> Summary[📝 Summary Agent]
-    Summary --> Embed[🧠 BGE-M3 Embed]
-    Embed --> LanceDB[(🗄️ LanceDB)]
-    LanceDB --> API[🔌 Query API]
-    API --> Agent[🤖 Your Agent]
+
+subgraph Literature_Ingestion
+PDF["📄 PDFs"]
+GROBID["🔍 GROBID"]
+META["📋 Metadata"]
+TAG["🏷️ Tags"]
+SUM["📝 Summary Agent"]
+end
+
+subgraph Knowledge_Layer
+EMB["🧠 BGE-M3 Embedding"]
+DB["🗄️ LanceDB"]
+MAP["🗺️ Research Map"]
+GRAPH["🕸️ Knowledge Explorer"]
+end
+
+subgraph Agent_Layer
+API["🔌 Query API"]
+SDK["🤖 Agent SDK"]
+COPILOT["🚀 Scientra Copilot"]
+end
+
+PDF --> GROBID
+GROBID --> META
+META --> TAG
+TAG --> SUM
+
+SUM --> EMB
+EMB --> DB
+
+DB --> MAP
+DB --> GRAPH
+
+MAP --> API
+GRAPH --> API
+
+API --> SDK
+SDK --> COPILOT
 ```
 
-## ✨ Features
+---
 
-- **🔬 Zero-Config PDF Pipeline** — Drop PDFs in, get structured knowledge out. GROBID parsing with automatic retry and health checks.
-- **🏷️ Rule-Based Tag Engine** — No LLM hallucinations. Ontology-driven tagging across TOXIN, HOST, MECHANISM, and METHOD dimensions.
-- **📝 Dual-Mode Summary Agent** — Works with any LLM (Anthropic, DeepSeek, OpenAI-compatible). Falls back to prompt-file mode when no API key is available — resolved by Claude Code or any local agent.
-- **🧠 Three-Level Vector Index** — BGE-M3 embeddings at metadata, summary, and chunk levels for precise retrieval at any granularity.
-- **🔍 Hybrid Search** — Keyword + vector combined scoring with domain-specific field weights. Filter by toxin, species, mechanism, method, year, and DOI.
-- **🛡️ Agent-First Design** — Single entry point `literature_query()`. Policy enforcement prevents agents from accessing raw PDFs, SQLite, or LanceDB directly. Every result has a traceable citation anchor.
-- **⚡ Incremental Processing** — SHA256-based change detection. Only re-process what changed. Resume from any failed step.
+# Core Features
 
-## 🚀 Quick Start
+## 📄 Literature Pipeline
 
-### Prerequisites
+* PDF ingestion
+* GROBID parsing
+* Metadata extraction
+* Automatic tagging
+* AI-assisted summaries
+* Incremental processing
 
-- Python 3.11+
-- Docker (for GROBID)
-- 8GB+ RAM (for BGE-M3 embedding)
+---
 
-### 1. Clone & Install
+## 🧠 Knowledge Layer
+
+* Knowledge Explorer
+* Related Papers Engine
+* Research Map
+* Cluster Discovery
+* Semantic Retrieval
+* Multi-level Embeddings
+
+---
+
+## 🤖 Agent Layer
+
+* Query API
+* Agent SDK
+* AI Copilot
+* Context Pack Generation
+* Agent-safe Retrieval
+* Citation-grounded Responses
+
+---
+
+## 🔍 Search
+
+Supports:
+
+* Keyword Search
+* Vector Search
+* Hybrid Search
+* Tag Filtering
+* Metadata Filtering
+* Evidence Retrieval
+
+---
+
+# Screenshots
+
+## Dashboard
+
+Track your literature collection, research activity, and knowledge statistics.
+
+![Dashboard](docs/screenshots/dashboard.png)
+
+---
+
+## Library
+
+Search and explore your literature knowledge base.
+
+![Library](docs/screenshots/library.png)
+
+---
+
+## Knowledge Explorer
+
+Interactive knowledge networks connecting concepts, methods, topics, and papers.
+
+![Knowledge Explorer](docs/screenshots/network.png)
+
+---
+
+## Research Map
+
+Automatically identify:
+
+* Mature Topics
+* Emerging Topics
+* Research Gaps
+* Knowledge Clusters
+
+![Research Map](docs/screenshots/research_map.png)
+
+---
+
+## AI Copilot
+
+Chat with your literature and retrieve evidence-backed answers.
+
+![AI Copilot](docs/screenshots/copilot.png)
+
+---
+
+# Quick Start
+
+## Requirements
+
+* Python 3.11+
+* Docker
+* 8GB+ RAM
+* GROBID
+* BGE-M3
+
+---
+
+## Installation
 
 ```bash
-git clone https://github.com/your-org/scientra-copilot.git
+git clone https://github.com/YOUR_USERNAME/scientra-copilot.git
+
 cd scientra-copilot
+
 pip install -r requirements.txt
-
-# Run environment check (verifies everything is ready)
-python Scripts/setup_check.py
 ```
 
-### 2. Start GROBID
+---
 
-**First time?** One command sets up everything automatically:
+## Start Everything
+
+Windows:
 
 ```bash
-python Scripts/setup_grobid.py
+start_scientra_os.bat
 ```
 
-This checks Docker, pulls the GROBID image, creates the container, and waits until it's ready.
+PowerShell:
 
-**Already have Docker?** Manual one-liner:
-
-```bash
-docker run -d --name scientra_grobid -p 18070:8070 --restart unless-stopped lfoppiano/grobid:0.8.1
+```powershell
+powershell -ExecutionPolicy Bypass -File start_scientra_os.ps1
 ```
 
-**No Docker?** [Install Docker Desktop](https://docs.docker.com/desktop/) first, then run either command above.
+---
 
-> 💡 The pipeline auto-detects GROBID status. If the container doesn't exist, `ensure_grobid.py` will create it for you — no manual setup needed on subsequent runs.
+## Import Papers
 
-### 3. Drop PDFs & Run
+Place PDFs into:
+
+```text
+00_Inbox/
+```
+
+Run:
 
 ```bash
-# Put your PDFs in 00_Inbox/ or 01_PDF/
 python workflow.py --all
 ```
 
-That's it. Your literature is now a searchable knowledge base.
+---
 
-## 🔌 API & SDK
+# Project Structure
 
-### Start the API server
+```text
+Scientra_Copilot/
 
-```bash
-python Scripts/run_api_server.py
-# Server running at http://localhost:8800
+00_Inbox/
+01_PDF/
+02_Metadata/
+03_Summary/
+04_VectorDB/
+05_Index/
+06_API/
+07_Workflows/
+08_Agent_Interface/
+
+Config/
+Scripts/
+docs/
+Tests/
+
+workflow.py
+agent_sdk.py
 ```
 
-### Query via REST
+---
 
-```bash
-curl -X POST http://localhost:8800/v1/scientra/query \
-  -H "Content-Type: application/json" \
-  -d '{"query": "Vip3Aa receptor resistance mechanism", "mode": "hybrid", "top_k": 5}'
+# Use Cases
+
+Scientra Copilot is designed for researchers in:
+
+* Life Sciences
+* Medicine
+* Bioinformatics
+* AI & Computer Science
+* Materials Science
+* Chemistry
+* Environmental Science
+* Social Sciences
+* Any literature-driven research field
+
+---
+
+# Roadmap
+
+## v0.2
+
+* PDF Pipeline
+* Knowledge Explorer
+* Research Map
+* Agent SDK
+
+## v0.3
+
+* Topic Engine
+* AI Research Copilot
+* Advanced Knowledge Discovery
+
+## v0.4
+
+* Citation Extraction
+* Citation Network
+* Research Evolution Analysis
+
+## v1.0
+
+* Word Integration
+* Zotero Integration
+* Cloud Workspace
+* Multi-Agent Research Workflows
+
+---
+
+# 中文简介
+
+## Scientra Copilot 是什么？
+
+Scientra Copilot 是一个面向科研工作者的 AI 研究发现平台（AI-Powered Research Discovery Platform）。
+
+它不仅仅是一个文献管理工具，也不仅仅是一个 PDF 阅读器。
+
+Scientra Copilot 的目标是：
+
+> 将文献转化为知识，将知识转化为发现。
+
+核心流程：
+
+```text
+PDF
+↓
+Metadata
+↓
+Knowledge
+↓
+Research Map
+↓
+Agent
+↓
+Discovery
 ```
 
-### Query via Python SDK
+---
 
-```python
-from agent_sdk import search, get_summary, get_evidence
+## 核心能力
 
-# Hybrid search
-results = search("Cry toxin receptor binding", query_type="hybrid_search", top_k=10)
-for paper in results.papers:
-    print(f"[{paper.year}] {paper.title}")
-    print(f"  Toxin: {paper.toxin}, Mechanism: {paper.mechanism}")
+### 📄 文献自动处理
 
-# Get structured summary
-summary = get_summary("paper_2247e647bb604df2")
+* PDF 导入
+* GROBID 解析
+* Metadata 提取
+* 标签生成
+* AI 摘要
 
-# Get evidence chain with citations
-evidence = get_evidence(query="Cry1Ac resistance ABC transporter", top_k=10)
+### 🧠 知识发现
+
+* Knowledge Explorer
+* Related Papers
+* Research Map
+* Research Gap Discovery
+* Semantic Search
+
+### 🤖 Agent 调用
+
+* Query API
+* Agent SDK
+* AI Copilot
+* Context Pack
+* Agent-safe Retrieval
+
+---
+
+## 适用场景
+
+适用于：
+
+* 生物学
+* 医学
+* 材料科学
+* AI与计算机科学
+* 化学
+* 环境科学
+* 社会科学
+
+以及任何依赖文献调研的科研领域。
+
+---
+
+# Contributing
+
+Contributions are welcome.
+
+Please see:
+
+```text
+CONTRIBUTING.md
 ```
 
-## 📁 Project Structure
+for development setup and contribution guidelines.
 
-```
-scientra-copilot/
-├── 00_Inbox/            # Pending input (drop PDFs here)
-├── 01_PDF/              # Source PDFs
-├── 02_Metadata/         # Extracted metadata (YAML/JSON)
-├── 03_Summary/          # Structured summaries & raw text
-├── 04_VectorDB/         # LanceDB vector index
-├── 05_Index/            # Tags, reports, embedding plans
-├── 06_API/              # FastAPI query server
-├── 07_Workflows/        # Pipeline orchestration
-├── 08_Agent_Interface/  # Agent SDK contracts
-├── Config/              # YAML configuration files
-├── Scripts/             # CLI tools & utilities
-├── docs/                # Architecture & design docs
-├── Tests/               # Test suite
-├── agent_sdk.py         # Public Agent SDK
-├── workflow.py          # Pipeline entry point
-└── pyproject.toml       # Project metadata
-```
+---
 
-## 🏗️ Architecture
+# License
 
-Scientra Copilot is a **one-way gate architecture**: PDFs enter on the left, structured knowledge exits on the right. No step can mutate upstream data.
-
-See [Architecture Docs](docs/Scientra_Copilot_Architecture.md) for full design details, including:
-
-- 8-step pipeline with state-machine resume
-- Three-level embedding index strategy
-- Tag Engine ontology design
-- Hybrid search merge algorithm
-- Agent SDK policy enforcement
-
-## 🤝 Integrations
-
-Scientra Copilot is designed to be called by any AI agent:
-
-| Integration | Method | Guide |
-|-------------|--------|-------|
-| Claude Code | SDK (local mode) | [Agent SDK Design](docs/Agent_SDK_Design.md) |
-| Any Web Agent | REST API | [Query API Design](docs/Query_API_Design.md) |
-| MCP Clients | MCP Bridge (optional) | [Skill Integration Guide](docs/Skill_Integration_Guide.md) |
-
-## 📊 Performance
-
-| Operation | Typical Latency | Notes |
-|-----------|----------------|-------|
-| GROBID parse | 2-5s / paper | Depends on GROBID server |
-| Tag assignment | <1s / paper | Pure rule matching |
-| Summary (cached) | <1ms | Uses SHA256 cache key |
-| Summary (LLM) | 3-15s | Depends on model/API |
-| BGE-M3 embedding | 15-30s / paper | CPU; faster on GPU |
-| Vector search | 100-500ms | LanceDB ANN |
-| Keyword search | <10ms | In-memory scoring |
-
-## 🧪 Running Tests
-
-```bash
-python -m pytest Tests/ -v
-```
-
-## 📖 Documentation
-
-- [Architecture](docs/Scientra_Copilot_Architecture.md)
-- [User Manual](docs/Scientra_Copilot_Manual.md)
-- [Agent SDK Design](docs/Agent_SDK_Design.md)
-- [Query API Design](docs/Query_API_Design.md)
-- [Tag Engine Design](docs/Tag_Engine_Design.md)
-- [Embedding Engine Design](docs/Embedding_Engine_Design.md)
-- [Workflow Engine Design](docs/Workflow_Engine_Design.md)
-
-## 🤝 Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
-
-## 📄 License
-
-MIT — see [LICENSE](LICENSE) for details.
+MIT License
 
 ---
 
 <p align="center">
-  <b>Scientra Copilot</b> — Your Literature, Structured.<br>
-  Built for researchers. Designed for agents.
+  <b>Scientra Copilot</b><br>
+  From Literature to Discovery.
 </p>
