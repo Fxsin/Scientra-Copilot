@@ -39,7 +39,7 @@ export function AppSidebar() {
           <FlaskConical className="size-4" strokeWidth={2} />
         </div>
         <div className="flex flex-col leading-tight">
-          <span className="text-sm font-semibold tracking-tight">Research OS</span>
+          <span className="text-sm font-semibold tracking-tight">Scientra Copilot</span>
           <span className="text-[10px] text-sidebar-foreground/50 font-medium">
             Intelligence Platform
           </span>
@@ -122,7 +122,7 @@ export function AppSidebar() {
       {/* Footer */}
       <div className="border-t border-sidebar-border px-4 py-3">
         <p className="text-[10px] text-sidebar-foreground/40">
-          Research OS v0.2.0
+          Scientra Copilot v0.2.0
         </p>
       </div>
     </aside>
