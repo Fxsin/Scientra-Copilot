@@ -13,7 +13,17 @@ import yaml
 
 
 TAG_ENGINE_VERSION = "0.2.0"
-PROJECT_ROOT = Path(__file__).resolve().parent
+def _detect_project_root() -> Path:
+    """Walk up from this file until a 'Config/workflow_config.yaml' is found."""
+    candidate = Path(__file__).resolve().parent
+    for _ in range(4):
+        if (candidate / "Config" / "workflow_config.yaml").exists():
+            return candidate
+        candidate = candidate.parent
+    return Path(__file__).resolve().parent.parent
+
+
+PROJECT_ROOT = _detect_project_root()
 DEFAULT_ONTOLOGY_PATH = PROJECT_ROOT / "Config" / "tag_ontology.yaml"
 DEFAULT_DICTIONARY_PATH = PROJECT_ROOT / "Config" / "tag_dictionary.yaml"
 DEFAULT_TAG_OUTPUT_DIR = PROJECT_ROOT / "05_Index" / "tags"

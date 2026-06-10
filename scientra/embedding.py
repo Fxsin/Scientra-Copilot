@@ -58,7 +58,17 @@ except ModuleNotFoundError:
 
 EMBEDDING_ENGINE_VERSION = "0.2.0"
 DEFAULT_MODEL_NAME = "BAAI/bge-m3"
-PROJECT_ROOT = Path(__file__).resolve().parent
+def _detect_project_root() -> Path:
+    """Walk up from this file until a 'Config/workflow_config.yaml' is found."""
+    candidate = Path(__file__).resolve().parent
+    for _ in range(4):
+        if (candidate / "Config" / "workflow_config.yaml").exists():
+            return candidate
+        candidate = candidate.parent
+    return Path(__file__).resolve().parent.parent
+
+
+PROJECT_ROOT = _detect_project_root()
 DEFAULT_EMBEDDING_CONFIG_PATH = PROJECT_ROOT / "Config" / "embedding.yaml"
 DEFAULT_DRY_RUN_REPORT_PATH = PROJECT_ROOT / "05_Index" / "embedding_dry_run_report.md"
 DEFAULT_REAL_RUN_REPORT_PATH = PROJECT_ROOT / "05_Index" / "embedding_report.md"

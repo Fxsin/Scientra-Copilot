@@ -56,7 +56,17 @@ SUMMARY_AGENT_VERSION = "0.1.0"
 PROMPT_VERSION = "2026-06-09.v1"
 DEFAULT_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-6")
 DEFAULT_BASE_URL = os.environ.get("ANTHROPIC_BASE_URL", "https://api.anthropic.com")
-PROJECT_ROOT = Path(__file__).resolve().parent
+def _detect_project_root() -> Path:
+    """Walk up from this file until a 'Config/workflow_config.yaml' is found."""
+    candidate = Path(__file__).resolve().parent
+    for _ in range(4):
+        if (candidate / "Config" / "workflow_config.yaml").exists():
+            return candidate
+        candidate = candidate.parent
+    return Path(__file__).resolve().parent.parent
+
+
+PROJECT_ROOT = _detect_project_root()
 
 SECTION_ORDER = [
     "Core Finding",
