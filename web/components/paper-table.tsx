@@ -13,12 +13,15 @@ interface PaperTableProps {
 function collectTags(item: QueryResultItem): string[] {
   const seen = new Set<string>();
   // matched tags first, then assigned
-  for (const t of item.matched_tags) {
+  for (const t of (item.matched_tags ?? [])) {
     if (t) seen.add(t);
   }
-  for (const [, tags] of Object.entries(item.assigned_tags)) {
-    for (const t of tags) {
-      if (t) seen.add(t);
+  const at = item.assigned_tags;
+  if (at && typeof at === "object" && !Array.isArray(at)) {
+    for (const tags of Object.values(at)) {
+      for (const t of (tags as string[])) {
+        if (t) seen.add(t);
+      }
     }
   }
   return [...seen].slice(0, 8); // max 8 badges per row
@@ -120,14 +123,14 @@ export function PaperTable({ results }: PaperTableProps) {
                   <span
                     className={cn(
                       "inline-flex items-center rounded-md px-1.5 py-0.5 font-mono text-xs font-medium",
-                      item.score >= 5
+                      (item.score ?? 0) >= 5
                         ? "bg-secondary/10 text-secondary"
-                        : item.score >= 1
+                        : (item.score ?? 0) >= 1
                           ? "bg-accent/20 text-accent-foreground"
                           : "bg-muted text-muted-foreground",
                     )}
                   >
-                    {item.score.toFixed(3)}
+                    {(item.score ?? 0).toFixed(3)}
                   </span>
                 </td>
 

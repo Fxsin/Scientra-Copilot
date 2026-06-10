@@ -96,6 +96,8 @@ function buildMockData(): ResearchMapResponse {
     gap_topics,
     cluster_stats: [...mature_topics, ...growing_topics],
     topic_relationships,
+    clusters: [],
+    network_stats: { total_nodes: 0, total_edges: 0 },
   };
 }
 

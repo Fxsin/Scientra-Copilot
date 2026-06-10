@@ -90,19 +90,19 @@ export function MetadataPanel({ metadata, tags }: MetadataPanelProps) {
         </dl>
       </div>
 
-      {tags && Object.keys(tags.assigned_tags).length > 0 ? (
+      {tags?.assigned_tags && typeof tags.assigned_tags === "object" && !Array.isArray(tags.assigned_tags) && Object.keys(tags.assigned_tags).length > 0 ? (
         <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
           <h3 className="text-sm font-semibold text-foreground mb-3">
             Assigned Tags
           </h3>
           <div className="flex flex-col gap-3">
-            {Object.entries(tags.assigned_tags).map(([category, tagList]) => (
+            {Object.entries(tags.assigned_tags as Record<string, string[]>).map(([category, tagList]) => (
               <div key={category} className="flex flex-col gap-1">
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                   {category}
                 </span>
                 <div className="flex flex-wrap gap-1">
-                  {tagList.map((tag) => (
+                  {(tagList as string[]).map((tag: string) => (
                     <TagBadge key={tag} label={tag} />
                   ))}
                 </div>
@@ -112,13 +112,13 @@ export function MetadataPanel({ metadata, tags }: MetadataPanelProps) {
         </div>
       ) : null}
 
-      {tags && Object.keys(tags.candidate_tags).length > 0 ? (
+      {tags?.candidate_tags && typeof tags.candidate_tags === "object" && !Array.isArray(tags.candidate_tags) && Object.keys(tags.candidate_tags).length > 0 ? (
         <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
           <h3 className="text-sm font-semibold text-foreground mb-3">
             Candidate Tags
           </h3>
           <div className="flex flex-col gap-3">
-            {Object.entries(tags.candidate_tags).map(([category, tagList]) => (
+            {Object.entries(tags.candidate_tags as Record<string, string[]>).map(([category, tagList]) => (
               <div key={category} className="flex flex-col gap-1">
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                   {category}

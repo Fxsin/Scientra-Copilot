@@ -1,71 +1,63 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Library, BookOpen, Users, Calendar, Search } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Library, BookOpen, Users, Calendar, Search, Tag, ChevronLeft, ChevronRight } from "lucide-react";
 import { DemoBanner } from "@/components/demo-banner";
 import { DebugPanel } from "@/components/debug-panel";
 import { useApiWithFallback, updateGlobalDataSource } from "@/lib/use-api";
-import { getStats, queryLiterature, ApiError } from "@/lib/api";
-import type { StatsResponse } from "@/lib/types";
-import { Button } from "@/components/ui/button";
+import { getStats, getPapers } from "@/lib/api";
+import type { StatsResponse, PaperItem } from "@/lib/types";
 
 function buildMockStats(): StatsResponse {
-  return {
-    paper_count: 0,
-    metadata_embedding_count: 0,
-    summary_embedding_count: 0,
-    chunk_embedding_count: 0,
-    tag_distribution: {},
-    year_distribution: {},
-  };
-}
-
-interface SearchResult {
-  paper_id: string;
-  title?: string;
-  journal?: string;
-  year?: number;
-  doi?: string;
-  authors?: string[];
+  return { paper_count: 0, metadata_embedding_count: 0, summary_embedding_count: 0, chunk_embedding_count: 0, tag_distribution: {}, year_distribution: {} };
 }
 
 export default function LibraryPage() {
-  const { data: stats, dataSource, error, lastUrl, lastStatus, refetch } =
+  const router = useRouter();
+
+  // Stats from /stats
+  const { data: stats, dataSource, error, lastUrl, lastStatus, refetch: refetchStats } =
     useApiWithFallback(getStats, buildMockStats());
 
+  // Papers from /papers
+  const [papers, setPapers] = useState<PaperItem[]>([]);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
-  const [results, setResults] = useState<SearchResult[]>([]);
-  const [searching, setSearching] = useState(false);
-  const [searchError, setSearchError] = useState<string | null>(null);
-
-  useEffect(() => {
-    updateGlobalDataSource(dataSource);
-  }, [dataSource]);
-
-  const doSearch = useCallback(async () => {
-    if (!searchQuery.trim()) {
-      setResults([]);
-      return;
-    }
-    setSearching(true);
-    setSearchError(null);
-    try {
-      const resp = await queryLiterature({
-        query: searchQuery.trim(),
-        mode: "keyword",
-        top_k: 20,
-        level: "all",
-      });
-      setResults(resp.results as unknown as SearchResult[]);
-    } catch (err) {
-      const msg = err instanceof ApiError ? err.message : String(err);
-      setSearchError(msg);
-    } finally {
-      setSearching(false);
-    }
-  }, [searchQuery]);
-
+  const [activeQuery, setActiveQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [papersError, setPapersError] = useState<string | null>(null);
+  const PAGE_SIZE = 15;
   const isRealData = dataSource === "REAL_API";
+
+  useEffect(() => { updateGlobalDataSource(dataSource); }, [dataSource]);
+
+  const fetchPapers = useCallback(async (p: number, q: string) => {
+    setLoading(true);
+    setPapersError(null);
+    try {
+      const resp = await getPapers({ page: p, page_size: PAGE_SIZE, q: q || undefined });
+      setPapers(resp.papers);
+      setTotal(resp.total);
+      setTotalPages(resp.total_pages);
+    } catch (err) {
+      setPapersError(err instanceof Error ? err.message : "Failed to load papers");
+      setPapers([]);
+      setTotal(0);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchPapers(page, activeQuery); }, [page, activeQuery, fetchPapers]);
+
+  const handleSearch = () => {
+    setPage(1);
+    setActiveQuery(searchQuery);
+  };
+
   const paperCount = isRealData ? stats.paper_count : 0;
 
   return (
@@ -80,18 +72,13 @@ export default function LibraryPage() {
         </p>
       </div>
 
-      <DemoBanner
-        dataSource={dataSource}
-        error={error}
-        lastUrl={lastUrl}
-        lastStatus={lastStatus}
-        onRetry={refetch}
-      />
+      <DemoBanner dataSource={dataSource} error={error || papersError || undefined} lastUrl={lastUrl} lastStatus={lastStatus} onRetry={() => { refetchStats(); fetchPapers(page, activeQuery); }} />
 
+      {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
         <StatBadge label="Papers" value={paperCount} />
-        <StatBadge label="Topics" value={25} />
-        <StatBadge label="Gaps" value={6} />
+        <StatBadge label="Page" value={`${page}/${totalPages}`} />
+        <StatBadge label="Results" value={total} />
       </div>
 
       {/* Search */}
@@ -102,66 +89,106 @@ export default function LibraryPage() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") doSearch(); }}
+            onKeyDown={(e) => { if (e.key === "Enter") handleSearch(); }}
             placeholder="Search by keyword — e.g. Vip3Aa, resistance, receptor…"
             className="w-full rounded-lg border bg-background pl-10 pr-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
           />
         </div>
-        <Button size="sm" onClick={doSearch} disabled={searching || !searchQuery.trim()}>
-          {searching ? "Searching…" : "Search"}
-        </Button>
+        <button
+          onClick={handleSearch}
+          disabled={loading}
+          className="inline-flex items-center gap-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+        >
+          <Search className="size-3.5" /> {loading ? "…" : "Search"}
+        </button>
       </div>
 
-      {searchError && (
-        <div className="text-sm text-red-600 bg-red-50 rounded-lg p-3">{searchError}</div>
+      {/* Loading */}
+      {loading && (
+        <div className="text-sm text-muted-foreground animate-pulse">Loading papers…</div>
       )}
 
-      {/* Results or default paper list */}
-      <div className="space-y-3">
-        <h2 className="text-lg font-semibold flex items-center gap-2">
-          <BookOpen className="size-4" />
-          {results.length > 0 ? `Results (${results.length})` : "Search for papers above"}
-        </h2>
-        {results.length > 0
-          ? results.map((paper) => (
-              <PaperCard key={paper.paper_id} paper={paper} />
-            ))
-          : !searching && searchQuery && (
-              <p className="text-sm text-muted-foreground">No results. Try a different keyword.</p>
-            )}
-      </div>
+      {/* Error */}
+      {papersError && !loading && (
+        <div className="text-sm text-red-600 bg-red-50 rounded-lg p-4">{papersError}</div>
+      )}
 
-      <DebugPanel
-        stats={{
-          paperCount,
-          apiStatus: isRealData ? "ok" : error || "unknown",
-          lastError: error,
-          lastUrl,
-          lastStatus,
-        }}
-      />
+      {/* Empty */}
+      {!loading && !papersError && papers.length === 0 && (
+        <div className="text-sm text-muted-foreground py-8 text-center">
+          {activeQuery ? `No papers matching "${activeQuery}".` : "No papers found. Import PDFs and run the workflow first."}
+        </div>
+      )}
+
+      {/* Paper list */}
+      {!loading && papers.length > 0 && (
+        <>
+          <div className="space-y-3">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <BookOpen className="size-4" />
+              {activeQuery ? `Results for "${activeQuery}" (${total})` : `Papers ${(page - 1) * PAGE_SIZE + 1}–${Math.min(page * PAGE_SIZE, total)} of ${total}`}
+            </h2>
+            {papers.map((paper) => (
+              <div
+                key={paper.paper_id}
+                onClick={() => router.push(`/paper/${paper.paper_id}`)}
+                className="rounded-lg border bg-card p-4 shadow-sm hover:shadow-md hover:border-primary/30 transition-all cursor-pointer"
+              >
+                <h3 className="font-medium text-sm leading-snug">{paper.title}</h3>
+                <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-muted-foreground">
+                  {paper.authors.length > 0 && (
+                    <span className="flex items-center gap-1"><Users className="size-3" /> {paper.authors[0]}{paper.authors.length > 1 ? ` +${paper.authors.length - 1}` : ""}</span>
+                  )}
+                  {paper.year && <span className="flex items-center gap-1"><Calendar className="size-3" /> {paper.year}</span>}
+                  {paper.journal && <span className="truncate max-w-[250px]">{paper.journal}</span>}
+                </div>
+                {paper.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {paper.tags.slice(0, 5).map((t) => (
+                      <span key={t} className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+                        <Tag className="size-2.5 mr-0.5" /> {t}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {paper.summary_snippet && (
+                  <p className="mt-2 text-xs text-muted-foreground leading-relaxed line-clamp-2">{paper.summary_snippet}</p>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Pagination */}
+          <div className="flex items-center justify-center gap-4">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              className="inline-flex items-center gap-1 text-sm disabled:opacity-30 hover:text-primary"
+            >
+              <ChevronLeft className="size-4" /> Prev
+            </button>
+            <span className="text-sm text-muted-foreground">Page {page} of {totalPages}</span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages}
+              className="inline-flex items-center gap-1 text-sm disabled:opacity-30 hover:text-primary"
+            >
+              Next <ChevronRight className="size-4" />
+            </button>
+          </div>
+        </>
+      )}
+
+      <DebugPanel stats={{ paperCount, apiStatus: isRealData ? "ok" : "error", lastError: error || papersError, lastUrl, lastStatus }} />
     </div>
   );
 }
 
-function StatBadge({ label, value }: { label: string; value: number }) {
+function StatBadge({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-lg border bg-white p-4 shadow-sm">
+    <div className="rounded-lg border bg-card p-4 shadow-sm">
       <p className="text-xs text-muted-foreground uppercase tracking-wide">{label}</p>
       <p className="text-2xl font-bold mt-1">{value}</p>
-    </div>
-  );
-}
-
-function PaperCard({ paper }: { paper: SearchResult }) {
-  return (
-    <div className="rounded-lg border bg-white p-4 shadow-sm hover:shadow-md transition-shadow">
-      <h3 className="font-medium text-sm">{paper.title || "Untitled"}</h3>
-      <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-        <span className="flex items-center gap-1"><Users className="size-3" /> {paper.authors?.[0] || "Unknown"}</span>
-        {paper.year && <span className="flex items-center gap-1"><Calendar className="size-3" /> {paper.year}</span>}
-        {paper.journal && <span className="truncate max-w-[200px]">{paper.journal}</span>}
-      </div>
     </div>
   );
 }

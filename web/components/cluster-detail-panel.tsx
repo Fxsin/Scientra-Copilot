@@ -27,13 +27,13 @@ export function ClusterDetailPanel({ cluster, onClose }: ClusterDetailPanelProps
       <p className="text-xs text-foreground/80 leading-relaxed mb-4">{cluster.summary}</p>
 
       {/* Central Papers */}
-      {cluster.central_papers.length > 0 && (
+      {(cluster.central_papers?.length ?? 0) > 0 && (
         <div className="mb-4">
           <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
             Central Papers
           </h4>
           <div className="flex flex-col gap-1.5">
-            {cluster.central_papers.slice(0, 5).map((cp) => (
+            {(cluster.central_papers ?? []).slice(0, 5).map((cp) => (
               <Link
                 key={cp.paper_id}
                 href={`/papers/${cp.paper_id}`}
@@ -50,10 +50,10 @@ export function ClusterDetailPanel({ cluster, onClose }: ClusterDetailPanelProps
       )}
 
       {/* Tag sections */}
-      <TagSection title="Top Toxins" tags={cluster.top_toxins} prefix="TOXIN" />
-      <TagSection title="Top Mechanisms" tags={cluster.top_mechanisms} prefix="MECH" />
-      <TagSection title="Top Methods" tags={cluster.top_methods} prefix="METHOD" />
-      <TagSection title="Top Hosts" tags={cluster.top_hosts} prefix="HOST" />
+      <TagSection title="Top Toxins" tags={cluster.top_toxins ?? []} prefix="TOXIN" />
+      <TagSection title="Top Mechanisms" tags={cluster.top_mechanisms ?? []} prefix="MECH" />
+      <TagSection title="Top Methods" tags={cluster.top_methods ?? []} prefix="METHOD" />
+      <TagSection title="Top Hosts" tags={cluster.top_hosts ?? []} prefix="HOST" />
     </div>
   );
 }

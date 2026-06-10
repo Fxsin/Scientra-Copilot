@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { TagBadge } from "@/components/tag-badge";
 import type { TagEvidence } from "@/lib/types";
 

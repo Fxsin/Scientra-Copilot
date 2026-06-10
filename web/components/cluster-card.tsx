@@ -34,12 +34,12 @@ export function ClusterCard({ cluster, onClick, active }: ClusterCardProps) {
         {cluster.summary}
       </p>
 
-      {(cluster.top_toxins.length > 0 || cluster.top_mechanisms.length > 0) && (
+      {((cluster.top_toxins?.length ?? 0) > 0 || (cluster.top_mechanisms?.length ?? 0) > 0) && (
         <div className="mt-2 flex flex-wrap gap-1">
-          {cluster.top_toxins.map((t) => (
+          {(cluster.top_toxins ?? []).map((t) => (
             <TagBadge key={t} label={`TOXIN:${t}`} />
           ))}
-          {cluster.top_mechanisms.map((m) => (
+          {(cluster.top_mechanisms ?? []).map((m) => (
             <TagBadge key={m} label={`MECH:${m}`} />
           ))}
         </div>

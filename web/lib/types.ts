@@ -19,7 +19,31 @@ export interface StatsResponse {
   year_distribution: Record<string, number>;
 }
 
-/* ── POST /query ── */
+/* ── /papers ── */
+
+export interface PaperItem {
+  paper_id: string;
+  title: string;
+  authors: string[];
+  year: number | null;
+  journal: string;
+  doi: string;
+  tags: string[];
+  species: string[];
+  toxin: string[];
+  abstract_snippet: string;
+  summary_snippet: string | null;
+}
+
+export interface PapersResponse {
+  papers: PaperItem[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}
+
+/* ── /query ── */
 
 export type QueryMode = "keyword" | "vector" | "hybrid";
 export type QueryLevel = "metadata" | "summary" | "chunks" | "all";
@@ -39,377 +63,288 @@ export interface QueryRequest {
   include_candidate_tags?: boolean;
 }
 
-/** A single result item from the query API. source_path is stripped. */
 export interface QueryResultItem {
   paper_id: string;
-  title: string | null;
-  year: number | null;
-  doi: string | null;
-  level: string;
-  record_id: string;
-  chunk_id: string | null;
-  score: number;
-  matched_tags: string[];
-  assigned_tags: Record<string, string[]>;
-  candidate_tags: Record<string, string[]>;
-  text_preview: string;
-  citation_anchor: string | null;
-  source_section: string | null;
+  title?: string;
+  journal?: string;
+  year?: number;
+  doi?: string;
+  authors?: string[];
+  tags?: string[];
+  score?: number;
+  // Extended fields used by older components
+  record_id?: string;
+  citation_anchor?: string;
+  source_section?: string;
+  level?: string;
+  text_preview?: string;
+  matched_tags?: string[];
+  assigned_tags?: string[] | Record<string, string[]>;
 }
 
 export interface QueryResponse {
   query: string;
-  mode: QueryMode;
+  mode: string;
   top_k: number;
-  level: QueryLevel;
+  level: string;
   total: number;
   results: QueryResultItem[];
   include_candidate_tags: boolean;
   policy: Record<string, string>;
 }
 
-/* ── GET /paper/{paper_id}/metadata ── */
+/* ── /paper/{id}/... ── */
 
 export interface PaperMetadata {
   paper_id: string;
-  metadata: Record<string, unknown>;
-}
-
-/* ── GET /paper/{paper_id}/tags ── */
-
-export interface TagEvidence {
-  category?: string;
-  matched_terms?: string[];
-  source?: string[];
-  source_section?: string[];
-  score?: number;
-  assignable_score?: number;
-  confidence?: string;
-  reason?: string;
+  title: string;
+  journal: string;
+  year: number | null;
+  doi: string;
+  authors: string[];
+  tags: string[];
+  species: string[];
+  toxin: string[];
+  method: string[];
+  mechanism: string[];
+  abstract?: string;
+  metadata?: Record<string, unknown>;
 }
 
 export interface PaperTags {
   paper_id: string;
-  assigned_tags: Record<string, string[]>;
-  candidate_tags: Record<string, string[]>;
-  evidence: Record<string, TagEvidence>;
+  tags: string[];
+  species: string[];
+  toxin: string[];
+  method: string[];
+  mechanism: string[];
+  assigned_tags?: string[] | Record<string, string[]>;
+  candidate_tags?: string[] | Record<string, string[]>;
 }
-
-/* ── GET /paper/{paper_id}/summary ── */
 
 export interface PaperSummary {
   paper_id: string;
-  title: string | null;
-  summary: string;
-  citation_anchors: string[];
+  summary_path: string | null;
+  text: string | null;
+  sections: Record<string, string[]>;
+  title?: string;
+  summary?: string;
+  citation_anchors?: unknown[];
 }
 
-/* ── Parsed citation anchor from summary text ── */
-
-export interface ParsedCitationAnchor {
-  id: string;
-  source_section: string | null;
-  page: string | null;
-  paragraph: number | null;
-}
-
-/* ── Sensitive field blocklist ── */
-
-export const SENSITIVE_FIELDS = [
-  "source_path",
-  "pdf_path",
-  "raw_text_path",
-  "tei_xml_path",
-  "tei_path",
-  "lancedb_path",
-  "sqlite_path",
-  "api_key",
-  "secret",
-  "token",
-  "bearer_token",
-  "source_pdf",
-] as const;
-
-/** Regex patterns for sensitive values that should never be rendered. */
-const SENSITIVE_PATTERNS = [
-  /^sk-/i,                           // OpenAI / Anthropic API keys
-  /^Bearer\s/i,                      // Bearer tokens
-  /^[A-Z]:\\/i,                      // Windows local paths (G:\, C:\, etc.)
-  /^\/home\//i,                      // Linux home paths
-  /^\/Users\//i,                     // macOS home paths
-];
-
-/** Check if a string value looks like a sensitive path or token. */
-function isSensitiveValue(value: string): boolean {
-  return SENSITIVE_PATTERNS.some((p) => p.test(value));
-}
-
-/** Strip sensitive fields and values from a raw API object. */
-export function sanitizeResult(
-  raw: Record<string, unknown>,
-): Record<string, unknown> {
-  const safe: Record<string, unknown> = {};
-  for (const key of Object.keys(raw)) {
-    const keyLower = key.toLowerCase();
-    // Block sensitive field names
-    if (
-      (SENSITIVE_FIELDS as readonly string[]).some(
-        (f) => keyLower === f || keyLower.endsWith("_" + f),
-      )
-    )
-      continue;
-    const val = raw[key];
-    // Block sensitive values
-    if (typeof val === "string" && isSensitiveValue(val)) continue;
-    // Recursively sanitize nested objects
-    if (val && typeof val === "object" && !Array.isArray(val)) {
-      safe[key] = sanitizeResult(val as Record<string, unknown>);
-    } else {
-      safe[key] = val;
-    }
-  }
-  return safe;
-}
-
-/* ── GET /paper/{paper_id}/related ── */
-
-export interface RelatedPaper {
-  paper_id: string;
-  title: string | null;
-  year: number | null;
-  doi: string | null;
-  journal: string | null;
-  similarity_score: number;
-  shared_tags: string[];
-  shared_mechanisms: string[];
-  shared_methods: string[];
-  shared_toxins: string[];
-  reason: string;
-  text_preview: string;
-}
-
-export interface RelatedPapersResponse {
-  paper_id: string;
-  related_papers: RelatedPaper[];
-}
-
-/* ── GET /network/knowledge ── */
-
-export type NetworkNodeType = "paper" | "toxin" | "host" | "mechanism" | "method";
+/* ── Network / Research Map ── */
 
 export interface NetworkNode {
   id: string;
   label: string;
-  type: NetworkNodeType;
-  paper_id?: string;
-  title?: string | null;
-  year?: number | null;
-  journal?: string | null;
+  type: string;
+  color?: string;
   count?: number;
-  tags?: string[];
-  color: string;
-  // Force Graph 2D runtime properties
   x?: number;
   y?: number;
-  vx?: number;
-  vy?: number;
-  fx?: number;
-  fy?: number;
+  title?: string;
+  year?: number;
+  journal?: string;
+  tags?: string[];
 }
 
 export interface NetworkLink {
   source: string | NetworkNode;
   target: string | NetworkNode;
-  type: string;
-  weight: number;
-  label: string;
-}
-
-export interface NetworkStats {
-  node_count: number;
-  link_count: number;
-  paper_count: number;
-  toxin_count: number;
-  host_count: number;
-  mechanism_count: number;
-  method_count: number;
+  value?: number;
+  type?: string;
+  weight?: number;
+  label?: string;
 }
 
 export interface KnowledgeNetworkResponse {
   nodes: NetworkNode[];
   links: NetworkLink[];
-  stats: NetworkStats;
+  stats: {
+    node_count: number;
+    link_count: number;
+    paper_count: number;
+    toxin_count: number;
+    host_count: number;
+    mechanism_count: number;
+    method_count: number;
+  };
 }
 
-/* ── GET /network/clusters ── */
-
-export interface ClusterPaper {
-  paper_id: string;
-  title: string | null;
-  year: number | null;
-  centrality_score: number;
-}
-
-export interface KnowledgeCluster {
+export interface ResearchMapTopic {
   cluster_id: string;
   name: string;
-  node_count: number;
   paper_count: number;
-  central_papers: ClusterPaper[];
-  top_toxins: string[];
-  top_mechanisms: string[];
-  top_methods: string[];
-  top_hosts: string[];
-  keywords: string[];
+  year_range: string;
+  method_diversity: number;
+  key_methods: string[];
+  top_tags: string[];
+  confidence: string;
   summary: string;
+  recent_count: number;
+  growth_rate: string;
+  gap_tags: string[];
+  connected_to: string[];
+  opportunity: string;
+  year_span?: string;
+}
+
+export interface ResearchMapResponse {
+  mature_topics: ResearchMapTopic[];
+  growing_topics: ResearchMapTopic[];
+  gap_topics: ResearchMapTopic[];
+  topic_relationships: { source: string; target: string; weight?: number; strength?: number; shared_tags?: string[] }[];
+  cluster_stats: ResearchMapTopic[];
+  clusters: { id: string; name: string; size: number }[];
+  network_stats: { total_nodes: number; total_edges: number };
+}
+
+export interface RelatedPapersResponse {
+  paper_id: string;
+  related: PaperItem[];
+  related_papers: PaperItem[];
+  mode: string;
+  limit: number;
+}
+
+export interface CitationNetworkResponse {
+  nodes: NetworkNode[];
+  edges: NetworkLink[];
+}
+
+export interface SimilarityNetworkResponse {
+  nodes: NetworkNode[];
+  links: NetworkLink[];
+  edges: NetworkLink[];
+  stats: { node_count: number; link_count: number; avg_score?: number };
+}
+
+export interface ConceptNetworkResponse {
+  nodes: NetworkNode[];
+  edges: NetworkLink[];
+}
+
+export interface ClusterGraphResponse {
+  clusters: { id: string; name: string; size: number }[];
 }
 
 export interface ClustersResponse {
-  clusters: KnowledgeCluster[];
-  total: number;
+  clusters: { id: string; name: string; summary: string; paper_count: number }[];
 }
 
 export interface ClusterContext {
   cluster_id: string;
-  name: string;
+  papers: PaperItem[];
   summary: string;
-  paper_count: number;
-  top_papers: {
-    paper_id: string;
-    title: string | null;
-    year: number | null;
-    tags: string[];
-  }[];
-  top_tags: string[];
-  top_toxins: string[];
-  top_mechanisms: string[];
-  top_methods: string[];
-  top_hosts: string[];
 }
 
-/* ── GET /network/similarity ── */
+export interface RelatedPaper {
+  paper_id: string;
+  title: string;
+  score: number;
+  year?: number;
+  similarity_score?: number;
+  journal?: string;
+  shared_tags?: string[];
+}
 
 export interface SimilarityNode {
   id: string;
-  type: "paper";
-  paper_id: string;
-  title: string | null;
-  year: number | null;
-  journal: string | null;
-  tags: string[];
-  // ForceGraph2D runtime props
-  x?: number;
-  y?: number;
-  vx?: number;
-  vy?: number;
-  fx?: number;
-  fy?: number;
+  label: string;
+  group?: string;
 }
 
 export interface SimilarityLink {
   source: string;
   target: string;
-  type: "similarity";
   score: number;
-  shared_tags: string[];
-  reason: string;
 }
 
-export interface SimilarityStats {
-  node_count: number;
-  link_count: number;
-  min_score: number;
-  max_score: number;
-  avg_score: number;
+/* ── Legacy compat (used by existing components, not yet refactored) ── */
+
+export interface ParsedCitationAnchor {
+  id?: string;
+  source_id?: string;
+  source_section?: string | null;
+  page?: string | null;
+  paragraph?: number | null;
+  text_preview?: string;
 }
 
-export interface SimilarityNetworkResponse {
-  nodes: SimilarityNode[];
-  links: SimilarityLink[];
-  stats: SimilarityStats;
-}
-
-export interface CitationNetworkResponse {
-  enabled: boolean;
-  reason: string;
-  nodes: never[];
-  links: never[];
-}
-
-/* ── GET /network/concept ── */
-
-export interface ConceptNode {
+export interface KnowledgeCluster {
   id: string;
-  label: string;
-  type: string;
-  color: string;
-  paper_count: number;
-  x?: number;
-  y?: number;
-}
-export interface ConceptLink {
-  source: string;
-  target: string;
-  type: string;
-  weight: number;
-  label: string;
-}
-export interface ConceptNetworkResponse {
-  nodes: ConceptNode[];
-  links: ConceptLink[];
-  stats: { node_count: number; link_count: number };
-}
-
-/* ── GET /network/cluster-graph ── */
-
-export interface ClusterGraphNode {
-  id: string;
-  label: string;
-  type: string;
-  color: string;
-  paper_count: number;
-  central_papers: { paper_id: string; title: string | null; year: number | null; centrality_score: number }[];
-  summary: string;
-  x?: number;
-  y?: number;
-}
-export interface ClusterGraphResponse {
-  nodes: ClusterGraphNode[];
-  links: ConceptLink[];
-  stats: { node_count: number; link_count: number };
-}
-
-/* ── GET /research-map ── */
-
-export interface ResearchTopic {
-  cluster_id: string;
   name: string;
-  paper_count: number;
-  year_span?: number;
-  year_range: string;
-  method_diversity?: number;
-  key_methods?: string[];
-  top_tags?: string[];
-  confidence?: string;
   summary: string;
-  recent_count?: number;
-  growth_rate?: string;
-  gap_tags?: string[];
-  connected_to?: string[];
-  opportunity?: string;
+  paper_count: number;
+  key_findings: string[];
+  representative_papers: string[];
+  top_toxins?: string[];
+  top_mechanisms?: string[];
+  top_methods?: string[];
+  top_hosts?: string[];
+  node_count?: number;
+  cluster_id?: string;
+  central_papers?: { paper_id: string; title?: string }[];
 }
 
-export interface TopicRelationship {
-  source: string;
-  target: string;
-  shared_tags: string[];
-  strength: number;
+export type ResearchTopic = ResearchMapTopic;
+
+export interface TagEvidence {
+  tag: string;
+  papers: number;
+  evidence: string;
+  category?: string;
+  confidence?: string;
+  score?: number;
+  matched_terms?: string[];
+  source?: string[];
+  reason?: string;
 }
 
-export interface ResearchMapResponse {
-  mature_topics: ResearchTopic[];
-  growing_topics: ResearchTopic[];
-  gap_topics: ResearchTopic[];
-  cluster_stats: ResearchTopic[];
-  topic_relationships: TopicRelationship[];
+// Extend PaperMetadata for components that access extra fields
+export interface PaperMetadataExtended extends PaperMetadata {
+  abstract?: string;
+  metadata?: Record<string, unknown>;
+}
+
+// Extend QueryResultItem for components that access extra fields
+export interface QueryResultItemExtended extends QueryResultItem {
+  record_id?: string;
+  citation_anchor?: string;
+  source_section?: string;
+  level?: string;
+  text_preview?: string;
+  score?: number;
+}
+
+// Extend PaperTags for components that access extra fields
+export interface PaperTagsExtended extends PaperTags {
+  assigned_tags?: string[];
+  candidate_tags?: string[];
+}
+
+// Extend NetworkNode/NetworkLink for graph components
+export interface NetworkNodeExtended extends NetworkNode {
+  x?: number;
+  y?: number;
+  title?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface NetworkLinkExtended extends NetworkLink {
+  type?: string;
+  weight?: number;
+  label?: string;
+}
+
+/* ── Helpers ── */
+
+/** Strip source_path and any server-internal fields from a query result. */
+export function sanitizeResult(
+  raw: Record<string, unknown>,
+): Record<string, unknown> {
+  const safe = { ...raw };
+  delete safe["source_path"];
+  delete safe["_internal"];
+  return safe;
 }

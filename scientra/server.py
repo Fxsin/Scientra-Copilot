@@ -80,6 +80,16 @@ def _load_yaml_metadata(root: Path) -> list[dict[str, Any]]:
     return papers
 
 
+def _load_summary_snippet(root: Path, paper_id: str, max_chars: int = 200) -> str | None:
+    """Return a short text snippet from the summary, or None."""
+    text = _load_summary_text(root, paper_id)
+    if not text:
+        return None
+    # Take first sentence-ish chunk
+    snippet = text[:max_chars].rsplit(".", 1)[0] + "." if "." in text[:max_chars] else text[:max_chars]
+    return snippet
+
+
 def _load_summary_text(root: Path, paper_id: str) -> str | None:
     """Load summary.md for a paper, extracting text from JSON."""
     summary_path = root / "03_Summary" / paper_id / "summary.md"
@@ -177,6 +187,69 @@ def create_app(root: Path | None = None) -> FastAPI:
             "chunk_embedding_count": l_counts.get("literature_vectors", 0),
             "tag_distribution": dict(tag_counter.most_common(30)),
             "year_distribution": dict(sorted(year_counter.items())),
+        }
+
+    # ── /papers — paginated paper list ──
+
+    @api.get("/papers")
+    def list_papers(
+        page: int = 1,
+        page_size: int = 20,
+        q: str | None = None,
+        year: int | None = None,
+        toxin: str | None = None,
+        species: str | None = None,
+        method: str | None = None,
+        tag: str | None = None,
+    ) -> dict[str, Any]:
+        papers = _load_yaml_metadata(root)
+        # Filter
+        if q:
+            q_lower = q.lower()
+            papers = [
+                p for p in papers
+                if q_lower in (p.get("title") or "").lower()
+                or q_lower in (p.get("abstract") or "").lower()
+                or any(q_lower in str(t).lower() for t in (p.get("tags") or []))
+            ]
+        if year:
+            papers = [p for p in papers if p.get("year") == year]
+        if toxin:
+            papers = [p for p in papers if toxin.lower() in " ".join(str(t).lower() for t in (p.get("toxin") or []))]
+        if species:
+            papers = [p for p in papers if species.lower() in " ".join(str(s).lower() for s in (p.get("species") or []))]
+        if method:
+            papers = [p for p in papers if method.lower() in " ".join(str(m).lower() for m in (p.get("method") or []))]
+        if tag:
+            papers = [p for p in papers if any(tag.lower() in str(t).lower() for t in (p.get("tags") or []))]
+
+        total = len(papers)
+        start = (page - 1) * page_size
+        page_papers = papers[start : start + page_size]
+
+        results: list[dict[str, Any]] = []
+        for p in page_papers:
+            pid = p.get("paper_id", "")
+            summary_snippet = _load_summary_snippet(root, pid)
+            results.append({
+                "paper_id": pid,
+                "title": p.get("title", ""),
+                "authors": p.get("authors", []) or [],
+                "year": p.get("year"),
+                "journal": p.get("journal", ""),
+                "doi": p.get("doi", ""),
+                "tags": p.get("tags", []) or [],
+                "species": p.get("species", []) or [],
+                "toxin": p.get("toxin", []) or [],
+                "abstract_snippet": (p.get("abstract") or "")[:300],
+                "summary_snippet": summary_snippet,
+            })
+        return {
+            "papers": results,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "total_pages": max(1, (total + page_size - 1) // page_size),
         }
 
     # ── POST /query (Web-compatible simplified endpoint) ──

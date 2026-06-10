@@ -132,7 +132,7 @@ export function ContextPackViewer({ pack }: ContextPackViewerProps) {
                     </span>
                   )}
                   <span className="ml-auto font-mono text-[10px] text-muted-foreground">
-                    score: {chunk.score.toFixed(3)}
+                    score: {chunk.score?.toFixed(3) ?? "N/A"}
                   </span>
                 </div>
                 <p className="text-xs text-foreground/80 line-clamp-3 leading-relaxed">

@@ -3,6 +3,7 @@ import type {
   PaperMetadata,
   PaperSummary,
   PaperTags,
+  PapersResponse,
   QueryRequest,
   QueryResponse,
   QueryResultItem,
@@ -130,6 +131,29 @@ export function getHealth(): Promise<HealthResponse> {
 
 export function getStats(): Promise<StatsResponse> {
   return fetchJson<StatsResponse>("/stats").then((r) => r.data);
+}
+
+export function getPapers(params?: {
+  page?: number;
+  page_size?: number;
+  q?: string;
+  year?: number;
+  toxin?: string;
+  species?: string;
+  method?: string;
+  tag?: string;
+}): Promise<PapersResponse> {
+  const sp = new URLSearchParams();
+  if (params?.page) sp.set("page", String(params.page));
+  if (params?.page_size) sp.set("page_size", String(params.page_size));
+  if (params?.q) sp.set("q", params.q);
+  if (params?.year) sp.set("year", String(params.year));
+  if (params?.toxin) sp.set("toxin", params.toxin);
+  if (params?.species) sp.set("species", params.species);
+  if (params?.method) sp.set("method", params.method);
+  if (params?.tag) sp.set("tag", params.tag);
+  const qs = sp.toString();
+  return fetchJson<PapersResponse>(`/papers${qs ? "?" + qs : ""}`).then((r) => r.data);
 }
 
 /* ── POST /query ── */
@@ -284,8 +308,7 @@ export async function getResearchMap(): Promise<ResearchMapResponse> {
   return fetchJson<ResearchMapResponse>("/research-map").then((r) => r.data);
 }
 
-/** Expose for debug display in error cards. */
-export { API_BASE_URL };
+/** Exposed via `export const` at the top of this file. */
 
 /* ── POST /import/upload (multipart) ── */
 

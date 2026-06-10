@@ -49,3 +49,6 @@ logs/
 05_Index/
 07_Workflows/
 reports/
+
+# Build artifacts
+*.tsbuildinfo
