@@ -9,13 +9,27 @@ export const metadata: Metadata = {
     "AI-Powered Research Discovery Platform — From Literature to Discovery.",
 };
 
+const themeScript = `
+  (function() {
+    try {
+      var theme = localStorage.getItem('scientra-theme');
+      if (theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+      }
+    } catch (e) {}
+  })();
+`.replace(/\n\s*/g, "");
+
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="scrollbar-thin">
+    <html lang="en" className="scrollbar-thin" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body>
         <QueryProvider>
           <LayoutShell>{children}</LayoutShell>
