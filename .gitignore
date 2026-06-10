@@ -39,3 +39,13 @@ logs/
 
 # LanceDB
 *.lance/
+
+# User data directories (literature and generated output)
+00_Inbox/
+01_PDF/
+02_Metadata/
+03_Summary/
+04_VectorDB/
+05_Index/
+07_Workflows/
+reports/

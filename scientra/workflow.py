@@ -49,8 +49,19 @@ except Exception:  # pragma: no cover - fallback for minimal environments
     logger = _LoggerCompat()
 
 
+def _detect_project_root() -> Path:
+    """Walk up from this file until a 'Config/workflow_config.yaml' is found."""
+    candidate = Path(__file__).resolve().parent
+    for _ in range(4):
+        if (candidate / "Config" / "workflow_config.yaml").exists():
+            return candidate
+        candidate = candidate.parent
+    # Fallback to the scientra/ directory's parent
+    return Path(__file__).resolve().parent.parent
+
+
 WORKFLOW_RUNNER_VERSION = "0.1.0"
-PROJECT_ROOT = Path(__file__).resolve().parent
+PROJECT_ROOT = _detect_project_root()
 DEFAULT_CONFIG_PATH = PROJECT_ROOT / "Config" / "workflow_config.yaml"
 STEP_ORDER = [
     "import_pdf",
@@ -154,9 +165,28 @@ class WorkflowRunner:
             return []
 
         sources = self.collect_input_pdfs()
+
+        # When no explicit sources are provided (inbox empty, no --file/--input-dir),
+        # discover PDFs already present in pdf_dir (01_PDF) and register them.
+        if not sources:
+            pdf_dir = self.paths["pdf_dir"]
+            if pdf_dir.exists():
+                existing = sorted(pdf_dir.glob("*.pdf"))
+                if existing:
+                    logger.info(
+                        "No inbox PDFs provided; registering {} existing PDF(s) from {}",
+                        len(existing),
+                        pdf_dir,
+                    )
+                sources = existing
+
         imported: list[ImportedPdf] = []
         for source in sources:
-            target = self.paths["pdf_dir"] / source.name
+            # If the source is already inside pdf_dir, use it as both source & target
+            if source.parent.resolve() == self.paths["pdf_dir"].resolve():
+                target = source
+            else:
+                target = self.paths["pdf_dir"] / source.name
             source_hash = file_sha256(source)
             previous = self.state.get("pdfs", {}).get(str(target))
             changed = previous is None or previous.get("sha256") != source_hash or not target.exists()
@@ -213,7 +243,7 @@ class WorkflowRunner:
             timeout = int(step_config.get("timeout_seconds") or self.config.get("runtime", {}).get("default_timeout_seconds") or 3600)
             completed = subprocess.run(
                 command,
-                cwd=str(self.root.parent),
+                cwd=str(self.root),
                 text=True,
                 capture_output=True,
                 timeout=timeout,
@@ -300,20 +330,20 @@ class WorkflowRunner:
     def _resolve_summary_module(self) -> str:
         """Resolve summary module based on summary.mode in config.
 
-        mode == "agent"      → scientra.summary_agent
+        mode == "agent"      → scientra.summary
         mode == "direct_api" → scientra.summary_engine
         """
         summary_config = self.config.get("steps", {}).get("summary", {})
         mode = summary_config.get("mode", "agent")
         fallback = summary_config.get("fallback_mode", "direct_api")
         if mode == "agent":
-            return "scientra.summary_agent"
+            return "scientra.summary"
         elif mode == "direct_api":
             return "scientra.summary_engine"
         else:
             logger.warning("Unknown summary.mode '{}', falling back to {}", mode, fallback)
             if fallback == "agent":
-                return "scientra.summary_agent"
+                return "scientra.summary"
             return "scientra.summary_engine"
 
     def expand_args_for_step(self, step: str, args: list[str]) -> list[str]:
@@ -480,6 +510,13 @@ class WorkflowRunner:
     def command_env(self) -> dict[str, str]:
         env = dict(os.environ)
         env["PYTHONDONTWRITEBYTECODE"] = "1"
+        # Ensure `python -m scientra.xxx` can find the scientra package
+        existing_path = env.get("PYTHONPATH", "")
+        project_root = str(self.root)
+        if existing_path:
+            env["PYTHONPATH"] = project_root + os.pathsep + existing_path
+        else:
+            env["PYTHONPATH"] = project_root
         return env
 
 
@@ -625,7 +662,16 @@ def write_json_atomic(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temp_path = path.with_name(f"{path.name}.tmp")
     temp_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    temp_path.replace(path)
+    # Retry on Windows where file locks may cause PermissionError
+    max_attempts = 5
+    for attempt in range(max_attempts):
+        try:
+            temp_path.replace(path)
+            return
+        except PermissionError:
+            if attempt == max_attempts - 1:
+                raise
+            time.sleep(0.2 * (attempt + 1))
 
 
 def tail_text(value: str | None, max_chars: int = 3000) -> str | None:

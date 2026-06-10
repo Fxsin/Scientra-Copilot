@@ -241,13 +241,13 @@ pip install -r requirements.txt
 Windows:
 
 ```bash
-start_scientra_os.bat
+start_scientra.bat
 ```
 
 PowerShell:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File start_scientra_os.ps1
+powershell -ExecutionPolicy Bypass -File start_scientra.ps1
 ```
 
 This automatically starts:
@@ -269,7 +269,7 @@ Place PDFs into:
 Run:
 
 ```bash
-python workflow.py --all
+python workflow.py run
 ```
 
 The workflow will automatically:

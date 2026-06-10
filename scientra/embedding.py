@@ -227,11 +227,19 @@ class EmbeddingEngine:
             normalize_embeddings=self.options.normalize_embeddings,
         )
         vector_rows: list[dict[str, Any]] = []
-        for batch in batched(records_to_index, self.options.batch_size):
+        total = len(records_to_index)
+        for i, batch in enumerate(batched(records_to_index, self.options.batch_size)):
             texts = [record.text for record in batch]
             vectors = embedder.encode(texts, batch_size=self.options.batch_size)
             for record, vector in zip(batch, vectors):
                 vector_rows.append(self.to_vector_row(record, vector))
+            if total >= 10 and (i + 1) % max(1, total // 10) == 0:
+                logger.info(
+                    "Embedding progress: {}/{} records ({:.0f}%)",
+                    min((i + 1) * self.options.batch_size, total),
+                    total,
+                    min((i + 1) * self.options.batch_size, total) / total * 100,
+                )
 
         store = LanceVectorStore(db_dir=self.options.db_dir, table_name=self.options.table_name)
         store_status = store.upsert_vectors(vector_rows)

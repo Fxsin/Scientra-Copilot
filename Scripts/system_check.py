@@ -128,11 +128,18 @@ def check_lancedb(root: Path) -> dict[str, str]:
             names = set(payload.tables if hasattr(payload, "tables") else payload)
         else:
             names = set(db.table_names())
-        expected = {"metadata_embeddings", "summary_embeddings", "chunk_embeddings"}
-        missing = expected - names
+        # Accept both the legacy per-level table names and the unified table name
+        expected_legacy = {"metadata_embeddings", "summary_embeddings", "chunk_embeddings"}
+        expected_unified = {"literature_vectors"}
+        if names & expected_unified:
+            # Unified table present — count it
+            table_name = (names & expected_unified).pop()
+            counts = {table_name: len(db.open_table(table_name).to_arrow())}
+            return result("LanceDB", "PASS", json.dumps(counts, ensure_ascii=False))
+        missing = expected_legacy - names
         if missing:
             return result("LanceDB", "WARN", f"Tables not yet created: {sorted(missing)}. Run workflow first.")
-        counts = {name: len(db.open_table(name).to_arrow()) for name in sorted(expected)}
+        counts = {name: len(db.open_table(name).to_arrow()) for name in sorted(expected_legacy)}
         return result("LanceDB", "PASS", json.dumps(counts, ensure_ascii=False))
     except Exception as exc:
         return result("LanceDB", "WARN", f"{type(exc).__name__}: {exc}. Tables created on first workflow run.")
