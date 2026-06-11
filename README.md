@@ -165,6 +165,53 @@ python -m scientra.evidence_chunks --force
 python -m scientra.evidence_embedding --force
 ```
 
+### Web Frontend Startup
+
+The frontend is a Next.js 16 application located in `web/`. It connects to the API server via environment variables.
+
+**Quick start (automatic):**
+```bash
+python Scripts/dev_restart.py
+```
+This automatically starts both API and Web, syncs `.env.local`, and validates the connection.
+
+**Manual start:**
+```bash
+cd web
+npm install        # first time only
+npm run dev        # starts on http://localhost:3000
+```
+
+**API connection configuration:**
+
+The frontend reads API address from environment variables (priority order):
+1. `NEXT_PUBLIC_SCIENTRA_API_URL` — full URL, e.g., `http://127.0.0.1:8711`
+2. `NEXT_PUBLIC_SCIENTRA_API_PORT` — port only, defaults to `8710`
+
+These can be set in `web/.env.local`:
+```
+NEXT_PUBLIC_SCIENTRA_API_URL=http://127.0.0.1:8711
+NEXT_PUBLIC_SCIENTRA_API_PORT=8711
+```
+
+**Port conflict:** If port 3000 is occupied, Next.js auto-increments to 3001, 3002, etc. Specify manually with:
+```bash
+npm run dev -- -p 3005
+```
+
+**Production build:**
+```bash
+cd web
+npm run build
+npm start          # serves on http://localhost:3000
+```
+
+**Troubleshooting:**
+- `localhost refused to connect` → API server not running. Check `curl http://127.0.0.1:8710/health`
+- `Research Map shows no data` → Wrong API port. Check `web/.env.local` matches running API port
+- `Build errors` → Clear cache: `rm -rf web/.next && npm run build`
+- `Schema mismatch warning` → Old API server running. Run `python Scripts/dev_restart.py`
+
 ---
 
 ## Testing
