@@ -14,6 +14,97 @@ export const API_BASE_URL =
   `http://127.0.0.1:${process.env.NEXT_PUBLIC_SCIENTRA_API_PORT || "8710"}` ||
   "http://127.0.0.1:8710";
 
+// Log API base URL once in development for troubleshooting
+if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
+  console.log(
+    `%c[Scientra API] %c${API_BASE_URL}`,
+    "color: #0891b2; font-weight: bold;",
+    "color: #64748b;",
+  );
+}
+
+/* ── Schema guard: detect old API ── */
+
+export type SchemaStatus = "ok" | "outdated" | "empty" | "error";
+
+export interface SchemaCheckResult {
+  status: SchemaStatus;
+  message: string;
+  apiBaseUrl: string;
+}
+
+/**
+ * Check if a /research-map response matches the expected v2 schema.
+ * Old schema: {topics: [], papers: []}
+ * New schema: {clusters, mature_topics, growing_topics, gap_topics, topic_relationships}
+ */
+export function checkResearchMapSchema(data: unknown): SchemaCheckResult {
+  if (!data || typeof data !== "object") {
+    return {
+      status: "error",
+      message: "Research Map API returned invalid data.",
+      apiBaseUrl: API_BASE_URL,
+    };
+  }
+
+  const d = data as Record<string, unknown>;
+  const keys = Object.keys(d);
+
+  // Detect old schema: {topics: [], papers: []}
+  if (
+    keys.length === 2 &&
+    keys.includes("topics") &&
+    keys.includes("papers") &&
+    Array.isArray(d.topics) &&
+    d.topics.length === 0
+  ) {
+    return {
+      status: "outdated",
+      message:
+        "Research Map API returned an outdated or empty schema. " +
+        "Please restart the API server with the latest code. " +
+        `Current API: ${API_BASE_URL}`,
+      apiBaseUrl: API_BASE_URL,
+    };
+  }
+
+  // Check for new schema markers
+  const hasClusters = "clusters" in d;
+  const hasTopics = "mature_topics" in d || "growing_topics" in d;
+  const hasRelationships = "topic_relationships" in d;
+
+  if (hasClusters || hasTopics || hasRelationships) {
+    const totalTopics =
+      (Array.isArray(d.clusters) ? d.clusters.length : 0) +
+      (Array.isArray(d.mature_topics) ? (d.mature_topics as unknown[]).length : 0) +
+      (Array.isArray(d.growing_topics) ? (d.growing_topics as unknown[]).length : 0) +
+      (Array.isArray(d.gap_topics) ? (d.gap_topics as unknown[]).length : 0);
+
+    if (totalTopics === 0) {
+      return {
+        status: "empty",
+        message: "Research Map loaded but no topics were generated yet. Import more papers.",
+        apiBaseUrl: API_BASE_URL,
+      };
+    }
+
+    return {
+      status: "ok",
+      message: `Research Map schema OK (${totalTopics} topics).`,
+      apiBaseUrl: API_BASE_URL,
+    };
+  }
+
+  return {
+    status: "outdated",
+    message:
+      "Research Map API returned an unrecognized schema. " +
+      "The API server may need to be restarted. " +
+      `Current API: ${API_BASE_URL}`,
+    apiBaseUrl: API_BASE_URL,
+  };
+}
+
 /* ── Error taxonomy ── */
 
 export type ApiErrorKind =
@@ -302,7 +393,21 @@ export async function getClusterContext(
 }
 
 export async function getResearchMap(): Promise<ResearchMapResponse> {
-  return fetchJson<ResearchMapResponse>("/research-map").then((r) => r.data);
+  const { data } = await fetchJson<ResearchMapResponse>("/research-map");
+
+  // Schema check in development
+  if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
+    const check = checkResearchMapSchema(data);
+    if (check.status === "outdated" || check.status === "error") {
+      console.warn(
+        `%c[Scientra Schema] %c${check.message}`,
+        "color: #d97706; font-weight: bold;",
+        "color: #92400e;",
+      );
+    }
+  }
+
+  return data;
 }
 
 export async function getResearchMapTopic(topicId: string): Promise<{ topic: ResearchMapTopic }> {

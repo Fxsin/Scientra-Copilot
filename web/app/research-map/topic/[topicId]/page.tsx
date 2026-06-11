@@ -76,8 +76,14 @@ export default function TopicDetailPage() {
   const t = topic as any;
   const related: any[] = t?.related_topics || [];
   const evolutionRaw: any[] = t?.evolution_phases || [];
-  const evolution = useMemo(() => buildEvidenceDrivenPhaseAnalysis(evolutionRaw), [evolutionRaw]);
-  const evolutionSummary = useMemo(() => buildEvSummary(evolution), [evolution]);
+  const evolution = useMemo(() => {
+    if (!evolutionRaw || evolutionRaw.length === 0) return [];
+    return buildEvidenceDrivenPhaseAnalysis(evolutionRaw);
+  }, [evolutionRaw]);
+  const evolutionSummary = useMemo(() => {
+    if (evolution.length === 0) return "Topic evolution is based on limited structured evidence. More complete paper summaries may improve this analysis.";
+    return buildEvSummary(evolution);
+  }, [evolution]);
   const yd: { year: number; count: number }[] = t?.year_distribution || [];
   const years = allPapers.map((p) => p.year).filter((y): y is number => y != null && y >= 1800);
   const firstY = years.length > 0 ? Math.min(...years) : null;

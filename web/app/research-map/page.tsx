@@ -76,7 +76,7 @@ function computeTrend(topic: ResearchMapTopic): { label: string; recentCount: nu
   return { label, recentCount, recentRatio, reason };
 }
 
-function computeEvolutionPhases(topic: ResearchMapTopic): TopicEvolutionPhase[] {
+function computeEvolutionPhases(topic: ResearchMapTopic): any[] {
   const papers = tpapers(topic);
   const thisYear = new Date().getFullYear();
   const validYears = papers.map((p) => p.year).filter((y): y is number => y != null && y >= 1800 && y <= thisYear + 1);

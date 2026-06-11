@@ -183,8 +183,8 @@ export interface ResearchMapTopic {
   year_range?: [number, number] | number[];
   keywords?: string[];
   summary?: string;
-  papers?: RelatedPaper[];
-  representative_papers?: RelatedPaper[];
+  papers?: TopicPaper[];
+  representative_papers?: TopicPaper[];
   method_diversity?: number;
   key_methods?: string[];
   top_tags?: string[];
@@ -200,6 +200,23 @@ export interface ResearchMapTopic {
   trend_label?: "emerging" | "active" | "stable" | "dormant" | "sparse" | "unknown";
   trend_reason?: string;
   evolution_phases?: TopicEvolutionPhase[];
+  related_topics?: RelatedTopicRef[];
+  cohesion_score?: number;
+  cohesion_label?: string;
+}
+
+export interface TopicPaper {
+  paper_id: string;
+  title: string;
+  authors?: string[];
+  year?: number | null;
+  journal?: string | null;
+  doi?: string | null;
+  summary?: string | null;
+  evidence?: Record<string, unknown> | null;
+  topic_relevance?: number;
+  relevance_label?: "high" | "medium" | "low";
+  relevance_reason?: string;
 }
 
 export interface YearCount { year: number; count: number; }
@@ -209,7 +226,23 @@ export interface TopicEvolutionPhase {
   year_range: [number, number];
   paper_count: number;
   keywords: string[];
-  representative_papers: RelatedPaper[];
+  representative_papers: TopicPaper[];
+  papers?: TopicPaper[];
+  summary?: string;
+  evidence_coverage?: {
+    papers_with_evidence: number;
+    total_papers: number;
+  };
+}
+
+export interface RelatedTopicRef {
+  cluster_id: string;
+  name: string;
+  type?: string;
+  paper_count?: number;
+  similarity: number;
+  shared_keywords?: string[];
+  reason?: string;
 }
 
 export interface TopicRelationship {
@@ -217,6 +250,7 @@ export interface TopicRelationship {
   target_topic_id: string;
   similarity: number;
   reason?: string;
+  shared_keywords?: string[];
   source?: string;
   target?: string;
   weight?: number;
@@ -311,6 +345,10 @@ export interface RelatedPaper {
   similarity?: number;
   reason?: string;
   summary?: string | null;
+  evidence?: Record<string, unknown> | null;
+  topic_relevance?: number;
+  relevance_label?: string;
+  relevance_reason?: string;
 }
 
 export interface SimilarityNode {

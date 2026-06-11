@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test:summary-parser": "npx tsx scripts/test-summary-parser.ts",
-    "test:topic-evolution": "npx tsx scripts/test-topic-evolution.ts"
+    "test:topic-evolution": "npx tsx scripts/test-topic-evolution.ts",
+    "test:research-map": "npx tsx scripts/test-research-map.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
