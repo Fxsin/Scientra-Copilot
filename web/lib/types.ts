@@ -273,6 +273,34 @@ export interface ClusterContext {
   summary: string;
 }
 
+// ── Evidence types ──
+
+export interface EvidenceMethod { name?: string; purpose?: string; evidence_type?: string; quote?: string; confidence?: string; }
+export interface EvidenceKeyResult { result?: string; measured_variable?: string; direction?: string; condition?: string; quote?: string; confidence?: string; }
+export interface EvidenceCoreFinding { finding?: string; quote?: string; confidence?: string; }
+export interface EvidenceDiscussionPoint { point?: string; type?: string; quote?: string; confidence?: string; }
+export interface EvidenceLimitation { limitation?: string; quote?: string; confidence?: string; }
+export interface EvidenceOpenQuestion { question?: string; quote?: string; confidence?: string; }
+export interface ResultDiscussionLink { result_index?: number; discussion_index?: number; link_type?: string; basis?: string; confidence?: string; }
+
+export interface PaperEvidence {
+  paper_id?: string; status?: string; extraction_mode?: string;
+  methods?: EvidenceMethod[]; key_results?: EvidenceKeyResult[];
+  core_findings?: EvidenceCoreFinding[]; discussion_points?: EvidenceDiscussionPoint[];
+  limitations?: EvidenceLimitation[]; open_questions?: EvidenceOpenQuestion[];
+  result_discussion_links?: ResultDiscussionLink[];
+  coverage?: Record<string, boolean>; fallback_used?: boolean;
+}
+
+export interface EvidenceChunkItem {
+  chunk_id: string; paper_id: string; chunk_type: string; text: string;
+  source_section?: string; quote?: string; confidence?: string;
+  title?: string; year?: number | null; journal?: string | null; score?: number;
+}
+
+export interface EvidenceChunksResponse { paper_id?: string; chunks: EvidenceChunkItem[]; chunk_count: number; }
+export interface EvidenceQueryResponse { results: EvidenceChunkItem[]; source: string; }
+
 export interface RelatedPaper {
   paper_id: string;
   title: string;

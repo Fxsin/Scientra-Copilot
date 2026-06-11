@@ -7,7 +7,8 @@ import {
   Lightbulb, ListChecks, Microscope, AlertTriangle, Search, ChevronDown, ChevronRight, Info,
   Hash, Circle, Copy, Check,
 } from "lucide-react";
-import { getPaperMetadata, getPaperSummary, getPaperTags, getRelatedPapers, API_BASE_URL } from "@/lib/api";
+import { getPaperMetadata, getPaperSummary, getPaperTags, getRelatedPapers, getPaperEvidence, API_BASE_URL } from "@/lib/api";
+import type { PaperEvidence } from "@/lib/types";
 import { generateBibTeX, generateRIS, copyToClipboard, type CitationData } from "@/lib/citation";
 import { parseAISummary, type ParsedSummary } from "@/lib/summary-parser";
 import type { PaperMetadata, PaperSummary, PaperTags, RelatedPaper } from "@/lib/types";

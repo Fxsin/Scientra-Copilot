@@ -124,6 +124,9 @@ export default function TopicDetailPage() {
         )}
       </div>
 
+      {/* ── Evidence Overview ── */}
+      <EvidenceOverview topic={topic} allPapers={allPapers} />
+
       {/* ── Topic Overview ── */}
       <div className="rounded-xl border border-slate-200/50 bg-white p-4">
         <p className="text-sm text-slate-600 leading-relaxed">
@@ -159,7 +162,10 @@ export default function TopicDetailPage() {
                 {displayPapers.map((p) => (
                   <button key={p.paper_id} onClick={() => router.push(`/paper/${p.paper_id}`)} className="w-full text-left rounded-md hover:bg-slate-50 px-2 py-2 -mx-2 transition-colors group flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <p className="text-[11px] font-medium text-slate-700 leading-snug line-clamp-2 group-hover:text-blue-600"><ScientificText text={p.title || ""} /></p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-[11px] font-medium text-slate-700 leading-snug line-clamp-2 group-hover:text-blue-600"><ScientificText text={p.title || ""} /></p>
+                        {(p as any).evidence ? <span className="text-[8px] px-1 py-0.5 rounded bg-emerald-50 text-emerald-600 shrink-0 font-medium">Evidence</span> : (p as any).summary ? <span className="text-[8px] px-1 py-0.5 rounded bg-slate-100 text-slate-500 shrink-0">Summary</span> : null}
+                      </div>
                       <p className="text-[10px] text-slate-400 mt-0.5">{p.authors?.[0] || "—"}{p.authors && p.authors.length > 1 ? " et al." : ""} {p.year ? `· ${p.year}` : ""}{p.journal ? ` · ${p.journal.slice(0, 40)}` : ""}</p>
                     </div>
                     {p.doi && <a href={`https://doi.org/${p.doi}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-[9px] text-blue-500 hover:underline shrink-0 mt-0.5 flex items-center gap-0.5"><ExternalLink className="size-2.5" />DOI</a>}
@@ -328,6 +334,58 @@ export default function TopicDetailPage() {
 
 function Row({ label, value }: { label: string; value: string | number }) {
   return <div className="flex justify-between"><span className="text-slate-400">{label}</span><span className="font-medium text-slate-600">{value}</span></div>;
+}
+
+/* ─── Evidence Overview ─── */
+
+function EvidenceOverview({ topic, allPapers }: { topic: ResearchMapTopic; allPapers: RelatedPaper[] }) {
+  const papersWithEvidence = allPapers.filter((p: any) => p.evidence && p.evidence.status !== "failed").length;
+  const papersWithSummary = allPapers.filter((p: any) => (p as any).summary && !(p as any).evidence).length;
+  const total = allPapers.length || topic.paper_count || 0;
+
+  if (papersWithEvidence === 0 && papersWithSummary === 0) return null;
+
+  // Aggregate evidence composition
+  const comp: Record<string, number> = {};
+  for (const p of allPapers) {
+    const ev = (p as any).evidence;
+    if (!ev) continue;
+    if (ev.key_results?.length > 0) comp["key_result"] = (comp["key_result"] || 0) + ev.key_results.length;
+    if (ev.core_findings?.length > 0) comp["core_finding"] = (comp["core_finding"] || 0) + ev.core_findings.length;
+    if (ev.discussion_points?.length > 0) comp["discussion_point"] = (comp["discussion_point"] || 0) + ev.discussion_points.length;
+    if (ev.methods?.length > 0) comp["method"] = (comp["method"] || 0) + ev.methods.length;
+    if (ev.limitations?.length > 0) comp["limitation"] = (comp["limitation"] || 0) + ev.limitations.length;
+    if (ev.open_questions?.length > 0) comp["open_question"] = (comp["open_question"] || 0) + ev.open_questions.length;
+  }
+  const maxComp = Math.max(...Object.values(comp), 1);
+
+  const coverageLabel = papersWithEvidence / Math.max(total, 1) >= 0.6 ? "High coverage: Most papers in this topic have structured evidence."
+    : papersWithEvidence / Math.max(total, 1) >= 0.3 ? "Medium coverage: Some papers rely on summary fallback."
+    : "Low coverage: Topic analysis is limited by incomplete structured evidence.";
+
+  return (
+    <div className="rounded-xl border border-slate-200/50 bg-white p-4 space-y-3">
+      <h2 className="text-sm font-semibold text-slate-700">Evidence Coverage</h2>
+      <div className="flex items-center gap-4 text-[11px]">
+        <span className="font-medium text-emerald-600">{papersWithEvidence}/{total}</span> structured
+        <span className="text-slate-400">{papersWithSummary} summary</span>
+      </div>
+      {Object.keys(comp).length > 0 && (
+        <div className="space-y-1">
+          {Object.entries(comp).sort((a, b) => b[1] - a[1]).map(([k, v]) => (
+            <div key={k} className="flex items-center gap-2 text-[10px]">
+              <span className="w-24 text-right text-slate-400 capitalize">{k.replace(/_/g, " ")}</span>
+              <div className="flex-1 h-3 bg-slate-100 rounded-sm overflow-hidden">
+                <div className="h-full bg-emerald-200 rounded-sm" style={{ width: `${Math.round((v / maxComp) * 100)}%` }} />
+              </div>
+              <span className="w-5 text-slate-500">{v}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      <p className="text-[10px] text-slate-400">{coverageLabel}</p>
+    </div>
+  );
 }
 
 function Skeleton() {

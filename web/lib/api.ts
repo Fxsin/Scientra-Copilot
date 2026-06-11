@@ -1,14 +1,9 @@
 import type {
   HealthResponse,
-  PaperMetadata,
-  PaperSummary,
-  PaperTags,
-  PapersResponse,
-  QueryRequest,
-  QueryResponse,
-  QueryResultItem,
-  ResearchMapTopic,
-  StatsResponse,
+  PaperEvidence, EvidenceChunksResponse, EvidenceQueryResponse,
+  PaperMetadata, PaperSummary, PaperTags, PapersResponse,
+  QueryRequest, QueryResponse, QueryResultItem,
+  ResearchMapTopic, StatsResponse,
 } from "./types";
 import { sanitizeResult } from "./types";
 
@@ -312,6 +307,18 @@ export async function getResearchMap(): Promise<ResearchMapResponse> {
 
 export async function getResearchMapTopic(topicId: string): Promise<{ topic: ResearchMapTopic }> {
   return fetchJson<{ topic: ResearchMapTopic }>(`/research-map/topic/${encodeURIComponent(topicId)}`).then((r) => r.data);
+}
+
+export function getPaperEvidence(paperId: string): Promise<PaperEvidence> {
+  return fetchJson<PaperEvidence>(`/paper/${encodeURIComponent(paperId)}/evidence`).then((r) => r.data);
+}
+
+export function getPaperEvidenceChunks(paperId: string): Promise<EvidenceChunksResponse> {
+  return fetchJson<EvidenceChunksResponse>(`/paper/${encodeURIComponent(paperId)}/evidence-chunks`).then((r) => r.data);
+}
+
+export async function queryEvidence(payload: { query: string; limit?: number; chunk_type?: string }): Promise<EvidenceQueryResponse> {
+  return fetchJson<EvidenceQueryResponse>("/query/evidence", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then((r) => r.data);
 }
 
 /** Exposed via `export const` at the top of this file. */
