@@ -85,7 +85,14 @@ def run_evidence_embedding(root: str | Path, force: bool = False, batch_size: in
         db_dir.mkdir(parents=True, exist_ok=True)
         db = lancedb.connect(str(db_dir))
         table_names = db.table_names()
-        if TABLE_NAME in table_names and not force:
+        if TABLE_NAME in table_names and force:
+            try:
+                db.drop_table(TABLE_NAME)
+                logger.info(f"Dropped existing '{TABLE_NAME}' table for force rebuild")
+            except Exception as exc:
+                report["errors"].append(f"Drop table failed: {exc}")
+            table = None
+        elif TABLE_NAME in table_names:
             table = db.open_table(TABLE_NAME)
             logger.info(f"Table '{TABLE_NAME}' exists, appending")
         else:

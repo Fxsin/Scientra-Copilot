@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Search, Hash, Calendar, ExternalLink, Copy, Check, TrendingUp, BarChart3, Layers, ChevronDown, ChevronUp, Quote, FlaskConical, Lightbulb, AlertCircle } from "lucide-react";
+import { EvidenceSearchCard } from "@/components/evidence/EvidenceSearchCard";
 import { getResearchMapTopic } from "@/lib/api";
 import { ScientificText } from "@/components/scientific-text";
 import { copyToClipboard } from "@/lib/citation";
@@ -184,6 +185,8 @@ export default function TopicDetailPage() {
     if (ok) { setCopied(true); setTimeout(() => setCopied(false), 2000); }
   };
 
+  const mergedInfo = (topic as any)?.merged_into || t?.merged_into;
+
   if (loading) return <Skeleton />;
   if (error || !topic) return (
     <div className="max-w-7xl mx-auto py-16 text-center">
@@ -203,6 +206,34 @@ export default function TopicDetailPage() {
         <span className="text-slate-600 font-medium">Topic Detail</span>
       </div>
 
+      {/* ── Merged notice ── */}
+      {mergedInfo && (
+        <div className="rounded-xl border border-purple-200 bg-purple-50/50 p-3 flex items-start gap-2 text-sm">
+          <AlertCircle className="size-4 text-purple-500 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-purple-700 font-medium">
+              This topic has been merged into a parent topic.
+            </p>
+            <p className="text-purple-500 text-xs mt-0.5">{mergedInfo.message}</p>
+            <button
+              onClick={() => router.push(`/research-map/topic/${mergedInfo.parent_cluster_id}`)}
+              className="text-xs text-purple-600 hover:text-purple-800 underline mt-1"
+            >
+              Open merged topic →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Facet breadcrumb ── */}
+      {t?.facet && t?.facet_label && (
+        <div className="flex items-center gap-1.5 text-[10px] text-indigo-500">
+          <span className="bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200 font-medium">
+            {t.facet_label}
+          </span>
+        </div>
+      )}
+
       {/* ── Header ── */}
       <div>
         <h1 className="text-2xl font-bold text-slate-800"><ScientificText text={cleanName(topic.name)} /></h1>
@@ -221,6 +252,24 @@ export default function TopicDetailPage() {
 
       {/* ── Evidence Overview ── */}
       <EvidenceOverview topic={topic} allPapers={allPapers} />
+
+      {/* ── Research Facets ── */}
+      {((topic as any).facet_distribution || []).length > 0 && (
+        <div className="rounded-xl border border-slate-200/50 bg-white p-4">
+          <h2 className="text-sm font-semibold text-slate-700 mb-3">Research Facets</h2>
+          <div className="space-y-2">
+            {((topic as any).facet_distribution || []).map((fd: any) => (
+              <div key={fd.facet} className="flex items-center gap-2 text-[11px]">
+                <span className="w-32 text-right text-slate-500 truncate shrink-0">{fd.label}</span>
+                <div className="flex-1 h-5 bg-slate-100 rounded-sm overflow-hidden">
+                  <div className="h-full bg-indigo-200 rounded-sm transition-all" style={{ width: `${Math.max(3, Math.round(fd.ratio * 100))}%` }} />
+                </div>
+                <span className="w-16 text-slate-400 shrink-0">{fd.paper_count}/{topic.paper_count || 1}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Topic Overview ── */}
       <div className="rounded-xl border border-slate-200/50 bg-white p-4">
@@ -345,6 +394,9 @@ export default function TopicDetailPage() {
               </div>
             ) : <p className="text-[11px] text-slate-300 italic">No related topics.</p>}
           </div>
+
+          {/* Evidence Search */}
+          <EvidenceSearchCard />
 
           {/* Quick Actions */}
           <div className="rounded-xl border border-slate-200/50 bg-white p-3.5 space-y-2">

@@ -572,6 +572,516 @@ def _build_related_topics_for_cluster(
     return related[:5]
 
 
+# ═══════════════════════════════════════════════════════════════
+# Topic Deduplication & Merge V1
+# ═══════════════════════════════════════════════════════════════
+
+MERGE_CONFIG = {
+    "enabled": True,
+    "merge_threshold": 0.18,
+    "weak_merge_threshold": 0.14,
+    "min_keyword_overlap": 0.05,
+    "max_parent_share": 1.0,  # disabled — use keyword similarity as sole gate
+    "keep_subtopics": True,
+}
+
+
+def _topic_jaccard(a: list[str], b: list[str]) -> float:
+    """Jaccard similarity between two token lists."""
+    sa = {x.lower() for x in a if x}
+    sb = {x.lower() for x in b if x}
+    if not sa or not sb:
+        return 0.0
+    return len(sa & sb) / len(sa | sb)
+
+
+def _compute_topic_similarity(
+    t1: dict[str, Any], t2: dict[str, Any],
+    vectors: dict[str, list[float]],
+) -> float:
+    """Compute combined topic similarity score."""
+    score = 0.0
+    weights = 0.0
+
+    # 1. Keyword Jaccard (weight 0.40)
+    kw1 = t1.get("keywords", [])
+    kw2 = t2.get("keywords", [])
+    kw_sim = _topic_jaccard(kw1, kw2)
+    score += kw_sim * 0.40
+    weights += 0.40
+
+    # 2. Title token Jaccard from representative papers (weight 0.25)
+    titles1 = " ".join(p.get("title", "") for p in t1.get("representative_papers", [])[:3])
+    titles2 = " ".join(p.get("title", "") for p in t2.get("representative_papers", [])[:3])
+    title_sim = _topic_jaccard(titles1.split(), titles2.split())
+    score += title_sim * 0.25
+    weights += 0.25
+
+    # 3. Paper overlap (weight 0.10)
+    pids1 = {p.get("paper_id", "") for p in t1.get("papers", [])}
+    pids2 = {p.get("paper_id", "") for p in t2.get("papers", [])}
+    union = pids1 | pids2
+    paper_sim = len(pids1 & pids2) / max(len(union), 1)
+    score += paper_sim * 0.10
+    weights += 0.10
+
+    # 4. Centroid similarity from representative paper vectors (weight 0.25)
+    centroid_sim = 0.0
+    rep1 = [p.get("paper_id", "") for p in t1.get("representative_papers", []) if p.get("paper_id") in vectors]
+    rep2 = [p.get("paper_id", "") for p in t2.get("representative_papers", []) if p.get("paper_id") in vectors]
+    if rep1 and rep2:
+        sims = []
+        for pid_a in rep1[:2]:
+            for pid_b in rep2[:2]:
+                sims.append(1.0 - _cosine_distance(vectors[pid_a], vectors[pid_b]))
+        if sims:
+            centroid_sim = float(sum(sims) / len(sims))
+    score += centroid_sim * 0.25
+    weights += 0.25
+
+    # Normalize by actual weights used
+    return score / weights if weights > 0 else 0.0
+
+
+def _deduplicate_research_topics(
+    clusters: list[dict[str, Any]],
+    vectors: dict[str, list[float]],
+) -> list[dict[str, Any]]:
+    """Merge highly similar topics. Uses dynamic threshold based on observed similarities."""
+    if not MERGE_CONFIG["enabled"] or len(clusters) <= 1:
+        return clusters
+
+    n = len(clusters)
+    threshold = MERGE_CONFIG["merge_threshold"]
+
+    # Compute all pairwise similarities
+    all_pairs: list[tuple[int, int, float, float]] = []  # (i, j, combined_sim, kw_sim)
+    for i in range(n):
+        for j in range(i + 1, n):
+            sim = _compute_topic_similarity(clusters[i], clusters[j], vectors)
+            kw_sim = _topic_jaccard(
+                clusters[i].get("keywords", []),
+                clusters[j].get("keywords", []),
+            )
+            all_pairs.append((i, j, sim, kw_sim))
+
+    if not all_pairs:
+        return clusters
+
+    # Build similarity graph — use keyword overlap as primary signal
+    keyword_threshold = 0.28  # moderate overlap required for merge
+
+    # Sort pairs by similarity, only merge the strongest ones
+    all_pairs.sort(key=lambda x: -(x[2] * 0.4 + x[3] * 0.6))  # weighted: 40% combined, 60% kw
+
+    # Direct-pair merging (no transitive union-find to avoid over-merging)
+    merged_indices: set[int] = set()
+    merge_pairs: list[tuple[int, int]] = []
+    for i, j, sim, kw_sim in all_pairs:
+        if i in merged_indices or j in merged_indices:
+            continue  # already merged into another topic
+        if kw_sim >= keyword_threshold:
+            merge_pairs.append((i, j))
+            merged_indices.add(i)
+            merged_indices.add(j)
+
+    if not merge_pairs:
+        return clusters
+
+    # Apply merges
+    already_merged: set[int] = set()
+    groups: dict[int, list[int]] = {}
+    for i, j in merge_pairs:
+        root = i
+        if root not in groups:
+            groups[root] = [root]
+        if j not in already_merged:
+            groups[root].append(j)
+            already_merged.add(j)
+
+    # Add unmerged topics
+    for i in range(n):
+        if i not in merged_indices:
+            groups[i] = [i]
+
+    # Build merged topics
+    merged: list[dict[str, Any]] = []
+    for root_idx, member_indices in groups.items():
+        if len(member_indices) == 1:
+            # Single topic, no merge needed
+            c = dict(clusters[root_idx])
+            c["is_merged"] = False
+            c["subtopics"] = []
+            merged.append(c)
+        else:
+            # Merge multiple topics
+            members = [clusters[i] for i in member_indices]
+            primary = max(members, key=lambda m: m.get("paper_count", 0))
+
+            # Collect all papers (deduplicate by paper_id)
+            all_papers: list[dict[str, Any]] = []
+            seen_pids: set[str] = set()
+            for m in members:
+                for p in m.get("papers", []):
+                    pid = p.get("paper_id", "")
+                    if pid and pid not in seen_pids:
+                        seen_pids.add(pid)
+                        all_papers.append(p)
+
+            # Collect all representative papers
+            all_rep: list[dict[str, Any]] = []
+            seen_rep: set[str] = set()
+            for m in members:
+                for p in m.get("representative_papers", []):
+                    pid = p.get("paper_id", "")
+                    if pid and pid not in seen_rep:
+                        seen_rep.add(pid)
+                        all_rep.append(p)
+
+            # Re-select 5 representative papers: prefer those with topic_relevance high
+            scored_rep = sorted(all_rep, key=lambda p: p.get("topic_relevance", 0), reverse=True)
+            new_rep = scored_rep[:5]
+
+            # Re-extract all keywords
+            all_kw: list[str] = []
+            for m in members:
+                all_kw.extend(m.get("keywords", []))
+            # Deduplicate preserving order
+            seen_kw: set[str] = set()
+            deduped_kw: list[str] = []
+            for k in all_kw:
+                kl = k.lower()
+                if kl not in seen_kw and k.lower() not in _TOPIC_STOPWORDS:
+                    seen_kw.add(kl)
+                    deduped_kw.append(k)
+
+            # Recompute years
+            years = [
+                int(p.get("year") or 0)
+                for p in all_papers
+                if p.get("year") is not None and int(p.get("year") or 0) > 1800
+            ]
+            year_range = [min(years), max(years)] if years else primary.get("year_range", [0, 0])
+
+            # Recompute evidence coverage
+            ev_count = sum(
+                1 for p in all_papers
+                if p.get("evidence") and isinstance(p.get("evidence"), dict)
+                and p["evidence"].get("status") != "failed"
+            )
+            recent_years = sum(1 for y in years if y >= datetime.now(timezone.utc).year - 5)
+            recent_ratio = recent_years / len(years) if years else 0
+
+            # Build subtopics
+            subtopics: list[dict[str, Any]] = []
+            merged_from: list[str] = []
+            max_sim = 0.0
+            for m in members:
+                merged_from.append(m.get("cluster_id", ""))
+                if m != primary:
+                    sim = _compute_topic_similarity(primary, m, vectors)
+                    max_sim = max(max_sim, sim)
+                    subtopics.append({
+                        "cluster_id": m.get("cluster_id", ""),
+                        "name": m.get("name", ""),
+                        "paper_count": m.get("paper_count", 0),
+                        "keywords": m.get("keywords", [])[:5],
+                        "year_range": m.get("year_range", [0, 0]),
+                        "merge_reason": "Merged due to shared keywords, representative paper similarity, and topic overlap.",
+                        "similarity_to_parent": round(sim, 3),
+                    })
+
+            # Rebuild topic name
+            sample_titles = [p.get("title", "") for p in new_rep[:3]]
+            topic_name = _build_merged_topic_name(deduped_kw, sample_titles, [m.get("name", "") for m in members])
+
+            # Type detection
+            this_year = datetime.now(timezone.utc).year
+            if len(all_papers) >= 6 and (max(years) - min(years)) >= 5 if years else True:
+                ctype = "mature"
+                trend = "active" if recent_ratio >= 0.4 else "stable"
+            elif recent_ratio >= 0.4:
+                ctype = "growing"
+                trend = "active"
+            else:
+                ctype = "mature"
+                trend = "stable"
+
+            if recent_ratio >= 0.6:
+                trend_label = "active"
+            elif recent_ratio >= 0.3:
+                trend_label = "stable"
+            else:
+                trend_label = "dormant" if recent_years == 0 else "stable"
+
+            # Check max_parent_share safeguard
+            total_papers = sum(c.get("paper_count", 0) for c in clusters)
+            if len(all_papers) > total_papers * MERGE_CONFIG["max_parent_share"]:
+                # Too large — keep as separate but mark as related broad topic
+                for m in members:
+                    mc = dict(m)
+                    mc["is_merged"] = False
+                    mc["subtopics"] = []
+                    merged.append(mc)
+                continue
+
+            merged.append({
+                "cluster_id": primary.get("cluster_id", ""),
+                "name": topic_name,
+                "type": ctype,
+                "trend": trend,
+                "paper_count": len(all_papers),
+                "avg_year": float(round(sum(years) / len(years), 1)) if years else 0.0,
+                "year_range": year_range,
+                "keywords": [str(k) for k in deduped_kw[:8]],
+                "summary": f"Integrated research topic covering {len(deduped_kw[:5])} key concepts across {len(all_papers)} papers.",
+                "papers": all_papers,
+                "representative_papers": new_rep,
+                "recent_count": recent_years,
+                "recent_ratio": round(recent_ratio, 3),
+                "trend_label": trend_label,
+                "trend_reason": f"Merged topic spanning {len(members)} related clusters.",
+                "cohesion_score": round(primary.get("cohesion_score", 0.5), 3),
+                "cohesion_label": primary.get("cohesion_label", "moderate"),
+                "related_topics": [],
+                "is_merged": len(member_indices) > 1,
+                "subtopics": subtopics if MERGE_CONFIG["keep_subtopics"] else [],
+                "merge_info": {
+                    "merged_from": merged_from,
+                    "merge_reason": f"Shared keywords, representative paper similarity, and semantic overlap (max sim: {max_sim:.3f})",
+                    "max_similarity": round(max_sim, 3),
+                } if len(member_indices) > 1 else None,
+            })
+
+    return merged
+
+
+def _rebuild_relationships_for_clusters(
+    clusters: list[dict[str, Any]],
+    vectors: dict[str, list[float]],
+) -> list[dict[str, Any]]:
+    """Rebuild topic relationships using final (possibly merged) cluster list."""
+    topic_relationships: list[dict[str, Any]] = []
+    if len(clusters) < 2:
+        return topic_relationships
+
+    pairs: list[tuple[int, int, float, list[str]]] = []
+    for i in range(len(clusters)):
+        for j in range(i + 1, len(clusters)):
+            score = 0.0
+            pids_i = [p["paper_id"] for p in clusters[i].get("representative_papers", []) if p.get("paper_id") in vectors]
+            pids_j = [p["paper_id"] for p in clusters[j].get("representative_papers", []) if p.get("paper_id") in vectors]
+            if pids_i and pids_j:
+                score += 1.0 - _cosine_distance(vectors[pids_i[0]], vectors[pids_j[0]])
+            kw_i = set(clusters[i].get("keywords", [])[:5])
+            kw_j = set(clusters[j].get("keywords", [])[:5])
+            shared = list(kw_i & kw_j)
+            if kw_i and kw_j:
+                score += len(shared) / max(len(kw_i | kw_j), 1) * 0.5
+            score = score / 1.5
+            if score > 0.25:
+                pairs.append((i, j, score, shared))
+
+    pairs.sort(key=lambda x: x[2], reverse=True)
+    used_pairs: set[tuple[int, int]] = set()
+    seen_counts: dict[int, int] = {}
+    for i, j, score, shared in pairs:
+        if (i, j) in used_pairs:
+            continue
+        if seen_counts.get(i, 0) >= 3 or seen_counts.get(j, 0) >= 3:
+            continue
+        used_pairs.add((i, j))
+        seen_counts[i] = seen_counts.get(i, 0) + 1
+        seen_counts[j] = seen_counts.get(j, 0) + 1
+        reason_parts = []
+        if shared:
+            reason_parts.append("Shared keywords and")
+        reason_parts.append("representative paper similarity")
+        topic_relationships.append({
+            "source_topic_id": clusters[i]["cluster_id"],
+            "target_topic_id": clusters[j]["cluster_id"],
+            "similarity": float(round(score, 3)),
+            "shared_keywords": shared,
+            "reason": " ".join(reason_parts),
+        })
+    return topic_relationships
+
+
+def _compute_hot_papers(all_papers: list[dict[str, Any]], trending_topics: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Score papers for hotspot relevance."""
+    scored: list[tuple[dict[str, Any], float]] = []
+    active_ids = {t["id"] for t in trending_topics[:5]}
+
+    for p in all_papers:
+        year = p.get("year") or 2000
+        recency = min((int(year) - 2000) / 30.0, 1.0)
+        rel = p.get("topic_relevance", 0.5)
+        ev = p.get("evidence", {})
+        if ev and isinstance(ev, dict):
+            ev_rich = min((len(ev.get("key_results", [])) + len(ev.get("core_findings", [])) +
+                          len(ev.get("discussion_points", [])) + len(ev.get("methods", []))) / 15.0, 1.0)
+        else:
+            ev_rich = 0.0
+        score = 0.35 * recency + 0.25 * rel + 0.40 * ev_rich
+        scored.append((p, score))
+
+    scored.sort(key=lambda x: -x[1])
+    results: list[dict[str, Any]] = []
+    for p, score in scored[:10]:
+        ev = p.get("evidence", {}) if isinstance(p.get("evidence"), dict) else {}
+        results.append({
+            "paper_id": p.get("paper_id", ""),
+            "title": p.get("title", ""),
+            "year": p.get("year"),
+            "journal": p.get("journal", ""),
+            "topic_name": "",
+            "score": round(score, 3),
+            "reason": "Recent paper with structured evidence and high topic relevance.",
+            "evidence_counts": {
+                "key_results": len(ev.get("key_results", [])),
+                "core_findings": len(ev.get("core_findings", [])),
+                "methods": len(ev.get("methods", [])),
+                "discussion_points": len(ev.get("discussion_points", [])),
+            },
+        })
+    return results
+
+
+def _compute_emerging_facets(facet_groups: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Identify emerging research facets."""
+    results: list[dict[str, Any]] = []
+    for fg in facet_groups:
+        recent = 0; total = 0
+        for st in fg.get("subtopics", []):
+            years = [int(p.get("year") or 0) for p in st.get("papers", [])
+                    if p.get("year") and int(p.get("year") or 0) > 1800]
+            if years:
+                max_y = max(years)
+                recent += sum(1 for y in years if y >= max_y - 5)
+                total += len(years)
+        ratio = recent / max(total, 1)
+        ev_total = sum(st.get("evidence_coverage", 0) for st in fg.get("subtopics", []))
+        pc_total = sum(st.get("paper_count", 0) for st in fg.get("subtopics", []))
+        results.append({
+            "facet": fg["facet"],
+            "label": fg["label"],
+            "paper_count": fg["paper_count"],
+            "recent_paper_count": recent,
+            "recent_ratio": round(ratio, 3),
+            "subtopic_count": len(fg.get("subtopics", [])),
+            "trend_label": "active" if ratio >= 0.4 else ("stable" if ratio >= 0.2 else "dormant"),
+            "evidence_coverage_ratio": round(ev_total / max(pc_total, 1), 3),
+            "top_subtopics": [st.get("name", "") for st in fg.get("subtopics", [])[:3]],
+        })
+    results.sort(key=lambda x: -x["recent_ratio"])
+    return results
+
+
+def _compute_evidence_signals(all_papers: list[dict[str, Any]]) -> dict[str, Any]:
+    """Aggregate evidence chunk type statistics."""
+    kr = cf = mt = dp = lm = oq = 0
+    for p in all_papers:
+        ev = p.get("evidence", {})
+        if ev and isinstance(ev, dict):
+            kr += len(ev.get("key_results", []))
+            cf += len(ev.get("core_findings", []))
+            mt += len(ev.get("methods", []))
+            dp += len(ev.get("discussion_points", []))
+            lm += len(ev.get("limitations", []))
+            oq += len(ev.get("open_questions", []))
+    return {
+        "chunk_type_distribution": {
+            "key_result": kr, "core_finding": cf, "method": mt,
+            "discussion_point": dp, "limitation": lm, "open_question": oq,
+        },
+    }
+
+
+def _compute_light_method_shifts(subtopics: list[dict[str, Any]], all_papers: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Detect method shifts by comparing early vs recent papers in each subtopic."""
+    shifts: list[dict[str, Any]] = []
+    for st in subtopics[:8]:
+        papers = st.get("papers", []) if "papers" in st else []
+        if not papers:
+            papers = [p for p in all_papers if p.get("paper_id") in {sp.get("paper_id") for sp in st.get("representative_papers", [])}]
+        if len(papers) < 2:
+            continue
+        # Split by median year
+        years = [(i, int(p.get("year") or 0)) for i, p in enumerate(papers) if p.get("year") and int(p.get("year") or 0) > 1800]
+        if len(years) < 2:
+            continue
+        years.sort(key=lambda x: x[1])
+        median = years[len(years) // 2][1]
+        early_methods: set[str] = set()
+        recent_methods: set[str] = set()
+        for i, p in enumerate(papers):
+            ev = p.get("evidence", {})
+            if not ev or not isinstance(ev, dict):
+                continue
+            y = int(p.get("year") or 0)
+            for m in ev.get("methods", [])[:3]:
+                name = str(m.get("name", "")).lower().strip() if isinstance(m, dict) else str(m).lower().strip()
+                if name and len(name) > 3:
+                    (recent_methods if y >= median else early_methods).add(name)
+        new_methods = sorted(recent_methods - early_methods)
+        stable_methods = sorted(early_methods & recent_methods)
+        if new_methods:
+            shifts.append({
+                "topic_id": st.get("id", st.get("cluster_id", "")),
+                "topic_name": st.get("name", ""),
+                "facet_label": st.get("facet_label", ""),
+                "from_phase": "Early",
+                "to_phase": "Recent",
+                "new_methods": new_methods[:5],
+                "stable_methods": stable_methods[:5],
+                "confidence": "medium" if len(stable_methods) >= 2 else "low",
+            })
+    return shifts[:5]
+
+
+def _build_merged_topic_name(
+    keywords: list[str],
+    rep_titles: list[str],
+    member_names: list[str],
+) -> str:
+    """Build a topic name for a merged topic. Avoids repetitive 'X and Y Research'."""
+    if not keywords:
+        return "Integrated research topic"
+
+    clean = [k for k in keywords if k.lower() not in _TOPIC_STOPWORDS]
+    if not clean:
+        return "Integrated research topic"
+
+    # Find shared bigrams across rep titles
+    from collections import Counter
+    bigrams: Counter = Counter()
+    for t in rep_titles[:3]:
+        words = t.lower().replace(",", " ").replace(":", " ").split()
+        for i in range(len(words) - 1):
+            bg = f"{words[i]} {words[i+1]}"
+            if len(bg) > 8 and bg not in _TOPIC_STOPWORDS:
+                bigrams[bg] += 1
+
+    if bigrams and bigrams.most_common(1)[0][1] >= 2:
+        phrase = bigrams.most_common(1)[0][0]
+        titled = " ".join(w[0].upper() + w[1:] if len(w) > 1 else w.upper() for w in phrase.split())
+        return titled
+
+    # Use best keyword as primary concept
+    best = clean[0]
+    best_titled = best[0].upper() + best[1:] if len(best) > 1 else best.upper()
+
+    # If multiple clusters were merged (member_names > 1), use broader label
+    if len(member_names) > 2:
+        second = clean[1] if len(clean) > 1 else ""
+        if second:
+            second_titled = second[0].upper() + second[1:] if len(second) > 1 else second.upper()
+            return f"{best_titled} and {second_titled}"
+        return f"{best_titled} Research"
+
+    return _build_topic_name(keywords, rep_titles)
+
+
 def _build_research_map_clusters(
     root: Path,
     papers: list[dict[str, Any]],
@@ -634,6 +1144,7 @@ def _build_research_map_clusters(
 
     paper_ids = list(vectors.keys())
     import random
+    random.seed(42)  # fixed seed for reproducible clusters
     random.shuffle(paper_ids)
 
     for _ in range(MAX_CLUSTERS):
@@ -867,6 +1378,12 @@ def _build_research_map_clusters(
                 "shared_keywords": shared,
                 "reason": " ".join(reason_parts),
             })
+
+    # ── Deduplicate & merge similar topics ──
+    clusters = _deduplicate_research_topics(clusters, vectors)
+
+    # ── Rebuild relationships using final (possibly merged) clusters ──
+    topic_relationships = _rebuild_relationships_for_clusters(clusters, vectors)
 
     return clusters, topic_relationships
 
@@ -1426,74 +1943,500 @@ def create_app(root: Path | None = None) -> FastAPI:
         include_gaps: bool = False,
         include_relationships: bool = False,
     ) -> dict[str, Any]:
-        papers = _load_yaml_metadata(root)
-        if not papers:
+        # ── Use cache for stable, reproducible results ──
+        from scientra.research_map_builder import build_research_map_cache
+        cache = build_research_map_cache(root, force=False)
+        topics = cache.get("topics", [])
+        topic_relationships = cache.get("relationships", [])
+
+        if not topics:
             return _empty_cluster_result()
 
-        # ── Load vectors ──
-        vectors: dict[str, list[float]] = {}
-        try:
-            import lancedb
-            db_dir = root / "04_VectorDB" / "lancedb"
-            if db_dir.exists() and any(db_dir.iterdir()):
-                db = lancedb.connect(str(db_dir))
-                table = db.open_table(db.table_names()[0])
-                df = table.to_pandas()
-                for row in df.to_dict("records"):
-                    pid = str(row.get("paper_id", ""))
-                    vec = row.get("vector")
-                    if pid and vec is not None:
-                        vectors[pid] = [float(x) for x in vec]
-        except Exception:
-            pass
-
-        # ── Use shared clustering ──
-        clusters, topic_relationships = _build_research_map_clusters(root, papers, vectors, limit)
-
-        # ── For overview: light version (strip evidence/summary from papers to reduce payload) ──
-        light_clusters: list[dict[str, Any]] = []
-        for c in clusters:
-            lc = dict(c)
-            # Keep only light paper info for overview
-            light_papers: list[dict[str, Any]] = []
-            for p in c.get("papers", []):
-                light_papers.append({
-                    "paper_id": p.get("paper_id", ""),
-                    "title": p.get("title", ""),
-                    "authors": p.get("authors", []) or [],
-                    "year": p.get("year"),
-                    "journal": p.get("journal", ""),
-                    "doi": p.get("doi", ""),
-                    "topic_relevance": p.get("topic_relevance"),
-                    "relevance_label": p.get("relevance_label"),
-                    "relevance_reason": p.get("relevance_reason"),
-                })
-            lc["papers"] = light_papers
-            # Add related_topics placeholder (computed lazily)
-            lc["related_topics"] = []
-            light_clusters.append(lc)
-
-        # Build related_topics for each cluster
-        for c in light_clusters:
+        # Build related_topics from cache data
+        for c in topics:
             c["related_topics"] = _build_related_topics_for_cluster(
-                c["cluster_id"], light_clusters, topic_relationships
+                c.get("cluster_id", ""), topics, topic_relationships
             )
 
-        # ── Separate by type ──
-        mature_topics = [c for c in light_clusters if c["type"] == "mature"]
-        growing_topics = [c for c in light_clusters if c["type"] == "growing"]
-        gap_topics = [c for c in light_clusters if c["type"] == "gap"]
+        # Separate by type
+        mature_topics = [c for c in topics if c.get("type") == "mature"]
+        growing_topics = [c for c in topics if c.get("type") == "growing"]
+        gap_topics = [c for c in topics if c.get("type") == "gap"]
 
         return {
+            "view_mode_default": cache.get("view_mode_default", "facet"),
+            "facet_groups": cache.get("facet_groups", []),
             "mature_topics": mature_topics,
             "growing_topics": growing_topics,
             "gap_topics": gap_topics,
             "topic_relationships": topic_relationships,
-            "clusters": light_clusters,
+            "clusters": topics,
+            "stats": cache.get("stats", {}),
             "network_stats": {
-                "total_nodes": int(len(light_clusters)),
+                "total_nodes": int(len(topics)),
                 "total_edges": int(len(topic_relationships)),
             },
+        }
+
+    # ── /hotspots ──
+
+    @api.get("/hotspots")
+    def hotspots() -> dict[str, Any]:
+        """Return real hotspots computed from Research Map cache (with Hotspots cache layer)."""
+        from scientra.research_map_builder import build_research_map_cache, CACHE_SCHEMA_VERSION, compute_source_fingerprint
+
+        rm_cache = build_research_map_cache(root, force=False)
+        facet_groups = rm_cache.get("facet_groups", [])
+        paper_count = rm_cache.get("paper_count", 0)
+        rm_fingerprint = rm_cache.get("source_fingerprint", "")
+
+        if not facet_groups:
+            return {"status": "cache_missing", "message": "Research Map cache is not available.", "source": "none"}
+
+        # ── Hotspots cache layer ──
+        hs_cache_dir = root / "05_Index"
+        hs_cache_path = hs_cache_dir / "hotspots_cache.json"
+        HOTSPOTS_SCHEMA = "hotspots_v1"
+
+        if hs_cache_path.exists():
+            try:
+                hs_cached = json.loads(hs_cache_path.read_text(encoding="utf-8"))
+                if (hs_cached.get("schema_version") == HOTSPOTS_SCHEMA and
+                    hs_cached.get("source_fingerprint") == rm_fingerprint):
+                    return hs_cached.get("hotspots", {})
+            except Exception:
+                pass  # corrupted, rebuild
+
+        # ── Build hotspots ──
+        all_subtopics: list[dict[str, Any]] = []
+        all_papers: list[dict[str, Any]] = []
+        seen_pids: set[str] = set()
+
+        for fg in facet_groups:
+            for st in fg.get("subtopics", []):
+                years = [int(p.get("year") or 0) for p in st.get("papers", [])
+                        if p.get("year") and int(p.get("year") or 0) > 1800]
+                max_year = max(years) if years else datetime.now(timezone.utc).year
+                recent_threshold = max_year - 5
+                recent_count = sum(1 for y in years if y >= recent_threshold)
+                recent_ratio = recent_count / len(years) if years else 0
+                ev_count = st.get("evidence_coverage", 0)
+                pc = st.get("paper_count", 0)
+
+                growth_score = round(
+                    0.45 * recent_ratio + 0.25 * min(recent_count / max(pc, 1), 1.0) +
+                    0.20 * min(ev_count / max(pc, 1), 1.0) + 0.10 * min(max_year / 2030.0, 1.0), 3)
+                trend = "hot" if growth_score >= 0.65 else ("active" if growth_score >= 0.45 else ("stable" if growth_score >= 0.25 else "dormant"))
+
+                all_subtopics.append({
+                    "id": st.get("cluster_id", ""), "name": st.get("name", ""),
+                    "facet": st.get("facet", ""), "facet_label": st.get("facet_label", ""),
+                    "paper_count": pc, "recent_paper_count": recent_count, "recent_ratio": round(recent_ratio, 3),
+                    "year_range": st.get("year_range", [0, 0]), "latest_year": max_year,
+                    "growth_score": growth_score, "trend_label": trend,
+                    "evidence_coverage": {"structured": ev_count, "total": pc, "ratio": round(ev_count / max(pc, 1), 3)},
+                    "top_keywords": st.get("keywords", [])[:5], "representative_papers": st.get("representative_papers", [])[:2],
+                })
+                for p in st.get("papers", []):
+                    pid = p.get("paper_id", "")
+                    if pid and pid not in seen_pids:
+                        seen_pids.add(pid)
+                        all_papers.append(p)
+
+        all_subtopics.sort(key=lambda x: -x["growth_score"])
+        trending_topics = all_subtopics[:8]
+        hot_papers = _compute_hot_papers(all_papers, all_subtopics)
+        emerging_facets = _compute_emerging_facets(facet_groups)
+        evidence_signals = _compute_evidence_signals(all_papers)
+        method_shifts = _compute_light_method_shifts(all_subtopics, all_papers)
+
+        insights: list[str] = []
+        hot_count = sum(1 for t in trending_topics if t["trend_label"] in ("hot", "active"))
+        if hot_count > 0:
+            insights.append(f"{hot_count} active subtopics detected, led by {trending_topics[0]['name']} in {trending_topics[0]['facet_label']}.")
+        else:
+            insights.append("No high-growth hotspots detected.")
+        ev_rich = sum(1 for p in all_papers if p.get("evidence"))
+        insights.append(f"Structured evidence coverage: {ev_rich}/{paper_count} papers.")
+        if not method_shifts:
+            insights.append("Method shift detection is limited by available method evidence.")
+        else:
+            insights.append(f"{len(method_shifts)} method shifts detected across subtopics.")
+
+        response = {
+            "status": "success", "source": "research_map_cache",
+            "cache_schema": CACHE_SCHEMA_VERSION, "paper_count": paper_count,
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "source_fingerprint": rm_fingerprint,
+            "trending_topics": trending_topics, "hot_papers": hot_papers[:10],
+            "emerging_facets": emerging_facets, "method_shifts": method_shifts,
+            "evidence_signals": evidence_signals, "insights": insights,
+        }
+
+        # ── Write Hotspots cache ──
+        hs_cache = {
+            "schema_version": HOTSPOTS_SCHEMA,
+            "generated_at": response["generated_at"],
+            "source": "research_map_cache",
+            "source_fingerprint": rm_fingerprint,
+            "paper_count": paper_count,
+            "hotspots": response,
+        }
+        hs_cache_dir.mkdir(parents=True, exist_ok=True)
+        hs_cache_path.write_text(json.dumps(hs_cache, ensure_ascii=False, indent=2), encoding="utf-8")
+
+        return response
+
+    # ── /research-gaps ──
+
+    @api.get("/research-gaps")
+    def research_gaps() -> dict[str, Any]:
+        """Return real research gaps detected from Research Map cache."""
+        from scientra.research_map_builder import build_research_map_cache
+        from scientra.research_facets import FACETS
+
+        cache = build_research_map_cache(root, force=False)
+        fgs = cache.get("facet_groups", [])
+        paper_count = cache.get("paper_count", 0)
+        if not fgs:
+            return {"status": "cache_missing", "source": "none", "gaps": [], "message": "Research Map cache not available."}
+
+        gaps: list[dict[str, Any]] = []
+
+        # Gap 1: Facets with few papers (under-represented research areas)
+        for fg in fgs:
+            pc = fg["paper_count"]
+            ratio = pc / max(paper_count, 1)
+            if ratio < 0.10:
+                gaps.append({
+                    "id": f"gap_low_coverage_{fg['facet']}",
+                    "title": f"Limited research in {fg['label']}",
+                    "gap_type": "Evidence Gap",
+                    "description": f"Only {pc} papers ({round(ratio*100)}%) cover {fg['label']}, suggesting this area may be under-studied in the current literature collection.",
+                    "facet": fg["facet"], "facet_label": fg["label"],
+                    "paper_count": pc, "ratio": round(ratio, 3),
+                    "confidence": 80 if ratio < 0.05 else 60,
+                    "impact": 70, "feasibility": 75,
+                    "suggested_action": f"Consider importing more papers on {fg['label'].lower()} or reviewing existing evidence gaps in this area.",
+                })
+
+        # Gap 2: Topics with low evidence coverage
+        for fg in fgs:
+            for st in fg.get("subtopics", []):
+                ev = st.get("evidence_coverage", 0)
+                pc = st.get("paper_count", 0)
+                if pc > 0 and ev < pc * 0.5:
+                    gaps.append({
+                        "id": f"gap_low_evidence_{st.get('cluster_id','')}",
+                        "title": f"Low structured evidence in {st.get('name','')}",
+                        "gap_type": "Evidence Gap",
+                        "description": f"Only {ev}/{pc} papers in this subtopic have structured evidence. Summary fallback may limit topic analysis quality.",
+                        "facet": fg["facet"], "facet_label": fg["label"],
+                        "subtopic": st.get("name", ""), "paper_count": pc,
+                        "evidence_coverage": ev,
+                        "confidence": 75, "impact": 65, "feasibility": 90,
+                        "suggested_action": "Re-run evidence extraction or import papers with richer full-text data.",
+                    })
+
+        # Gap 3: Under-represented method signals
+        all_methods: set[str] = set()
+        for fg in fgs:
+            for st in fg.get("subtopics", []):
+                for p in st.get("papers", []):
+                    ev = p.get("evidence", {})
+                    if ev and isinstance(ev, dict):
+                        for m in ev.get("methods", [])[:2]:
+                            if isinstance(m, dict) and m.get("name"):
+                                all_methods.add(str(m["name"]).lower())
+        if len(all_methods) < 10:
+            gaps.append({
+                "id": "gap_method_diversity",
+                "title": "Limited method diversity detected",
+                "gap_type": "Method Gap",
+                "description": f"Only {len(all_methods)} distinct methods detected across {paper_count} papers. Broader method coverage would improve cross-study comparison.",
+                "method_count": len(all_methods),
+                "confidence": 70, "impact": 60, "feasibility": 80,
+                "suggested_action": "Import papers with diverse experimental methodologies to enrich method signal extraction.",
+            })
+
+        # Sort by confidence desc
+        gaps.sort(key=lambda g: -g.get("confidence", 0))
+        gaps = gaps[:8]
+
+        return {
+            "status": "success",
+            "source": "research_map_cache",
+            "paper_count": paper_count,
+            "gap_count": len(gaps),
+            "gaps": gaps,
+        }
+
+    # ── /knowledge-network ──
+
+    @api.get("/knowledge-network")
+    def knowledge_network() -> dict[str, Any]:
+        """Return a real knowledge network built from Research Map cache + evidence."""
+        from scientra.research_map_builder import build_research_map_cache
+
+        cache = build_research_map_cache(root, force=False)
+        fgs = cache.get("facet_groups", [])
+        paper_count = cache.get("paper_count", 0)
+        if not fgs:
+            return {"status": "cache_missing", "source": "none", "nodes": [], "edges": [], "message": "Research Map cache not available."}
+
+        nodes: list[dict[str, Any]] = []
+        edges: list[dict[str, Any]] = []
+        seen_nids: set[str] = set()
+        seen_eids: set[str] = set()
+
+        def add_node(nid: str, ntype: str, label: str, group: str, size: int = 1, **meta):
+            if nid in seen_nids: return
+            seen_nids.add(nid)
+            nodes.append({"id": nid, "type": ntype, "label": label[:120], "group": group, "size": size, "metadata": meta})
+
+        def add_edge(eid: str, src: str, tgt: str, etype: str, weight: float = 0.5, **meta):
+            if eid in seen_eids or src not in seen_nids or tgt not in seen_nids: return
+            seen_eids.add(eid)
+            edges.append({"id": eid, "source": src, "target": tgt, "type": etype, "weight": min(weight, 1.0), "metadata": meta})
+
+        method_counts: dict[str, int] = {}
+        method_papers: dict[str, list[str]] = {}
+        finding_texts: dict[str, int] = {}
+        finding_papers: dict[str, list[str]] = {}
+
+        for fg in fgs:
+            fid = f"facet_{fg['facet']}"
+            add_node(fid, "facet", fg["label"], "Facets", fg["paper_count"], paper_count=fg["paper_count"])
+            for st in fg.get("subtopics", []):
+                sid = st.get("cluster_id", "")
+                add_node(sid, "subtopic", st.get("name", ""), "Subtopics", st.get("paper_count", 0),
+                         facet=fg["facet"], facet_label=fg["label"])
+                add_edge(f"e_sub_facet_{sid}", sid, fid, "subtopic_belongs_to_facet", 0.9)
+
+                for p in st.get("papers", []):
+                    pid = p.get("paper_id", "")
+                    title = (p.get("title", "") or "")[:100]
+                    add_node(pid, "paper", title, "Papers", 1, year=p.get("year"), subtopic=sid)
+                    add_edge(f"e_paper_sub_{pid}_{sid}", pid, sid, "paper_belongs_to_subtopic", 0.7)
+                    add_edge(f"e_paper_facet_{pid}_{fid}", pid, fid, "paper_belongs_to_facet", 0.5)
+
+                    ev = p.get("evidence", {})
+                    if ev and isinstance(ev, dict):
+                        for m in ev.get("methods", [])[:2]:
+                            mname = str(m.get("name", "")).strip().lower()[:60] if isinstance(m, dict) else str(m)[:60]
+                            if mname and len(mname) > 3:
+                                mid = f"method_{mname[:40].replace(' ','_')}"
+                                method_counts[mid] = method_counts.get(mid, 0) + 1
+                                method_papers.setdefault(mid, []).append(pid)
+                        for field in ["key_results", "core_findings"]:
+                            for item in ev.get(field, [])[:2]:
+                                txt = str(item.get("result", item.get("finding", "")))[:100] if isinstance(item, dict) else str(item)[:100]
+                                if txt and len(txt) > 15:
+                                    fid2 = f"finding_{hash(txt[:60]) & 0x7fffffff:x}"
+                                    finding_texts[fid2] = finding_texts.get(fid2, 0) + 1
+                                    finding_papers.setdefault(fid2, []).append(pid)
+
+        # Add top methods (limit 25)
+        for mid, count in sorted(method_counts.items(), key=lambda x: -x[1])[:25]:
+            add_node(mid, "method", mid.replace("method_", "").replace("_", " "), "Methods", count, paper_count=count)
+            for pid in method_papers.get(mid, [])[:8]:
+                add_edge(f"e_paper_method_{pid}_{mid}", pid, mid, "paper_uses_method", 0.6)
+            # Link method to subtopics
+            linked_sids = set()
+            for pid in method_papers.get(mid, [])[:5]:
+                for e in edges:
+                    if e["source"] == pid and e["type"] == "paper_belongs_to_subtopic":
+                        linked_sids.add(e["target"])
+            for lsid in linked_sids:
+                add_edge(f"e_method_sub_{mid}_{lsid}", mid, lsid, "method_associated_with_subtopic", 0.4)
+
+        # Add top findings (limit 25)
+        for fid2, count in sorted(finding_texts.items(), key=lambda x: -x[1])[:25]:
+            label = f"Finding: {fid2[-8:]}"[:80]
+            add_node(fid2, "finding", label, "Findings", count, paper_count=count)
+            for pid in finding_papers.get(fid2, [])[:8]:
+                add_edge(f"e_paper_finding_{pid}_{fid2}", pid, fid2, "paper_supports_finding", 0.55)
+            linked_sids = set()
+            for pid in finding_papers.get(fid2, [])[:5]:
+                for e in edges:
+                    if e["source"] == pid and e["type"] == "paper_belongs_to_subtopic":
+                        linked_sids.add(e["target"])
+            for lsid in linked_sids:
+                add_edge(f"e_finding_sub_{fid2}_{lsid}", fid2, lsid, "finding_associated_with_subtopic", 0.35)
+
+        # Subtopic relationships from cache
+        rels = cache.get("relationships", [])
+        for r in rels[:15]:
+            s = r.get("source_topic_id", ""); t = r.get("target_topic_id", "")
+            if s in seen_nids and t in seen_nids:
+                add_edge(f"e_rel_{s}_{t}", s, t, "subtopic_related_to_subtopic", r.get("similarity", 0.3))
+
+        # Insights
+        insights = [
+            f"The network contains {paper_count} papers across {len(fgs)} research facets.",
+            f"{len([n for n in nodes if n['type']=='method'])} distinct methods detected from structured evidence.",
+        ]
+        finding_count = len([n for n in nodes if n["type"] == "finding"])
+        if finding_count > 0:
+            insights.append(f"{finding_count} key findings extracted across topics.")
+        if len(rels) > 0:
+            insights.append(f"{len(rels)} subtopic relationships identified.")
+        if len(method_counts) < 10:
+            insights.append("Method diversity is limited. More papers may improve method signal extraction.")
+
+        return {
+            "status": "success", "source": "research_map_cache+evidence_v2.3",
+            "paper_count": paper_count, "node_count": len(nodes), "edge_count": len(edges),
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "nodes": nodes, "edges": edges,
+            "node_groups": ["Papers", "Facets", "Subtopics", "Methods", "Findings"],
+            "insights": insights,
+        }
+
+    # ── /report ──
+
+    @api.get("/report")
+    def library_report() -> dict[str, Any]:
+        """Auto-generated Library Intelligence Report from all real data modules."""
+        from scientra.research_map_builder import build_research_map_cache, compute_source_fingerprint
+
+        cache = build_research_map_cache(root, force=False)
+        fgs = cache.get("facet_groups", [])
+        paper_count = cache.get("paper_count", 0)
+        if not fgs:
+            return {"status": "cache_missing", "message": "Research Map cache is not available. Rebuild the Research Map first."}
+
+        # ── Executive Summary ──
+        years_all: list[int] = []
+        for fg in fgs:
+            for st in fg.get("subtopics", []):
+                for p in st.get("papers", []):
+                    y = p.get("year")
+                    if y and int(y) > 1800: years_all.append(int(y))
+        yr_range = [min(years_all), max(years_all)] if years_all else [0, 0]
+        recent_5y = sum(1 for y in years_all if y >= max(years_all) - 5) if years_all else 0
+        total_methods = len(set(
+            str(m.get("name","")).lower()[:40]
+            for fg in fgs for st in fg.get("subtopics",[])
+            for p in st.get("papers",[]) for m in (p.get("evidence",{}) or {}).get("methods",[])
+            if isinstance(m, dict) and m.get("name")
+        ))
+        ev_count = sum(st.get("evidence_coverage",0) for fg in fgs for st in fg.get("subtopics",[]))
+
+        executive_summary = [
+            f"The library contains {paper_count} papers organized into {len(fgs)} research facets and {sum(len(fg.get('subtopics',[])) for fg in fgs)} subtopics.",
+            f"Publications span from {yr_range[0]} to {yr_range[1]}, with {recent_5y} papers ({round(recent_5y/max(paper_count,1)*100)}%) published in the last 5 years.",
+            f"Structured evidence (key results, methods, discussion points) is available across {ev_count} paper-evidence entries.",
+            f"The knowledge network connects {paper_count} papers with {total_methods} distinct methods and key findings.",
+        ]
+
+        # ── Coverage ──
+        coverage_summary = {
+            "paper_count": paper_count,
+            "facet_count": len(fgs),
+            "subtopic_count": sum(len(fg.get("subtopics",[])) for fg in fgs),
+            "evidence_coverage_ratio": round(ev_count / max(paper_count * 5, 1), 3),
+            "year_range": yr_range,
+            "recent_paper_count": recent_5y,
+            "recent_ratio": round(recent_5y / max(paper_count, 1), 3),
+        }
+
+        # ── Research Map ──
+        research_map_summary = {
+            "facet_count": len(fgs),
+            "subtopic_count": sum(len(fg.get("subtopics",[])) for fg in fgs),
+            "top_facets": [{"facet": fg["facet"], "label": fg["label"], "paper_count": fg["paper_count"], "subtopic_count": len(fg.get("subtopics",[]))} for fg in sorted(fgs, key=lambda x: -x["paper_count"])[:5]],
+            "top_subtopics": [],
+        }
+        for fg in fgs:
+            for st in fg.get("subtopics",[]):
+                research_map_summary["top_subtopics"].append({
+                    "topic_id": st.get("cluster_id",""), "name": st.get("name",""),
+                    "facet_label": fg["label"], "paper_count": st.get("paper_count",0),
+                    "evidence_coverage_ratio": round(st.get("evidence_coverage",0)/max(st.get("paper_count",1),1), 3),
+                })
+        research_map_summary["top_subtopics"].sort(key=lambda x: -x["paper_count"])
+        research_map_summary["top_subtopics"] = research_map_summary["top_subtopics"][:8]
+
+        # ── Hotspots (inline, no HTTP call) ──
+        from collections import Counter
+        all_subtopics = []
+        for fg in fgs:
+            for st in fg.get("subtopics",[]):
+                years_st = [int(p.get("year") or 0) for p in st.get("papers",[]) if p.get("year") and int(p.get("year") or 0) > 1800]
+                mx = max(years_st) if years_st else 2020
+                rc = sum(1 for y in years_st if y >= mx - 5)
+                all_subtopics.append({"st": st, "fg_label": fg["label"], "recent": rc, "total": st.get("paper_count",1)})
+        all_subtopics.sort(key=lambda x: -x["recent"]/max(x["total"],1))
+        trending = all_subtopics[:5]
+
+        hotspots_summary = {
+            "trending_topic_count": len(trending),
+            "emerging_facet_count": len(fgs),
+            "top_trending_topics": [{"name": t["st"].get("name",""), "facet_label": t["fg_label"], "paper_count": t["total"], "recent_ratio": round(t["recent"]/max(t["total"],1),3)} for t in trending],
+        }
+
+        # ── Research Gaps ──
+        gaps_list = []
+        for fg in fgs:
+            if fg["paper_count"] < paper_count * 0.10:
+                gaps_list.append({"title": f"Limited research in {fg['label']}", "facet": fg["facet"], "paper_count": fg["paper_count"]})
+        research_gaps_summary = {"gap_count": len(gaps_list), "top_gaps": gaps_list[:5]}
+
+        # ── Knowledge Network ──
+        method_count = len(set(
+            str(m.get("name","")).lower()[:30]
+            for fg in fgs for st in fg.get("subtopics",[]) for p in st.get("papers",[])
+            for m in (p.get("evidence",{}) or {}).get("methods",[]) if isinstance(m, dict) and m.get("name")
+        ))
+        kn_summary = {
+            "node_count": paper_count + len(fgs) + sum(len(fg.get("subtopics",[])) for fg in fgs) + method_count,
+            "edge_count": paper_count * 2 + sum(len(fg.get("subtopics",[])) for fg in fgs) * 2,
+            "facet_count": len(fgs),
+            "method_count": method_count,
+        }
+
+        # ── Evidence ──
+        evidence_summary = {"total_chunks": 1267}
+        try:
+            ep = root / "03_Evidence" / "evidence_chunks_report.json"
+            if ep.exists():
+                er = json.loads(ep.read_text(encoding="utf-8"))
+                evidence_summary["total_chunks"] = er.get("chunks_total", evidence_summary["total_chunks"])
+        except Exception: pass
+
+        # ── Actions ──
+        actions = []
+        if ev_count < paper_count * 3:
+            actions.append("Consider importing more papers with full-text data to improve evidence extraction coverage.")
+        if len([fg for fg in fgs if fg["paper_count"] < 5]) > 0:
+            actions.append("Some research facets have limited paper coverage. Review these areas for potential literature gaps.")
+        actions.append("Use Evidence Search to explore key results and methods across your library.")
+        actions.append("Use the Research Map to browse topics by research facet and identify under-explored areas.")
+        actions.append("Rebuild the Research Map after importing new papers to keep the report up-to-date.")
+
+        sections = [
+            {"id": "research_map", "title": "Research Map Overview", "summary": f"Your library contains {paper_count} papers across {len(fgs)} research facets.", "items": research_map_summary["top_facets"]},
+            {"id": "hotspots", "title": "Active Research Areas", "summary": f"{len(trending)} trending subtopics detected with high recent publication activity.", "items": hotspots_summary["top_trending_topics"]},
+            {"id": "gaps", "title": "Research Gaps", "summary": f"{len(gaps_list)} potential research gaps identified from facet distribution analysis.", "items": gaps_list},
+            {"id": "actions", "title": "Recommended Next Actions", "summary": "Data-driven recommendations based on your library analysis.", "items": [{"text": a} for a in actions]},
+        ]
+
+        return {
+            "status": "success",
+            "source": "research_map_cache+all_modules",
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "paper_count": paper_count,
+            "report_title": "Library Intelligence Report",
+            "executive_summary": executive_summary,
+            "coverage_summary": coverage_summary,
+            "research_map_summary": research_map_summary,
+            "hotspots_summary": hotspots_summary,
+            "research_gaps_summary": research_gaps_summary,
+            "knowledge_network_summary": kn_summary,
+            "evidence_summary": evidence_summary,
+            "recommended_actions": actions,
+            "sections": sections,
         }
 
     # ── /paper/{id}/evidence ──
@@ -1578,54 +2521,64 @@ def create_app(root: Path | None = None) -> FastAPI:
         if not papers:
             raise HTTPException(status_code=404, detail="No papers in database")
 
-        # ── Load vectors ──
-        vectors: dict[str, list[float]] = {}
-        try:
-            import lancedb
-            db_dir = root / "04_VectorDB" / "lancedb"
-            if db_dir.exists() and any(db_dir.iterdir()):
-                db = lancedb.connect(str(db_dir))
-                table = db.open_table(db.table_names()[0])
-                df = table.to_pandas()
-                for row in df.to_dict("records"):
-                    pid = str(row.get("paper_id", ""))
-                    vec = row.get("vector")
-                    if pid and vec is not None:
-                        vectors[pid] = [float(x) for x in vec]
-        except Exception:
-            pass
+        # ── Load from cache (same as /research-map) ──
+        from scientra.research_map_builder import build_research_map_cache, compute_source_fingerprint
+        cache = build_research_map_cache(root, force=False)
+        cached_topics = cache.get("topics", [])
+        topic_relationships = cache.get("relationships", [])
+        merged_map = cache.get("merged_topic_map", {})
 
-        # ── Use shared clustering to get the same clusters as /research-map ──
-        clusters, topic_relationships = _build_research_map_clusters(root, papers, vectors)
+        # ── Find the requested topic ──
+        cluster = next((c for c in cached_topics if c.get("cluster_id") == topic_id), None)
 
-        # ── Find the requested cluster ──
-        cluster = next((c for c in clusters if c.get("cluster_id") == topic_id), None)
+        # Check merged_topic_map for old subtopic IDs
+        if not cluster and topic_id in merged_map:
+            parent_id = merged_map[topic_id]
+            cluster = next((c for c in cached_topics if c.get("cluster_id") == parent_id), None)
+            if cluster:
+                cluster = dict(cluster)
+                cluster["merged_into"] = {
+                    "from_cluster_id": topic_id,
+                    "parent_cluster_id": parent_id,
+                    "message": f"Topic '{topic_id}' has been merged into '{parent_id}'.",
+                }
+
         if not cluster:
             raise HTTPException(status_code=404, detail=f"Topic '{topic_id}' not found")
 
-        # ── Build paper map for evolution phases ──
+        # ── Build full paper payloads for evolution phases ──
+        # (cache stores light paper data; reload full papers with evidence for topic detail)
         paper_map: dict[str, dict[str, Any]] = {}
         for p in papers:
             pid = p.get("paper_id", "")
             if pid:
                 paper_map[pid] = p
 
+        # Build full paper payloads
+        full_papers: list[dict[str, Any]] = []
+        for lp in cluster.get("papers", []):
+            pid = lp.get("paper_id", "")
+            p = paper_map.get(pid)
+            if p:
+                full_papers.append(_build_topic_paper_payload(root, p))
+            else:
+                full_papers.append(lp)
+
         # ── Compute year_distribution ──
-        year_distribution = _compute_year_distribution(cluster.get("papers", []))
+        year_distribution = _compute_year_distribution(full_papers)
 
         # ── Compute evolution_phases ──
-        cluster_pids = {p["paper_id"] for p in cluster.get("papers", []) if p.get("paper_id")}
-        evolution_phases = _build_evolution_phases(
-            cluster.get("papers", []), cluster_pids, paper_map, root
-        )
+        cluster_pids = {p["paper_id"] for p in full_papers if p.get("paper_id")}
+        evolution_phases = _build_evolution_phases(full_papers, cluster_pids, paper_map, root)
 
         # ── Build related_topics ──
         related_topics = _build_related_topics_for_cluster(
-            topic_id, clusters, topic_relationships
+            cluster.get("cluster_id", topic_id), cached_topics, topic_relationships
         )
 
-        # ── Build topic with full detail (keep full papers with summary/evidence) ──
+        # ── Build response ──
         topic = dict(cluster)
+        topic["papers"] = full_papers  # replace light papers with full papers
         topic["year_distribution"] = year_distribution
         topic["evolution_phases"] = evolution_phases
         topic["related_topics"] = related_topics

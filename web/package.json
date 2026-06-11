@@ -9,7 +9,11 @@
     "lint": "eslint",
     "test:summary-parser": "npx tsx scripts/test-summary-parser.ts",
     "test:topic-evolution": "npx tsx scripts/test-topic-evolution.ts",
-    "test:research-map": "npx tsx scripts/test-research-map.ts"
+    "test:research-map": "npx tsx scripts/test-research-map.ts",
+    "test:hotspots": "npx tsx scripts/test-hotspots.ts",
+    "test:no-mock-pages": "npx tsx scripts/test-no-mock-pages.ts",
+    "test:knowledge-network": "npx tsx scripts/test-knowledge-network.ts",
+    "test:report": "npx tsx scripts/test-report.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",

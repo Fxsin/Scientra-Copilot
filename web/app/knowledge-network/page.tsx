@@ -1,217 +1,115 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { Share2, AlertCircle } from "lucide-react";
-import {
-  NetworkGraph,
-  type EdgeDensity,
-  type LabelMode,
-} from "@/components/network-graph";
-import { NetworkToolbar } from "@/components/network-toolbar";
-import { NetworkLegend } from "@/components/network-legend";
-import { NetworkNodeDetail } from "@/components/network-node-detail";
-import { DemoBanner } from "@/components/demo-banner";
-import { useApiWithFallback } from "@/lib/use-api";
+import { useEffect, useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { Share2, ExternalLink, Loader2, AlertCircle, Search, Hash, Filter } from "lucide-react";
 import { getKnowledgeNetwork } from "@/lib/api";
-import {
-  getNetworkData,
-  getResearchGapsByNode,
-  type NetworkMode,
-} from "@/lib/data/researchIntelligenceMock";
-import type { NetworkNode, NetworkLink, KnowledgeNetworkResponse } from "@/lib/types";
+import type { KnowledgeNetworkResponse, KnowledgeNode, KnowledgeEdge } from "@/lib/types";
 
-function buildMockData() {
-  return getNetworkData("concept");
-}
+const GROUP_COLORS: Record<string, string> = {
+  Papers: "bg-slate-50 text-slate-600 border-slate-200",
+  Facets: "bg-indigo-50 text-indigo-600 border-indigo-200",
+  Subtopics: "bg-blue-50 text-blue-600 border-blue-200",
+  Methods: "bg-purple-50 text-purple-600 border-purple-200",
+  Findings: "bg-amber-50 text-amber-600 border-amber-200",
+};
+
+const EDGE_LABELS: Record<string, string> = {
+  paper_belongs_to_subtopic: "Paper → Subtopic",
+  paper_belongs_to_facet: "Paper → Facet",
+  subtopic_belongs_to_facet: "Subtopic → Facet",
+  paper_uses_method: "Uses method",
+  paper_supports_finding: "Supports finding",
+  method_associated_with_subtopic: "Method ↔ Subtopic",
+  finding_associated_with_subtopic: "Finding ↔ Subtopic",
+  subtopic_related_to_subtopic: "Subtopic ↔ Subtopic",
+};
 
 export default function KnowledgeNetworkPage() {
-  const [mode, setMode] = useState<NetworkMode>("concept");
+  const router = useRouter();
+  const [data, setData] = useState<KnowledgeNetworkResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
-  const [activeTypes, setActiveTypes] = useState<string[]>([
-    "paper",
-    "toxin",
-    "host",
-    "mechanism",
-    "method",
-  ]);
-  const [selectedNode, setSelectedNode] = useState<NetworkNode | null>(null);
-  const [edgeDensity, setEdgeDensity] = useState<EdgeDensity>("medium");
-  const [labelMode, setLabelMode] = useState<LabelMode>("important");
 
-  // API-first for concept network
-  const { data: apiNetworkData, dataSource } = useApiWithFallback(
-    getKnowledgeNetwork,
-    { nodes: [], links: [], stats: { node_count: 0, link_count: 0, paper_count: 0, toxin_count: 0, host_count: 0, mechanism_count: 0, method_count: 0 } },
+  useEffect(() => {
+    getKnowledgeNetwork().then(setData).catch((e) => setError(e.message)).finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div className="max-w-6xl mx-auto py-16 text-center"><Loader2 className="size-6 animate-spin mx-auto text-slate-300" /></div>;
+  if (error) return <div className="max-w-6xl mx-auto py-16 text-center"><AlertCircle className="size-8 text-red-300 mx-auto mb-2" /><p className="text-sm text-red-500">{error}</p></div>;
+  if (!data || data.status === "cache_missing") return (
+    <div className="max-w-6xl mx-auto py-16 text-center"><Share2 className="size-8 text-slate-300 mx-auto mb-2" /><h1 className="text-xl font-bold text-slate-700">Knowledge Network</h1><p className="text-sm text-slate-400 mt-2">Research Map cache is not available.</p></div>
   );
 
-  // Use mock for non-concept modes or when API returns empty data
-  const mockData = getNetworkData(mode);
-  const useApi = dataSource === "REAL_API" && apiNetworkData.nodes.length > 0;
-  const rawData = !useApi ? mockData : {
-    nodes: apiNetworkData.nodes.map((n) => ({
-      id: n.id,
-      label: n.label,
-      type: n.type as "Concept" | "Method" | "Finding" | "Paper",
-      color: n.color,
-      size: n.count ?? 8,
-      entityId: n.id,
-      entityType: "concept" as const,
-    })),
-    links: apiNetworkData.links.map((l) => ({
-      source: typeof l.source === "string" ? l.source : (l.source as NetworkNode).id,
-      target: typeof l.target === "string" ? l.target : (l.target as NetworkNode).id,
-      type: l.type,
-      weight: l.weight,
-      label: l.label,
-    })),
-  };
-
-  const nodes: NetworkNode[] = rawData.nodes.map((n) => ({
-    id: n.id,
-    label: n.label,
-    type: n.type === "Finding"
-      ? "mechanism"
-      : (n.type.toLowerCase() as NetworkNode["type"]),
-    color: n.color,
-    count: "size" in n ? n.size : 8,
-    tags: [],
-  }));
-
-  const links: NetworkLink[] = rawData.links.map((l) => ({
-    source: l.source,
-    target: l.target,
-    type: l.type,
-    weight: l.weight,
-    label: l.label,
-  }));
-
-  const selectedRINode = selectedNode
-    ? mockData.nodes.find((n) => n.id === selectedNode.id) ?? null
-    : null;
-  const linkedGaps = selectedRINode
-    ? getResearchGapsByNode(selectedRINode)
-    : [];
-
-  const handleNodeClick = useCallback((node: NetworkNode) => {
-    setSelectedNode(node);
-  }, []);
-
-  const handleTypeToggle = useCallback((type: string) => {
-    setActiveTypes((prev) =>
-      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
-    );
-  }, []);
-
-  const handleReset = useCallback(() => {
-    setSearch("");
-    setActiveTypes(["paper", "toxin", "host", "mechanism", "method"]);
-    setSelectedNode(null);
-    setEdgeDensity("medium");
-    setLabelMode("important");
-  }, []);
-
-  const nodeTypes = ["paper", "toxin", "host", "mechanism", "method"];
+  const groups = data.node_groups || ["Papers", "Facets", "Subtopics", "Methods", "Findings"];
+  const filteredNodes = (data.nodes || []).filter((n: any) => {
+    if (filter !== "All" && n.group !== filter) return false;
+    if (search && !n.label.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
+  const filteredNodeIds = new Set(filteredNodes.map((n: any) => n.id));
+  const filteredEdges = (data.edges || []).filter((e: any) => filteredNodeIds.has(e.source) && filteredNodeIds.has(e.target));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-6xl mx-auto pb-16">
       <div>
-        <div className="flex items-center gap-2 mb-1">
-          <Share2 className="size-5 text-indigo-500" />
-          <h1 className="text-2xl font-bold tracking-tight">
-            Knowledge Network
-          </h1>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          Explore the interconnected knowledge graph of concepts, methods,
-          evidence, and contradictions.
-        </p>
+        <div className="flex items-center gap-2 mb-1"><Share2 className="size-5 text-blue-500" /><h1 className="text-2xl font-bold tracking-tight text-slate-800">Knowledge Network</h1></div>
+        <p className="text-sm text-slate-400">Papers, research facets, methods, findings, and relationships from your literature library.</p>
       </div>
 
-      <DemoBanner dataSource={dataSource} />
+      {/* Stats */}
+      <div className="grid grid-cols-6 gap-2">
+        {[{l:"Papers",v:data.paper_count},{l:"Nodes",v:data.node_count},{l:"Edges",v:data.edge_count},{l:"Facets",v:data.nodes.filter(n=>n.type==="facet").length},{l:"Methods",v:data.nodes.filter(n=>n.type==="method").length},{l:"Findings",v:data.nodes.filter(n=>n.type==="finding").length}].map(s=>(
+          <div key={s.l} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-center"><p className="text-lg font-bold text-slate-700">{s.v}</p><p className="text-[9px] text-slate-400 uppercase">{s.l}</p></div>
+        ))}
+      </div>
 
-      <NetworkToolbar
-        search={search}
-        onSearchChange={setSearch}
-        nodeTypes={nodeTypes}
-        activeTypes={activeTypes}
-        onTypeToggle={handleTypeToggle}
-        onReset={handleReset}
-        stats={{
-          node_count: rawData.nodes.length,
-          link_count: rawData.links.length,
-        }}
-        edgeDensity={edgeDensity}
-        onEdgeDensityChange={setEdgeDensity}
-        labelMode={labelMode}
-        onLabelModeChange={setLabelMode}
-      />
+      {/* Insights */}
+      <div className="rounded-xl border border-slate-200/50 bg-white p-3">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Insights</p>
+        {(data.insights || []).map((ins, i) => <p key={i} className="text-[11px] text-slate-600">· {ins}</p>)}
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <div className="rounded-xl border bg-card overflow-hidden">
-            <NetworkGraph
-              nodes={nodes}
-              links={links}
-              search={search}
-              activeTypes={activeTypes}
-              selectedNode={selectedNode}
-              edgeDensity={edgeDensity}
-              labelMode={labelMode}
-              onNodeClick={handleNodeClick}
-              width={700}
-              height={520}
-            />
-          </div>
-          <div className="mt-3">
-            <NetworkLegend activeTypes={activeTypes} />
-          </div>
-        </div>
+      {/* Controls */}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1"><Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-slate-300" /><input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search nodes..." className="w-full rounded-lg border border-slate-200 pl-8 pr-3 py-1.5 text-[11px] outline-none focus:ring-1 focus:ring-blue-100" /></div>
+        <div className="flex gap-1">{["All",...groups].map(g=><button key={g} onClick={()=>setFilter(g)} className={`text-[10px] px-2 py-1 rounded-md border ${filter===g?"bg-blue-50 text-blue-600 border-blue-200":"border-slate-200 text-slate-400 hover:text-slate-600"}`}>{g}</button>)}</div>
+      </div>
 
-        <div className="space-y-4">
-          <NetworkNodeDetail
-            node={selectedNode}
-            onClose={() => setSelectedNode(null)}
-          />
-
-          {linkedGaps.length > 0 && (
-            <div className="rounded-xl border bg-card p-4 space-y-2">
-              <h4 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-                <AlertCircle className="size-3 text-amber-500" />
-                Connected Research Gaps
-              </h4>
-              {linkedGaps.map((gap) => (
-                <div
-                  key={gap.id}
-                  className="text-xs text-muted-foreground p-2 rounded-md bg-red-50 border border-red-100"
-                >
-                  <p className="font-medium text-red-800">{gap.title}</p>
-                  <p className="mt-0.5 text-red-700">{gap.missingSummary}</p>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className="rounded-xl border bg-card p-4">
-            <h4 className="text-xs font-semibold text-muted-foreground mb-2">
-              Network Stats
-            </h4>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="rounded-md bg-muted p-2 text-center">
-                <span className="block text-lg font-bold">
-                  {rawData.nodes.length}
-                </span>
-                <span className="text-muted-foreground">Nodes</span>
-              </div>
-              <div className="rounded-md bg-muted p-2 text-center">
-                <span className="block text-lg font-bold">
-                  {rawData.links.length}
-                </span>
-                <span className="text-muted-foreground">Links</span>
-              </div>
-            </div>
-          </div>
+      {/* Node list */}
+      <div>
+        <p className="text-xs font-semibold text-slate-500 mb-2">Nodes ({filteredNodes.length})</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1.5">
+          {filteredNodes.slice(0, 60).map((n) => (
+            <button key={n.id} onClick={() => { if (n.type==="paper") router.push(`/paper/${n.id}`); else if (n.type==="subtopic") router.push(`/research-map/topic/${n.id}`); }}
+              className={`text-left rounded-lg border px-2.5 py-2 hover:shadow-sm transition-all truncate ${GROUP_COLORS[n.group||"Papers"]||GROUP_COLORS.Papers} ${(n.type==="paper"||n.type==="subtopic")?"cursor-pointer":""}`}>
+              <p className="text-[10px] font-medium truncate" title={n.label}>{n.label.slice(0,50)}</p>
+              <p className="text-[8px] opacity-60">{n.group} {(n.size||1)>1?`· ${n.size||1}`:""}</p>
+            </button>
+          ))}
         </div>
       </div>
+
+      {/* Relationship table */}
+      <div>
+        <p className="text-xs font-semibold text-slate-500 mb-2">Relationships ({filteredEdges.length})</p>
+        <div className="overflow-x-auto rounded-lg border border-slate-200">
+          <table className="w-full text-[10px]">
+            <thead><tr className="bg-slate-50 text-left text-slate-400"><th className="p-2">Source</th><th className="p-2">Type</th><th className="p-2">Target</th><th className="p-2 text-right">Weight</th></tr></thead>
+            <tbody className="divide-y divide-slate-50">
+              {filteredEdges.slice(0, 50).map((e) => {
+                const src = data.nodes.find(n=>n.id===e.source);
+                const tgt = data.nodes.find(n=>n.id===e.target);
+                return (<tr key={e.id} className="hover:bg-slate-50"><td className="p-2 truncate max-w-[200px]">{src?.label?.slice(0,50)||e.source}</td><td className="p-2"><span className="text-[9px] px-1 py-0.5 rounded bg-slate-100">{EDGE_LABELS[e.type]||e.type}</span></td><td className="p-2 truncate max-w-[200px]">{tgt?.label?.slice(0,50)||e.target}</td><td className="p-2 text-right text-slate-400">{(e.weight*100).toFixed(0)}%</td></tr>);
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <p className="text-center text-[9px] text-slate-300">Generated from Research Map cache · {data.source}</p>
     </div>
   );
 }

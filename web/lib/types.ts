@@ -138,6 +138,8 @@ export interface NetworkNode {
   id: string;
   label: string;
   type: string;
+  group?: string;
+  size?: number;
   color?: string;
   count?: number;
   x?: number;
@@ -158,9 +160,16 @@ export interface NetworkLink {
 }
 
 export interface KnowledgeNetworkResponse {
-  nodes: NetworkNode[];
-  links: NetworkLink[];
-  stats: {
+  status?: string; source?: string; paper_count?: number;
+  node_count?: number; edge_count?: number;
+  generated_at?: string;
+  nodes: NetworkNode[] | KnowledgeNode[];
+  links?: NetworkLink[];
+  edges?: KnowledgeEdge[];
+  node_groups?: string[];
+  insights?: string[];
+  message?: string;
+  stats?: {
     node_count: number;
     link_count: number;
     paper_count: number;
@@ -203,6 +212,29 @@ export interface ResearchMapTopic {
   related_topics?: RelatedTopicRef[];
   cohesion_score?: number;
   cohesion_label?: string;
+  facet_distribution?: FacetDistributionItem[];
+  is_merged?: boolean;
+  subtopics?: SubtopicRef[];
+  merge_info?: {
+    merged_from: string[];
+    merge_reason: string;
+    max_similarity: number;
+  } | null;
+  merged_into?: {
+    from_cluster_id: string;
+    parent_cluster_id: string;
+    message: string;
+  };
+}
+
+export interface SubtopicRef {
+  cluster_id: string;
+  name: string;
+  paper_count: number;
+  keywords: string[];
+  year_range: [number, number] | number[];
+  merge_reason: string;
+  similarity_to_parent: number;
 }
 
 export interface TopicPaper {
@@ -217,6 +249,24 @@ export interface TopicPaper {
   topic_relevance?: number;
   relevance_label?: "high" | "medium" | "low";
   relevance_reason?: string;
+  research_facets?: ResearchFacet[];
+}
+
+export interface ResearchFacet {
+  facet: string;
+  label: string;
+  score: number;
+  confidence: "high" | "medium" | "low";
+  matched_terms: string[];
+  evidence_sources: string[];
+}
+
+export interface FacetDistributionItem {
+  facet: string;
+  label: string;
+  paper_count: number;
+  ratio: number;
+  top_papers?: { paper_id: string; title: string }[];
 }
 
 export interface YearCount { year: number; count: number; }
@@ -327,13 +377,128 @@ export interface PaperEvidence {
 }
 
 export interface EvidenceChunkItem {
-  chunk_id: string; paper_id: string; chunk_type: string; text: string;
+  chunk_id?: string; paper_id: string; chunk_type: string; text: string;
   source_section?: string; quote?: string; confidence?: string;
   title?: string; year?: number | null; journal?: string | null; score?: number;
 }
 
+export type EvidenceChunkType =
+  | "all" | "key_result" | "core_finding" | "discussion_point"
+  | "method" | "limitation" | "open_question" | "claim";
+
+export interface EvidenceQueryRequest {
+  query: string;
+  limit?: number;
+  chunk_type?: EvidenceChunkType;
+}
+
+export interface EvidenceSearchResult {
+  chunk_id?: string;
+  paper_id: string;
+  title?: string;
+  year?: number | null;
+  journal?: string | null;
+  chunk_type: string;
+  text: string;
+  quote?: string;
+  source_section?: string;
+  confidence?: string;
+  score?: number;
+}
+
+/* ── /hotspots ── */
+
+export interface TrendingTopic {
+  id: string; name: string; facet: string; facet_label: string;
+  paper_count: number; recent_paper_count: number; recent_ratio: number;
+  year_range: number[]; latest_year: number; growth_score: number;
+  trend_label: "hot" | "active" | "stable" | "dormant";
+  evidence_coverage: { structured: number; total: number; ratio: number };
+  top_keywords: string[]; representative_papers: any[];
+}
+
+export interface HotPaper {
+  paper_id: string; title: string; year: number | null; journal: string;
+  topic_name: string; score: number; reason: string;
+  evidence_counts: { key_results: number; core_findings: number; methods: number; discussion_points: number };
+}
+
+export interface EmergingFacet {
+  facet: string; label: string; paper_count: number; recent_paper_count: number;
+  recent_ratio: number; subtopic_count: number; trend_label: string;
+  evidence_coverage_ratio: number; top_subtopics: string[];
+}
+
+/* ── /research-gaps ── */
+
+export interface ResearchGap {
+  id: string; title: string; gap_type: string; description: string;
+  facet?: string; facet_label?: string; subtopic?: string;
+  paper_count?: number; ratio?: number; evidence_coverage?: number;
+  method_count?: number;
+  confidence: number; impact: number; feasibility: number;
+  suggested_action: string;
+}
+
+export interface ResearchGapsResponse {
+  status: string; source: string; paper_count: number; gap_count: number;
+  gaps: ResearchGap[];
+  message?: string;
+}
+
+/* ── /knowledge-network ── */
+
+export interface KnowledgeNode { id: string; type: string; label: string; group: string; size: number; metadata?: Record<string, unknown>; }
+export interface KnowledgeEdge { id: string; source: string; target: string; type: string; weight: number; metadata?: Record<string, unknown>; }
+/* ── /report ── */
+
+export interface ReportSection { id: string; title: string; summary: string; items: any[]; }
+export interface ReportResponse {
+  status: string; source: string; generated_at: string; paper_count: number;
+  report_title: string; executive_summary: string[]; coverage_summary: any;
+  research_map_summary: any; hotspots_summary: any; research_gaps_summary: any;
+  knowledge_network_summary: any; evidence_summary: any;
+  recommended_actions: string[]; sections: ReportSection[];
+  message?: string;
+}
+
+export interface HotspotsResponse {
+  status: string; source: string; paper_count: number; generated_at: string;
+  trending_topics: TrendingTopic[]; hot_papers: HotPaper[];
+  emerging_facets: EmergingFacet[]; method_shifts: any[];
+  evidence_signals: { chunk_type_distribution: Record<string, number> };
+  insights: string[];
+  message?: string;
+}
+
+export interface EvidenceQueryResponse {
+  results: EvidenceSearchResult[];
+  source: string;
+}
+
 export interface EvidenceChunksResponse { paper_id?: string; chunks: EvidenceChunkItem[]; chunk_count: number; }
-export interface EvidenceQueryResponse { results: EvidenceChunkItem[]; source: string; }
+
+/** Human-readable chunk type labels */
+export const CHUNK_TYPE_LABELS: Record<string, string> = {
+  all: "All",
+  key_result: "Key result",
+  core_finding: "Core finding",
+  discussion_point: "Discussion",
+  method: "Method",
+  limitation: "Limitation",
+  open_question: "Open question",
+  claim: "Claim",
+};
+
+export const CHUNK_TYPE_COLORS: Record<string, string> = {
+  key_result: "bg-emerald-50 text-emerald-600 border-emerald-200",
+  core_finding: "bg-blue-50 text-blue-600 border-blue-200",
+  discussion_point: "bg-purple-50 text-purple-600 border-purple-200",
+  method: "bg-amber-50 text-amber-600 border-amber-200",
+  limitation: "bg-red-50 text-red-600 border-red-200",
+  open_question: "bg-cyan-50 text-cyan-600 border-cyan-200",
+  claim: "bg-slate-100 text-slate-500 border-slate-200",
+};
 
 export interface RelatedPaper {
   paper_id: string;

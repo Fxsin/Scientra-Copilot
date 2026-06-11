@@ -1,252 +1,64 @@
 "use client";
 
-import { useState } from "react";
-import { DemoBanner } from "@/components/demo-banner";
-import {
-  GitBranch,
-  ChevronRight,
-  ChevronDown,
-  BookOpen,
-  Beaker,
-  AlertCircle,
-  Sparkles,
-  TrendingUp,
-  Link2,
-} from "lucide-react";
-import {
-  mockTopicTree,
-  mockTopicDetails,
-  getDefaultTopicDetail,
-  getResearchGapsByTopicId,
-  type TopicTreeNode,
-  type TopicDetail,
-} from "@/lib/data/researchIntelligenceMock";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Layers, ExternalLink, Loader2 } from "lucide-react";
+import { getResearchMap } from "@/lib/api";
 
 export default function TopicExplorerPage() {
-  const [selectedId, setSelectedId] = useState<string>("topic_pore_formation");
+  const router = useRouter();
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const topicDetail =
-    mockTopicDetails[selectedId] ??
-    getDefaultTopicDetail(selectedId.replace(/^topic_/, ""));
-  const linkedGaps = getResearchGapsByTopicId(selectedId);
+  useEffect(() => {
+    getResearchMap().then(setData).catch(() => {}).finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div className="max-w-4xl mx-auto py-16 text-center"><Loader2 className="size-6 animate-spin mx-auto text-slate-300" /></div>;
+
+  const fgs = data?.facet_groups || [];
+
+  if (fgs.length === 0) return (
+    <div className="max-w-4xl mx-auto py-16 text-center">
+      <Layers className="size-8 text-slate-300 mx-auto mb-2" />
+      <h1 className="text-xl font-bold text-slate-700">Topic Explorer</h1>
+      <p className="text-sm text-slate-400 mt-2 max-w-md mx-auto">Research Map cache is not available. Rebuild the Research Map first.</p>
+      <button onClick={() => router.push("/research-map")} className="mt-4 text-sm text-blue-600 hover:underline">Open Research Map</button>
+      <p className="text-[10px] text-slate-300 mt-4">This module is not yet connected to your literature database.</p>
+    </div>
+  );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-4xl mx-auto pb-16">
       <div>
-        <div className="flex items-center gap-2 mb-1">
-          <GitBranch className="size-5 text-purple-500" />
-          <h1 className="text-2xl font-bold tracking-tight">Topic Explorer</h1>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          Browse the research topic hierarchy and explore definitions, findings,
-          and connections.
-        </p>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-800 flex items-center gap-2"><Layers className="size-5 text-slate-400" />Topic Explorer</h1>
+        <p className="text-sm text-slate-400 mt-1">Browse topics across research facets from your literature library.</p>
       </div>
 
-      <DemoBanner />
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1">
-          <div className="rounded-xl border bg-card p-4">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-              Topic Tree
-            </h2>
-            {mockTopicTree.map((node) => (
-              <TreeNodeRenderer
-                key={node.id}
-                node={node}
-                selectedId={selectedId}
-                onSelect={setSelectedId}
-              />
-            ))}
+      {fgs.map((fg: any) => (
+        <div key={fg.facet} className="rounded-xl border border-slate-200/50 bg-white overflow-hidden">
+          <div className="bg-slate-50 px-4 py-2.5 border-b border-slate-100 flex items-center justify-between">
+            <span className="text-[13px] font-bold text-slate-700">{fg.label}</span>
+            <span className="text-[10px] text-slate-400">{fg.paper_count} papers · {fg.subtopics?.length || 0} subtopics</span>
+          </div>
+          <div className="p-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {(fg.subtopics || []).map((st: any) => (
+                <button key={st.cluster_id} onClick={() => router.push(`/research-map/topic/${st.cluster_id}`)}
+                  className="text-left rounded-lg border border-slate-200 bg-white p-3 hover:shadow-sm hover:border-blue-200 transition-all group">
+                  <p className="text-[12px] font-semibold text-slate-700 group-hover:text-blue-600 leading-snug">{st.name}</p>
+                  <div className="flex items-center gap-2 mt-1 text-[10px] text-slate-400">
+                    <span>{st.paper_count} papers</span>
+                    {st.evidence_coverage > 0 && <><span className="text-slate-300">·</span><span className="text-emerald-500">Ev {st.evidence_coverage}/{st.paper_count}</span></>}
+                  </div>
+                  <div className="flex items-center gap-1 mt-1.5 text-[9px] text-blue-500">
+                    <ExternalLink className="size-2.5" /> View details
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-
-        <div className="lg:col-span-2 space-y-4">
-          <div className="rounded-xl border bg-card p-6 space-y-4">
-            <h3 className="text-lg font-semibold">
-              {topicDetail.id.replace(/_/g, " ")}
-            </h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {topicDetail.definition}
-            </p>
-
-            <div className="flex items-center gap-2">
-              <SignalStrength value={topicDetail.evidenceStrength} />
-              <span className="text-xs text-muted-foreground">
-                Evidence Strength
-              </span>
-            </div>
-
-            <div className="flex items-start gap-2 text-xs text-muted-foreground">
-              <TrendingUp className="size-3 mt-0.5 shrink-0" />
-              <span>{topicDetail.recentActivity}</span>
-            </div>
-
-            <Section title="Key Findings" icon={Sparkles}>
-              <ul className="list-disc list-inside space-y-1">
-                {topicDetail.keyFindings.map((f, i) => (
-                  <li key={i} className="text-sm text-muted-foreground">
-                    {f}
-                  </li>
-                ))}
-              </ul>
-            </Section>
-
-            <Section title="Related Methods" icon={Beaker}>
-              <div className="flex flex-wrap gap-1.5">
-                {topicDetail.relatedMethods.map((m) => (
-                  <span
-                    key={m}
-                    className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium"
-                  >
-                    {m}
-                  </span>
-                ))}
-              </div>
-            </Section>
-
-            <Section title="Unresolved Questions" icon={AlertCircle}>
-              <ul className="space-y-1">
-                {topicDetail.unresolvedQuestions.map((q, i) => (
-                  <li
-                    key={i}
-                    className="text-sm text-muted-foreground flex items-start gap-2"
-                  >
-                    <span className="text-amber-500 mt-1 shrink-0">?</span>
-                    {q}
-                  </li>
-                ))}
-              </ul>
-            </Section>
-
-            {linkedGaps.length > 0 && (
-              <Section title="Connected Research Gaps" icon={Link2}>
-                <ul className="space-y-1">
-                  {linkedGaps.map((g) => (
-                    <li
-                      key={g.id}
-                      className="text-sm text-red-600 flex items-start gap-2"
-                    >
-                      <AlertCircle className="size-3 mt-1 shrink-0" />
-                      {g.title}
-                    </li>
-                  ))}
-                </ul>
-              </Section>
-            )}
-
-            <Section title="Suggested Reading Order" icon={BookOpen}>
-              <ol className="list-decimal list-inside space-y-1">
-                {topicDetail.suggestedReadingOrder.map((r, i) => (
-                  <li key={i} className="text-sm text-muted-foreground">
-                    {r}
-                  </li>
-                ))}
-              </ol>
-            </Section>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function TreeNodeRenderer({
-  node,
-  selectedId,
-  onSelect,
-  depth = 0,
-}: {
-  node: TopicTreeNode;
-  selectedId: string;
-  onSelect: (id: string) => void;
-  depth?: number;
-}) {
-  const [open, setOpen] = useState(depth < 1);
-  const hasChildren = node.children && node.children.length > 0;
-  const isSelected = node.id === selectedId;
-
-  return (
-    <div>
-      <button
-        onClick={() => {
-          if (hasChildren) setOpen(!open);
-          onSelect(node.id);
-        }}
-        className={`flex items-center gap-1.5 w-full text-left py-1 px-2 rounded-md text-sm transition-colors ${
-          isSelected
-            ? "bg-primary/10 text-primary font-medium"
-            : "hover:bg-muted text-foreground"
-        }`}
-        style={{ paddingLeft: `${depth * 16 + 8}px` }}
-      >
-        {hasChildren ? (
-          open ? (
-            <ChevronDown className="size-3 shrink-0 text-muted-foreground" />
-          ) : (
-            <ChevronRight className="size-3 shrink-0 text-muted-foreground" />
-          )
-        ) : (
-          <span className="w-3" />
-        )}
-        {node.label}
-      </button>
-      {open &&
-        hasChildren &&
-        node.children!.map((child) => (
-          <TreeNodeRenderer
-            key={child.id}
-            node={child}
-            selectedId={selectedId}
-            onSelect={onSelect}
-            depth={depth + 1}
-          />
-        ))}
-    </div>
-  );
-}
-
-function Section({
-  title,
-  icon: Icon,
-  children,
-}: {
-  title: string;
-  icon: React.ComponentType<{ className?: string }>;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="border-t pt-3">
-      <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
-        <Icon className="size-3.5" />
-        {title}
-      </p>
-      {children}
-    </div>
-  );
-}
-
-function SignalStrength({ value }: { value: number }) {
-  const bars = Math.ceil(value / 25);
-  return (
-    <div className="flex items-end gap-0.5 h-4">
-      {[1, 2, 3, 4].map((n) => (
-        <div
-          key={n}
-          className={`w-1.5 rounded-t-sm transition-colors ${
-            n <= bars
-              ? value >= 75
-                ? "bg-emerald-500"
-                : value >= 50
-                  ? "bg-blue-500"
-                  : value >= 25
-                    ? "bg-amber-500"
-                    : "bg-red-500"
-              : "bg-slate-200"
-          }`}
-          style={{ height: `${n * 4}px` }}
-        />
       ))}
     </div>
   );

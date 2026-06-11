@@ -348,7 +348,7 @@ export async function getRelatedPapers(
   ).then((r) => r.data);
 }
 
-export async function getKnowledgeNetwork(
+export async function getKnowledgeNetworkLegacy(
   limit = 500,
 ): Promise<KnowledgeNetworkResponse> {
   return fetchJson<KnowledgeNetworkResponse>(
@@ -414,6 +414,28 @@ export async function getResearchMapTopic(topicId: string): Promise<{ topic: Res
   return fetchJson<{ topic: ResearchMapTopic }>(`/research-map/topic/${encodeURIComponent(topicId)}`).then((r) => r.data);
 }
 
+import type { HotspotsResponse } from "./types";
+
+import type { ResearchGapsResponse } from "./types";
+
+export async function getResearchGaps(): Promise<ResearchGapsResponse> {
+  return fetchJson<ResearchGapsResponse>("/research-gaps").then((r) => r.data);
+}
+
+import type { ReportResponse } from "./types";
+
+export async function getReport(): Promise<ReportResponse> {
+  return fetchJson<ReportResponse>("/report").then((r) => r.data);
+}
+
+export async function getKnowledgeNetwork(): Promise<KnowledgeNetworkResponse> {
+  return fetchJson<KnowledgeNetworkResponse>("/knowledge-network").then((r) => r.data);
+}
+
+export async function getHotspots(): Promise<HotspotsResponse> {
+  return fetchJson<HotspotsResponse>("/hotspots").then((r) => r.data);
+}
+
 export function getPaperEvidence(paperId: string): Promise<PaperEvidence> {
   return fetchJson<PaperEvidence>(`/paper/${encodeURIComponent(paperId)}/evidence`).then((r) => r.data);
 }
@@ -422,8 +444,19 @@ export function getPaperEvidenceChunks(paperId: string): Promise<EvidenceChunksR
   return fetchJson<EvidenceChunksResponse>(`/paper/${encodeURIComponent(paperId)}/evidence-chunks`).then((r) => r.data);
 }
 
-export async function queryEvidence(payload: { query: string; limit?: number; chunk_type?: string }): Promise<EvidenceQueryResponse> {
-  return fetchJson<EvidenceQueryResponse>("/query/evidence", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then((r) => r.data);
+import type { EvidenceQueryRequest, EvidenceQueryResponse as EvidenceQueryResponseType } from "./types";
+
+export async function queryEvidence(payload: EvidenceQueryRequest): Promise<EvidenceQueryResponseType> {
+  // Normalize: don't send chunk_type if "all"
+  const body: Record<string, unknown> = { query: payload.query, limit: payload.limit || 10 };
+  if (payload.chunk_type && payload.chunk_type !== "all") {
+    body.chunk_type = payload.chunk_type;
+  }
+  return fetchJson<EvidenceQueryResponseType>("/query/evidence", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  }).then((r) => r.data);
 }
 
 /** Exposed via `export const` at the top of this file. */

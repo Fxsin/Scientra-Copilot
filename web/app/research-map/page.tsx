@@ -127,9 +127,12 @@ export default function ResearchMapPage() {
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<string>("all");
+  const [facetFilter, setFacetFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<string>("paper_count");
   const [density, setDensity] = useState<string>("compact");
+  const [viewMode, setViewMode] = useState<"facet" | "topic">("facet");
+  const facetGroups = (data as any).facet_groups || [];
 
   // Merge all topics
   const allTopics: ResearchMapTopic[] = useMemo(() => {
@@ -152,6 +155,12 @@ export default function ResearchMapPage() {
     if (filterType === "mature") topics = topics.filter((t) => t.type === "mature");
     if (filterType === "growing") topics = topics.filter((t) => t.type === "growing");
     if (filterType === "gap") topics = topics.filter((t) => t.type === "gap");
+    if (facetFilter !== "all") {
+      topics = topics.filter((t) => {
+        const fd = t.facet_distribution || [];
+        return fd.some((f: any) => f.facet === facetFilter && f.paper_count > 0);
+      });
+    }
     if (search.trim()) {
       const q = search.toLowerCase();
       topics = topics.filter((t) => {
@@ -233,23 +242,88 @@ export default function ResearchMapPage() {
               className="text-[11px] text-slate-400 hover:text-slate-600 border border-slate-200 rounded-lg px-2 py-2 bg-white">
               {density === "compact" ? "Comfortable" : "Compact"}
             </button>
+            {/* View mode toggle */}
+            <div className="flex rounded-lg border border-slate-200 bg-white p-0.5">
+              <button onClick={() => setViewMode("facet")}
+                className={`px-2.5 py-1 text-[11px] rounded-md ${viewMode === "facet" ? "bg-indigo-100 text-indigo-700 font-medium" : "text-slate-400 hover:text-slate-600"}`}>Facet View</button>
+              <button onClick={() => setViewMode("topic")}
+                className={`px-2.5 py-1 text-[11px] rounded-md ${viewMode === "topic" ? "bg-indigo-100 text-indigo-700 font-medium" : "text-slate-400 hover:text-slate-600"}`}>Topic View</button>
+            </div>
           </div>
 
-          {/* Topic cards */}
-          {filtered.length === 0 ? (
-            <p className="text-sm text-slate-400 py-8 text-center">No topics match the current search.</p>
-          ) : (
-            <div className={`grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 ${density === "compact" ? "gap-2" : "gap-3.5"}`}>
-              {filtered.map((topic) => (
-                <TopicCard
-                  key={tid(topic)}
-                  topic={topic}
-                  selected={selectedId === (tid(topic))}
-                  onClick={() => setSelectedId(tid(topic) || null)}
-                  onPaperClick={(pid) => router.push(`/paper/${pid}`)}
+          {/* Facet filter */}
+          <div className="flex flex-wrap gap-1">
+            {[
+              { key: "all", label: "All facets" },
+              { key: "bioactivity_phenotype", label: "Bioactivity" },
+              { key: "structure_modeling", label: "Structure" },
+              { key: "domain_mutagenesis_engineering", label: "Domain/Eng." },
+              { key: "target_binding_interaction", label: "Binding" },
+              { key: "resistance_genetics_adaptation", label: "Resistance" },
+              { key: "expression_production_application", label: "Expression" },
+              { key: "omics_response_profiling", label: "Omics" },
+              { key: "method_resource_review", label: "Method/Review" },
+            ].map((f) => (
+              <button
+                key={f.key}
+                onClick={() => setFacetFilter(f.key)}
+                className={`text-[9px] px-2 py-0.5 rounded-full border transition-colors ${
+                  facetFilter === f.key
+                    ? "bg-indigo-50 text-indigo-600 border-indigo-200 font-medium"
+                    : "border-slate-200 text-slate-400 hover:text-slate-600"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Facet View */}
+          {viewMode === "facet" && facetGroups.length > 0 && (
+            <div className="space-y-4">
+              {facetGroups.filter((fg: any) => {
+                if (facetFilter !== "all" && fg.facet !== facetFilter) return false;
+                if (search.trim()) {
+                  const q = search.toLowerCase();
+                  const label = (fg.label || "").toLowerCase();
+                  const kw = (fg.keywords || []).join(" ").toLowerCase();
+                  return label.includes(q) || kw.includes(q);
+                }
+                return true;
+              }).map((fg: any) => (
+                <FacetGroupSection
+                  key={fg.facet}
+                  facetGroup={fg}
+                  onSubtopicClick={(id: string) => router.push(`/research-map/topic/${id}`)}
+                  onPaperClick={(pid: string) => router.push(`/paper/${pid}`)}
                 />
               ))}
+              {facetGroups.filter((fg: any) => {
+                if (facetFilter !== "all" && fg.facet !== facetFilter) return false;
+                return true;
+              }).length === 0 && (
+                <p className="text-sm text-slate-400 py-8 text-center">No facet groups match the current filters.</p>
+              )}
             </div>
+          )}
+
+          {/* Topic View — existing topic cards */}
+          {(viewMode === "topic" || facetGroups.length === 0) && (
+            filtered.length === 0 ? (
+              <p className="text-sm text-slate-400 py-8 text-center">No topics match the current search.</p>
+            ) : (
+              <div className={`grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 ${density === "compact" ? "gap-2" : "gap-3.5"}`}>
+                {filtered.map((topic) => (
+                  <TopicCard
+                    key={tid(topic)}
+                    topic={topic}
+                    selected={selectedId === (tid(topic))}
+                    onClick={() => setSelectedId(tid(topic) || null)}
+                    onPaperClick={(pid) => router.push(`/paper/${pid}`)}
+                  />
+                ))}
+              </div>
+            )
           )}
         </div>
 
@@ -314,6 +388,67 @@ function FilterTabs({ current, onChange }: { current: string; onChange: (v: stri
   );
 }
 
+/* ─── Facet Group Section ─── */
+
+function FacetGroupSection({ facetGroup, onSubtopicClick, onPaperClick }: {
+  facetGroup: any;
+  onSubtopicClick: (id: string) => void;
+  onPaperClick: (pid: string) => void;
+}) {
+  const subtopics = facetGroup.subtopics || [];
+
+  return (
+    <div className="rounded-xl border border-indigo-100 bg-white/80 shadow-sm overflow-hidden">
+      {/* Facet header */}
+      <div className="bg-indigo-50/50 px-4 py-2.5 border-b border-indigo-100 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-[13px] font-bold text-indigo-700">{facetGroup.label}</span>
+          <span className="text-[10px] text-indigo-400">{facetGroup.paper_count} papers · {Math.round((facetGroup.ratio || 0) * 100)}%</span>
+        </div>
+        <span className="text-[9px] text-indigo-400">{subtopics.length} subtopic{subtopics.length !== 1 ? "s" : ""}</span>
+      </div>
+
+      {/* Subtopic cards */}
+      <div className="p-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
+          {subtopics.map((st: any) => (
+            <button
+              key={st.cluster_id}
+              onClick={() => onSubtopicClick(st.cluster_id)}
+              className="text-left rounded-lg border border-slate-200 bg-white p-3 hover:shadow-md hover:border-indigo-200 transition-all cursor-pointer group"
+            >
+              <p className="text-[12px] font-semibold text-slate-700 group-hover:text-indigo-600 leading-snug line-clamp-2">
+                {st.name}
+              </p>
+              <div className="flex items-center gap-2 mt-1.5 text-[10px] text-slate-400">
+                <span>{st.paper_count} papers</span>
+                {st.year_range && st.year_range.length === 2 && (
+                  <><span className="text-slate-300">·</span><span>{st.year_range[0]}–{st.year_range[1]}</span></>
+                )}
+                {typeof st.evidence_coverage === "number" && st.evidence_coverage > 0 && (
+                  <><span className="text-slate-300">·</span><span className="text-emerald-500">Ev {st.evidence_coverage}/{st.paper_count}</span></>
+                )}
+              </div>
+              {(st.keywords || []).length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1.5">
+                  {st.keywords.slice(0, 3).map((k: string) => (
+                    <span key={k} className="text-[8px] px-1.5 py-0.5 rounded bg-slate-50 border border-slate-100 text-slate-500">{k}</span>
+                  ))}
+                </div>
+              )}
+              {st.representative_papers && st.representative_papers.length > 0 && (
+                <p className="mt-2 text-[9px] text-slate-400 line-clamp-1">
+                  <span className="text-slate-300">Top: </span>{st.representative_papers[0].title}
+                </p>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Topic Card ─── */
 
 function TopicCard({ topic, selected, onClick, onPaperClick }: { topic: ResearchMapTopic; selected: boolean; onClick: () => void; onPaperClick: (pid: string) => void }) {
@@ -330,9 +465,14 @@ function TopicCard({ topic, selected, onClick, onPaperClick }: { topic: Research
         {/* Header */}
         <div className="flex items-start justify-between gap-1.5">
           <h3 className="text-[13px] font-semibold text-slate-800 leading-snug line-clamp-2 flex-1">{topic.name || `Topic ${id.slice(-3)}`}</h3>
-          <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium shrink-0 ${typeColors[topic.type || "mature"] || typeColors.mature}`}>
-            {topic.type || "mature"}{trend.label !== "unknown" ? ` · ${trend.label}` : ""}
-          </span>
+          <div className="flex items-center gap-1 shrink-0">
+            {topic.is_merged && (
+              <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-purple-50 text-purple-600 font-medium">Merged</span>
+            )}
+            <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${typeColors[topic.type || "mature"] || typeColors.mature}`}>
+              {topic.type || "mature"}{trend.label !== "unknown" ? ` · ${trend.label}` : ""}
+            </span>
+          </div>
         </div>
 
         {/* Meta */}
@@ -341,6 +481,7 @@ function TopicCard({ topic, selected, onClick, onPaperClick }: { topic: Research
           <span className="text-slate-300">·</span>
           {topic.year_range && topic.year_range.length === 2 && <span>{topic.year_range[0]}–{topic.year_range[1]}</span>}
           {!topic.year_range && topic.avg_year && <span>~{Math.round(topic.avg_year)}</span>}
+          {(topic.subtopics || []).length > 0 && <><span className="text-slate-300">·</span><span className="text-purple-500">{(topic.subtopics || []).length} subtopic{(topic.subtopics || []).length !== 1 ? "s" : ""}</span></>}
           {/* Evidence mini indicator */}
           {papers.length > 0 && (
             <>
@@ -374,6 +515,16 @@ function TopicCard({ topic, selected, onClick, onPaperClick }: { topic: Research
           <p className="mt-2 pt-2 border-t border-slate-100 text-[10px] text-slate-500 leading-snug line-clamp-2">
             <span className="text-slate-300 mr-1">Top:</span>{papers[0].title}
           </p>
+        )}
+        {/* Top facets */}
+        {((topic as any).facet_distribution || []).length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-1.5">
+            {(topic as any).facet_distribution.slice(0, 2).map((fd: any) => (
+              <span key={fd.facet} className="inline-flex rounded border border-indigo-200/60 bg-indigo-50/50 px-1.5 py-0.5 text-[8px] text-indigo-500">
+                {fd.label.split(" / ")[0]} {Math.round(fd.ratio * 100)}%
+              </span>
+            ))}
+          </div>
         )}
         {papers.length === 0 && <p className="mt-2 text-[10px] text-slate-300 italic">No papers in cluster</p>}
       </div>
@@ -470,6 +621,25 @@ function TopicDetailPanel({ topic, relatedTopics, allTopics, onTopicClick, onPap
           <p className="text-xs text-slate-300 italic">No representative papers available.</p>
         )}
       </div>
+
+      {/* Subtopics (for merged topics) */}
+      {(topic.subtopics || []).length > 0 && (
+        <div className="p-4">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Subtopics ({(topic.subtopics || []).length})</p>
+          <div className="space-y-1.5">
+            {(topic.subtopics || []).map((st: any) => (
+              <div key={st.cluster_id} className="text-[10px] bg-slate-50 rounded-md p-2">
+                <p className="font-medium text-slate-700">{st.name}</p>
+                <p className="text-slate-400">{st.paper_count} papers · {(st.keywords || []).slice(0, 3).join(", ")}</p>
+                <p className="text-[9px] text-slate-400 mt-0.5">Sim: {(st.similarity_to_parent * 100).toFixed(0)}%</p>
+              </div>
+            ))}
+          </div>
+          {topic.merge_info && (
+            <p className="text-[9px] text-slate-400 mt-2 italic">{topic.merge_info.merge_reason}</p>
+          )}
+        </div>
+      )}
 
       {/* Related topics */}
       <div className="p-4">
