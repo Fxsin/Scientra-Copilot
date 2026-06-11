@@ -80,6 +80,39 @@ def _load_yaml_metadata(root: Path) -> list[dict[str, Any]]:
     return papers
 
 
+def _build_related_results(root: Path, neighbors: list[dict[str, Any]], source: str) -> list[dict[str, Any]]:
+    """Map LanceDB search results to related-paper objects with metadata."""
+    papers = {p.get("paper_id"): p for p in _load_yaml_metadata(root)}
+    results: list[dict[str, Any]] = []
+    for row in neighbors:
+        pid = str(row.get("paper_id", ""))
+        p = papers.get(pid)
+        if not p:
+            # Fallback: use fields from the vector row
+            results.append({
+                "paper_id": pid,
+                "title": str(row.get("title", row.get("text", ""))[:200]),
+                "authors": [],
+                "year": row.get("year"),
+                "journal": str(row.get("journal", "")),
+                "doi": str(row.get("doi", "")),
+                "similarity": round(1.0 - float(row.get("_distance", 0.0)), 4),
+                "reason": f"Vector similarity based on paper embedding",
+            })
+        else:
+            results.append({
+                "paper_id": pid,
+                "title": p.get("title", ""),
+                "authors": p.get("authors", []) or [],
+                "year": p.get("year"),
+                "journal": p.get("journal", ""),
+                "doi": p.get("doi", ""),
+                "similarity": round(1.0 - float(row.get("_distance", 0.0)), 4),
+                "reason": "Vector similarity based on paper embedding",
+            })
+    return results
+
+
 def _load_summary_snippet(root: Path, paper_id: str, max_chars: int = 200) -> str | None:
     """Return a short text snippet from the summary, or None."""
     text = _load_summary_text(root, paper_id)
@@ -398,8 +431,150 @@ def create_app(root: Path | None = None) -> FastAPI:
     # ── /paper/{id}/related ──
 
     @api.get("/paper/{paper_id}/related")
-    def paper_related(paper_id: str, limit: int = 5, mode: str = "hybrid") -> dict[str, Any]:
-        return {"paper_id": paper_id, "related": [], "mode": mode, "limit": limit}
+    def paper_related(paper_id: str, limit: int = 5) -> dict[str, Any]:
+        limit = max(1, min(limit, 20))
+
+        # ── Attempt vector search ──
+        try:
+            import lancedb
+
+            db_dir = root / "04_VectorDB" / "lancedb"
+            if db_dir.exists() and any(db_dir.iterdir()):
+                db = lancedb.connect(str(db_dir))
+                table_names = db.table_names()
+                if table_names:
+                    table = db.open_table(table_names[0])
+
+                    # Find query paper's vector — use to_pandas() or fallback
+                    query_rows: list[dict[str, Any]] = []
+                    try:
+                        df = table.to_pandas()
+                        query_rows = [r for r in df.to_dict("records")
+                                      if str(r.get("paper_id")) == paper_id][:1]
+                    except Exception:
+                        pass
+
+                    if query_rows and query_rows[0].get("vector") is not None:
+                        qv = query_rows[0]["vector"]
+                        # Search neighbors
+                        raw = table.search(qv).limit(limit + 10).to_list()
+
+                        # Exclude self, take top N
+                        neighbors = [
+                            r for r in raw
+                            if str(r.get("paper_id", "")) != paper_id
+                        ][:limit]
+
+                        if neighbors:
+                            related = _build_related_results(root, neighbors, source="vector")
+                            return {
+                                "paper_id": paper_id,
+                                "related": related,
+                                "source": "vector",
+                                "count": len(related),
+                                "reason": None,
+                            }
+        except Exception:
+            pass  # fall through to keyword fallback
+
+        # ── Keyword fallback ──
+        papers = _load_yaml_metadata(root)
+        current = next((p for p in papers if p.get("paper_id") == paper_id), None)
+
+        if current:
+            # Build query text from available fields
+            query_parts: list[str] = []
+            for field in ["title", "abstract", "journal"]:
+                val = current.get(field)
+                if val and isinstance(val, str):
+                    query_parts.append(val)
+            for field in ["tags", "toxin", "species", "method", "mechanism"]:
+                vals = current.get(field) or []
+                if isinstance(vals, list):
+                    query_parts.extend(str(v) for v in vals)
+            # Also include summary
+            summary_text = _load_summary_text(root, paper_id)
+            if summary_text:
+                query_parts.append(summary_text)
+
+            if query_parts:
+                query_text = " ".join(query_parts)
+                # Tokenize: lowercase, split, remove short tokens and stopwords
+                STOPWORDS = {
+                    "the", "a", "an", "of", "in", "on", "at", "to", "for", "with",
+                    "and", "or", "is", "are", "was", "were", "be", "been", "being",
+                    "have", "has", "had", "do", "does", "did", "will", "would",
+                    "could", "should", "may", "might", "can", "shall", "this", "that",
+                    "these", "those", "it", "its", "we", "they", "he", "she", "from",
+                    "by", "as", "into", "through", "during", "before", "after",
+                    "above", "below", "between", "under", "over", "such", "each",
+                    "all", "both", "few", "more", "most", "other", "some", "no",
+                    "not", "only", "same", "than", "too", "very", "also", "using",
+                    "used", "based", "found", "show", "shown", "report", "reported",
+                    "study", "studies", "result", "results", "data", "analysis",
+                    "method", "methods", "et", "al", "doi",
+                }
+                tokens = [t.lower() for t in query_text.replace(",", " ").replace(".", " ").replace(":", " ").replace(";", " ").split() if len(t) > 2 and t.lower() not in STOPWORDS]
+                query_tokens_set = set(tokens)
+
+                scored: list[tuple[dict[str, Any], float]] = []
+                for p in papers:
+                    if p.get("paper_id") == paper_id:
+                        continue
+                    # Build candidate text
+                    cand_parts: list[str] = []
+                    for field in ["title", "abstract", "journal"]:
+                        val = p.get(field)
+                        if val and isinstance(val, str):
+                            cand_parts.append(val)
+                    for field in ["tags", "toxin", "species", "method", "mechanism"]:
+                        vals = p.get(field) or []
+                        if isinstance(vals, list):
+                            cand_parts.extend(str(v) for v in vals)
+                    cand_text = " ".join(cand_parts)
+                    cand_tokens = [t.lower() for t in cand_text.replace(",", " ").replace(".", " ").replace(":", " ").replace(";", " ").split() if len(t) > 2 and t.lower() not in STOPWORDS]
+                    cand_set = set(cand_tokens)
+
+                    if not query_tokens_set or not cand_set:
+                        continue
+
+                    intersection = query_tokens_set & cand_set
+                    union = query_tokens_set | cand_set
+                    jaccard = len(intersection) / len(union) if union else 0.0
+
+                    if jaccard > 0:
+                        scored.append((p, jaccard))
+
+                scored.sort(key=lambda x: x[1], reverse=True)
+                top_k = scored[:limit]
+
+                if top_k:
+                    related = [{
+                        "paper_id": p.get("paper_id", ""),
+                        "title": p.get("title", ""),
+                        "authors": p.get("authors", []) or [],
+                        "year": p.get("year"),
+                        "journal": p.get("journal", ""),
+                        "doi": p.get("doi", ""),
+                        "similarity": round(score, 4),
+                        "reason": "Keyword overlap based on title, abstract, summary, tags, and metadata",
+                    } for p, score in top_k]
+                    return {
+                        "paper_id": paper_id,
+                        "related": related,
+                        "source": "keyword",
+                        "count": len(related),
+                        "reason": "Keyword overlap based on title, abstract, summary, tags, and metadata",
+                    }
+
+        # ── Empty fallback ──
+        return {
+            "paper_id": paper_id,
+            "related": [],
+            "source": "empty",
+            "count": 0,
+            "reason": "No vector or sufficient text metadata available for related paper retrieval",
+        }
 
     # ── Network / research-map stubs ──
 

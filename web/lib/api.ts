@@ -253,10 +253,9 @@ import type {
 export async function getRelatedPapers(
   paperId: string,
   limit = 5,
-  mode: "hybrid" | "vector" | "tags" = "hybrid",
 ): Promise<RelatedPapersResponse> {
   return fetchJson<RelatedPapersResponse>(
-    `/paper/${encodeURIComponent(paperId)}/related?limit=${limit}&mode=${mode}`,
+    `/paper/${encodeURIComponent(paperId)}/related?limit=${Math.min(limit, 20)}`,
   ).then((r) => r.data);
 }
 

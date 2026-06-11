@@ -7,9 +7,9 @@ import {
   Lightbulb, ListChecks, Microscope, AlertTriangle, Search, ChevronDown, ChevronRight, Info,
   Hash, Circle,
 } from "lucide-react";
-import { getPaperMetadata, getPaperSummary, getPaperTags, API_BASE_URL } from "@/lib/api";
+import { getPaperMetadata, getPaperSummary, getPaperTags, getRelatedPapers, API_BASE_URL } from "@/lib/api";
 import { parseAISummary, type ParsedSummary } from "@/lib/summary-parser";
-import type { PaperMetadata, PaperSummary, PaperTags } from "@/lib/types";
+import type { PaperMetadata, PaperSummary, PaperTags, RelatedPaper } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { ScientificText } from "@/components/scientific-text";
 
@@ -139,7 +139,7 @@ export default function PaperDetailPage() {
             <PaperInfoCard metadata={metadata} hasSummary={hasSummary} tagCount={allTags.length} />
             <TagsCard tags={allTags} />
             <MetadataPanel metadata={metadata} tags={tags} />
-            <RelatedPapersPlaceholder />
+            <RelatedPapersSection paperId={paperId} />
           </div>
         </div>
       </div>
@@ -232,18 +232,18 @@ function QuickNav({ parsed, classified, activeSection, sectionRefs }: {
   };
 
   return (
-    <div className="rounded-xl border border-border/40 bg-card/60 p-4 space-y-1">
-      <h3 className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-2">On This Page</h3>
+    <div className="rounded-xl border border-slate-200/50 bg-white/80 shadow-[0_2px_8px_rgba(15,23,42,0.03)] p-3.5 space-y-0.5">
+      <h3 className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2 ml-1">On This Page</h3>
       {items.map((item) => (
         <button
           key={item.id}
           onClick={() => scrollTo(item.id)}
-          className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors text-left
-            ${activeSection === item.id ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"}`}
+          className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[11px] transition-colors text-left
+            ${activeSection === item.id ? "bg-slate-100 text-slate-800 font-medium" : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"}`}
         >
-          <span className="shrink-0">{item.icon}</span>
+          <span className="shrink-0 opacity-60">{item.icon}</span>
           <span className="flex-1">{item.label}</span>
-          <span className="text-[10px] tabular-nums opacity-50">{item.count}</span>
+          <span className="text-[10px] tabular-nums text-slate-300 font-medium">{item.count}</span>
         </button>
       ))}
     </div>
@@ -434,18 +434,25 @@ function EmptySummary() {
 
 /* ━━━ Right sidebar cards ━━━ */
 
+const SIDEBAR_CARD = "rounded-xl border border-slate-200/50 bg-white/80 shadow-[0_2px_8px_rgba(15,23,42,0.03)] p-3.5";
+const SIDEBAR_TITLE = "text-[10px] font-semibold uppercase tracking-wider text-slate-400";
+
 function PaperInfoCard({ metadata, hasSummary, tagCount }: { metadata: PaperMetadata; hasSummary: boolean; tagCount: number }) {
   return (
-    <div className="rounded-xl border border-border/40 bg-card/60 p-4 space-y-2">
-      <div className="flex items-center gap-2"><Info className="size-3.5 text-muted-foreground" /><h3 className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Paper Info</h3></div>
-      <div className="space-y-1 text-xs">
-        <Row label="Year" value={metadata.year ? String(metadata.year) : "Not available"} />
-        <Row label="Journal" value={metadata.journal || "Not available"} />
-        <Row label="DOI" value={metadata.doi ? <a href={`https://doi.org/${metadata.doi}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{metadata.doi.slice(0, 28)}…</a> : "Not available"} />
-        <Row label="Paper ID" value={<code className="text-[10px]">{metadata.paper_id.slice(-16)}</code>} />
-        <Row label="Summary" value={hasSummary ? "Available ✅" : "Not generated"} />
-        <Row label="Tags" value={`${tagCount} assigned`} />
-        <Row label="Metadata" value="Available" />
+    <div className={SIDEBAR_CARD + " space-y-2"}>
+      <div className="flex items-center gap-2"><Info className="size-3.5 text-slate-400" /><h3 className={SIDEBAR_TITLE}>Paper Info</h3></div>
+      <div className="space-y-1.5 text-[11px]">
+        <Row label="Year" value={metadata.year ? String(metadata.year) : "—"} />
+        <Row label="Journal" value={metadata.journal || "—"} />
+        <Row label="DOI" value={metadata.doi ? (
+          <a href={`https://doi.org/${metadata.doi}`} target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-blue-600 transition-colors inline-flex items-center gap-0.5">
+            <ExternalLink className="size-3" /> Open DOI ↗
+          </a>
+        ) : "—"} />
+        <Row label="Paper ID" value={<code className="text-[10px] text-slate-400">{metadata.paper_id.slice(-12)}</code>} />
+        <Row label="Summary" value={hasSummary ? <span className="text-emerald-600/70">Available</span> : <span className="text-slate-300">—</span>} />
+        <Row label="Tags" value={tagCount > 0 ? `${tagCount}` : <span className="text-slate-300">None</span>} />
+        <Row label="Metadata" value={<span className="text-slate-500">Available</span>} />
       </div>
     </div>
   );
@@ -454,8 +461,8 @@ function PaperInfoCard({ metadata, hasSummary, tagCount }: { metadata: PaperMeta
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex justify-between gap-2">
-      <span className="text-muted-foreground shrink-0">{label}</span>
-      <span className="text-right truncate">{value || "Not available"}</span>
+      <span className="text-slate-400 shrink-0">{label}</span>
+      <span className="text-right truncate text-slate-600">{value || "—"}</span>
     </div>
   );
 }
@@ -463,10 +470,10 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 function TagsCard({ tags }: { tags: string[] }) {
   if (!tags.length) return null;
   return (
-    <div className="rounded-xl border border-border/40 bg-card/60 p-4 space-y-2">
-      <div className="flex items-center gap-2"><Tag className="size-3.5 text-muted-foreground" /><h3 className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Tags</h3></div>
+    <div className={SIDEBAR_CARD + " space-y-2"}>
+      <div className="flex items-center gap-2"><Tag className="size-3.5 text-slate-400" /><h3 className={SIDEBAR_TITLE}>Tags</h3></div>
       <div className="flex flex-wrap gap-1">
-        {tags.map((t) => <span key={t} className="inline-flex items-center rounded-full bg-muted/60 px-2 py-0.5 text-[10px] text-muted-foreground">{t}</span>)}
+        {tags.slice(0, 12).map((t) => <span key={t} className="inline-flex rounded-md border border-slate-200/70 bg-slate-50 px-1.5 py-0.5 text-[10px] text-slate-500">{t}</span>)}
       </div>
     </div>
   );
@@ -484,11 +491,11 @@ function MetadataPanel({ metadata, tags }: { metadata: PaperMetadata; tags: Pape
   if (!fields.length) return null;
 
   return (
-    <div className="rounded-xl border border-border/40 bg-card/60 p-4 space-y-2">
+    <div className={SIDEBAR_CARD + " space-y-2"}>
       <button onClick={() => setOpen(!open)} className="flex items-center gap-2 w-full text-left">
-        <Info className="size-3.5 text-muted-foreground" />
-        <h3 className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground flex-1">Metadata</h3>
-        {open ? <ChevronDown className="size-3.5 text-muted-foreground" /> : <ChevronRight className="size-3.5 text-muted-foreground" />}
+        <Info className="size-3.5 text-slate-400" />
+        <h3 className={SIDEBAR_TITLE + " flex-1"}>Metadata</h3>
+        {open ? <ChevronDown className="size-3.5 text-slate-400" /> : <ChevronRight className="size-3.5 text-slate-400" />}
       </button>
       {open && (
         <div className="space-y-2 pt-1">
@@ -508,11 +515,56 @@ function MetadataPanel({ metadata, tags }: { metadata: PaperMetadata; tags: Pape
   );
 }
 
-function RelatedPapersPlaceholder() {
+function RelatedPapersSection({ paperId }: { paperId: string }) {
+  const [items, setItems] = useState<RelatedPaper[]>([]);
+  const [source, setSource] = useState<string>("");
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true); setErr(null);
+    getRelatedPapers(paperId, 5)
+      .then((r) => { if (!cancelled) { setItems(r.related); setSource(r.source); } })
+      .catch((e) => { if (!cancelled) setErr(e instanceof Error ? e.message : "Failed"); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [paperId]);
+
   return (
-    <div className="rounded-xl border border-border/40 bg-card/60 p-4 space-y-2">
-      <div className="flex items-center gap-2"><Search className="size-3.5 text-muted-foreground" /><h3 className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Related Papers</h3></div>
-      <p className="text-xs text-muted-foreground/70">Related papers will appear here after similarity indexing is enabled.</p>
+    <div className={SIDEBAR_CARD + " space-y-2"}>
+      <div className="flex items-center gap-2">
+        <Search className="size-3.5 text-slate-400" />
+        <h3 className={SIDEBAR_TITLE}>Similar Papers</h3>
+        {source === "vector" && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600/70 font-medium">Vector</span>}
+        {source === "keyword" && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-600/70 font-medium">Keyword</span>}
+      </div>
+
+      {loading && <div className="space-y-2 py-1">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-8 bg-slate-100 rounded-md animate-pulse" />)}</div>}
+
+      {err && <p className="text-[11px] text-red-400">Unable to load related papers.</p>}
+
+      {!loading && !err && items.length === 0 && (
+        <p className="text-[11px] text-slate-300 italic leading-relaxed">Similar papers will appear here once similarity indexing is enabled.</p>
+      )}
+
+      {!loading && !err && items.map((rp) => (
+        <button
+          key={rp.paper_id}
+          onClick={() => router.push(`/paper/${rp.paper_id}`)}
+          className="w-full text-left rounded-lg hover:bg-muted/40 px-2 py-1.5 -mx-2 transition-colors group"
+        >
+          <p className="text-xs font-medium leading-snug line-clamp-2 group-hover:text-primary/80">{rp.title}</p>
+          <div className="flex items-center gap-x-2 mt-0.5 text-[10px] text-muted-foreground/70">
+            {rp.authors?.[0] && <span>{rp.authors[0]}{rp.authors.length > 1 ? " et al." : ""}</span>}
+            {rp.year && <><span className="text-border">·</span><span>{rp.year}</span></>}
+            {rp.similarity != null && (
+              <span className="ml-auto text-[10px] font-medium text-slate-400">{(rp.similarity * 100).toFixed(0)}%</span>
+            )}
+          </div>
+        </button>
+      ))}
     </div>
   );
 }

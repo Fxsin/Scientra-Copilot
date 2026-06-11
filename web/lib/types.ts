@@ -201,10 +201,10 @@ export interface ResearchMapResponse {
 
 export interface RelatedPapersResponse {
   paper_id: string;
-  related: PaperItem[];
-  related_papers: PaperItem[];
-  mode: string;
-  limit: number;
+  related: RelatedPaper[];
+  source: "vector" | "keyword" | "empty";
+  count: number;
+  reason?: string | null;
 }
 
 export interface CitationNetworkResponse {
@@ -241,11 +241,12 @@ export interface ClusterContext {
 export interface RelatedPaper {
   paper_id: string;
   title: string;
-  score: number;
-  year?: number;
-  similarity_score?: number;
-  journal?: string;
-  shared_tags?: string[];
+  authors?: string[];
+  year?: number | null;
+  journal?: string | null;
+  doi?: string | null;
+  similarity?: number;
+  reason?: string;
 }
 
 export interface SimilarityNode {
