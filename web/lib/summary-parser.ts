@@ -1,3 +1,15 @@
+/**
+ * Scientra Copilot — Product-grade Summary Normalizer
+ *
+ * Compatible formats: Markdown / JSON / YAML+JSON / object / plain text / truncated JSON.
+ *
+ * CRITICAL INVARIANT:
+ *   User-visible text areas (takeaway, coreFindings, evidence, methods,
+ *   limitations, supportingDetails) MUST NEVER display raw JSON structure.
+ *   Raw JSON may ONLY appear in Developer & Raw Data (collapsed by default).
+ *
+ * Tests: npm run test:summary-parser
+ */
 export interface ParsedSummary {
   takeaway: string | null;
   coreFindings: string[];
