@@ -1,0 +1,87 @@
+{
+  "paper_id": "Retrotransposon-mediated_disruption_of_a_chitin_synthase_gene_confers_insect_resistance_to_Bacillus_thuringiensis_Vip3Aa_1bc3ea965f7d",
+  "title": "Retrotransposon-mediated disruption of a chitin synthase gene confers insect resistance to Bacillus thuringiensis Vip3Aa toxin",
+  "year": 2024,
+  "journal": "PLOS Biology",
+  "evidence_version": "v1",
+  "status": "partial",
+  "research_question": "",
+  "study_objective": "",
+  "research_gap": "",
+  "methods": [],
+  "key_results": [],
+  "core_findings": [],
+  "discussion_points": [
+    {
+      "point": "Whereas previous findings show that transposable elements can cause resistance to Cry toxins [45][46][47][48][49][50], the results here are the first to identify this mechanism in resistance to Vip3Aa.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Whereas previous findings show that transposable elements can cause resistance to Cry toxins [45][46][47][48][49][50], the results here are the first to identify this mechanism in resistance to Vip3Aa",
+      "confidence": "medium"
+    },
+    {
+      "point": "These findings also suggest that CHS2 might be important in susceptibility to Vip3Aa in other noctuids as well as more broadly in Lepidoptera.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "These findings also suggest that CHS2 might be important in susceptibility to Vip3Aa in other noctuids as well as more broadly in Lepidoptera.",
+      "confidence": "medium"
+    },
+    {
+      "point": "The finding that resistance to Vip3Aa in Sfru_R3 is associated with truncation of the C-terminal domain of SfCHS2 (C7) suggests that this domain plays a key role in susceptibility to Vip3Aa.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "The finding that resistance to Vip3Aa in Sfru_R3 is associated with truncation of the C-terminal domain of SfCHS2 (C7) suggests that this domain plays a key role in susceptibility to Vip3Aa.",
+      "confidence": "medium"
+    },
+    {
+      "point": "Additional work is needed to test the hypothesis that mutations affecting CHS2 reduce binding of Vip3Aa in the larval midgut.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Additional work is needed to test the hypothesis that mutations affecting CHS2 reduce binding of Vip3Aa in the larval midgut.",
+      "confidence": "medium"
+    },
+    {
+      "point": "This hypothesis is plausible because such reduced binding is the most common and most potent mechanism of insect resistance to Bt toxins [51].",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "This hypothesis is plausible because such reduced binding is the most common and most potent mechanism of insect resistance to Bt toxins [51].",
+      "confidence": "medium"
+    },
+    {
+      "point": "For the Sfru_R3 strain analyzed here, the lack of strong cross-resistance to Cry1Ab, Cry1Ac, Cry1Fa, and Cry2Ab proteins associated with resistance to Vip3Aa is consistent with a target-specific mechanism rather a more general mechanism that alters processing or penetration of a wide spectrum of ins",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "For the Sfru_R3 strain analyzed here, the lack of strong cross-resistance to Cry1Ab, Cry1Ac, Cry1Fa, and Cry2Ab proteins associated with resistance to Vip3Aa is consistent with a target-specific mecha",
+      "confidence": "medium"
+    },
+    {
+      "point": "The recessive inheritance of resistance at a relatively high concentration of Vip3Aa (2 μg Vip3Aa per cm 2 diet) is also consistent with reduced binding of Vip3Aa as the mechanism of resistance [52].",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "The recessive inheritance of resistance at a relatively high concentration of Vip3Aa (2 μg Vip3Aa per cm 2 diet) is also consistent with reduced binding of Vip3Aa as the mechanism of resistance [52].",
+      "confidence": "medium"
+    },
+    {
+      "point": "If future work supports the hypothesis that disruption of SfCHS2 is associated with reduced binding of Vip3Aa to midgut target sites, it will be useful to determine if CHS2 binds Vip3Aa or if it facilitates binding of Vip3Aa to one or more other receptors on the larval midgut membrane.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "If future work supports the hypothesis that disruption of SfCHS2 is associated with reduced binding of Vip3Aa to midgut target sites, it will be useful to determine if CHS2 binds Vip3Aa or if it facil",
+      "confidence": "medium"
+    }
+  ],
+  "limitations": [],
+  "open_questions": [],
+  "future_directions": [],
+  "claims": [],
+  "result_discussion_links": [],
+  "coverage": {
+    "has_introduction": true,
+    "has_methods": true,
+    "has_results": true,
+    "has_discussion": true,
+    "has_key_results": false,
+    "has_discussion_points": true
+  },
+  "fallback_used": true,
+  "errors": []
+}

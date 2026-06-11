@@ -1,0 +1,93 @@
+{
+  "paper_id": "Insights_into_the_Structure_of_the_Vip3Aa_Insecticidal_Protein_by_Protease_Digestion_Analysis_5e929a297a84",
+  "title": "Insights into the Structure of the Vip3Aa Insecticidal Protein by Protease Digestion Analysis",
+  "year": 2017,
+  "journal": "Toxins",
+  "evidence_version": "v1",
+  "status": "partial",
+  "research_question": "",
+  "study_objective": "",
+  "research_gap": "",
+  "methods": [
+    {
+      "name": "by Protease Digestion Analysis",
+      "section": "Methods",
+      "quote": "by Protease Digestion Analysis"
+    }
+  ],
+  "key_results": [],
+  "core_findings": [],
+  "discussion_points": [
+    {
+      "point": "Therefore, the full length Vip3Aa protein, or protoxin, is activated in the insect midgut and produces a protease resistant core, the one identified as the 62-66 kDa fragment.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Therefore, the full length Vip3Aa protein, or protoxin, is activated in the insect midgut and produces a protease resistant core, the one identified as the 62-66 kDa fragment.",
+      "confidence": "medium"
+    },
+    {
+      "point": "However, this model has been challenged by results which have pointed out that the 62-66 kDa fragment is not as resistant to proteases as originally thought.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "However, this model has been challenged by results which have pointed out that the 62-66 kDa fragment is not as resistant to proteases as originally thought.",
+      "confidence": "medium"
+    },
+    {
+      "point": "Although the 62-66 kDa fragment appears as the main proteolysis band in SDS-PAGE when the concentration of trypsin or midgut juice is low, it is no longer the main band in SDS-PAGE gels when higher concentrations of proteases are used [22,28,29].",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Although the 62-66 kDa fragment appears as the main proteolysis band in SDS-PAGE when the concentration of trypsin or midgut juice is low, it is no longer the main band in SDS-PAGE gels when higher co",
+      "confidence": "medium"
+    },
+    {
+      "point": "Therefore, the full length Vip3Aa protein, or protoxin, is activated in the insect midgut and produces a protease resistant core, the one identified as the 62-66 kDa fragment.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Therefore, the full length Vip3Aa protein, or protoxin, is activated in the insect midgut and produces a protease resistant core, the one identified as the 62-66 kDa fragment.",
+      "confidence": "medium"
+    },
+    {
+      "point": "However, this model has been challenged by results which have pointed out that the 62-66 kDa fragment is not as resistant to proteases as originally thought.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "However, this model has been challenged by results which have pointed out that the 62-66 kDa fragment is not as resistant to proteases as originally thought.",
+      "confidence": "medium"
+    },
+    {
+      "point": "Although the 62-66 kDa fragment appears as the main proteolysis band in SDS-PAGE when the concentration of trypsin or midgut juice is low, it is no longer the main band in SDS-PAGE gels when higher concentrations of proteases are used [22,28,29].",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Although the 62-66 kDa fragment appears as the main proteolysis band in SDS-PAGE when the concentration of trypsin or midgut juice is low, it is no longer the main band in SDS-PAGE gels when higher co",
+      "confidence": "medium"
+    },
+    {
+      "point": "The unexpected increase of the 66 kDa band with time at high concentrations of trypsin (Figure 1) can be explained as follows: since trypsin autodigests, the shorter the incubation time of the Vip3Aa protein with trypsin, then the higher the trypsin concentration still present in the sample; and thu",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "The unexpected increase of the 66 kDa band with time at high concentrations of trypsin (Figure 1) can be explained as follows: since trypsin autodigests, the shorter the incubation time of the Vip3Aa ",
+      "confidence": "medium"
+    },
+    {
+      "point": "The SDS-PAGE analysis of the elution peak shows two bands of 66 kDa and 19 kDa, which indicates that these two molecules remain associated under native conditions, as was previously reported [30].",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "The SDS-PAGE analysis of the elution peak shows two bands of 66 kDa and 19 kDa, which indicates that these two molecules remain associated under native conditions, as was previously reported [30].",
+      "confidence": "medium"
+    }
+  ],
+  "limitations": [],
+  "open_questions": [],
+  "future_directions": [],
+  "claims": [],
+  "result_discussion_links": [],
+  "coverage": {
+    "has_introduction": true,
+    "has_methods": true,
+    "has_results": true,
+    "has_discussion": true,
+    "has_key_results": false,
+    "has_discussion_points": true
+  },
+  "fallback_used": true,
+  "errors": []
+}

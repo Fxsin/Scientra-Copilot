@@ -1,0 +1,87 @@
+{
+  "paper_id": "Characterization_of_the_resistance_to_Vip3Aa_in_Helicoverpa_armigera_from_Australia_and_the_role_of_midgut_processing_an_11cf778c060a",
+  "title": "Characterization of the resistance to Vip3Aa in Helicoverpa armigera from Australia and the role of midgut processing and receptor binding",
+  "year": 2016,
+  "journal": "Scientific Reports",
+  "evidence_version": "v1",
+  "status": "partial",
+  "research_question": "",
+  "study_objective": "",
+  "research_gap": "",
+  "methods": [],
+  "key_results": [],
+  "core_findings": [],
+  "discussion_points": [
+    {
+      "point": "However, with the recent incursion of H.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "However, with the recent incursion of H.",
+      "confidence": "medium"
+    },
+    {
+      "point": "This relatively high baseline level of resistance may reflect selection at a low level from naturally occurring Vip3 toxins and/or direct or indirect (e.g.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "This relatively high baseline level of resistance may reflect selection at a low level from naturally occurring Vip3 toxins and/or direct or indirect (e.g.",
+      "confidence": "medium"
+    },
+    {
+      "point": "Our results suggest that natural variation Protein Mean ± SEM R t (pmol/mg) K d (nM) Susceptible 25 ± 4 139 ± 33 Resistant 19 ± 5 141 ± 25 Table 3.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Our results suggest that natural variation Protein Mean ± SEM R t (pmol/mg) K d (nM) Susceptible 25 ± 4 139 ± 33 Resistant 19 ± 5 141 ± 25 Table 3.",
+      "confidence": "medium"
+    },
+    {
+      "point": "exists in insect populations that could drive resistance once crops expressing Vip3Aa are introduced unless appropriate resistance management measures are implemented (mean expression levels of Vip3Aa in cotton plants is 25 μg/g dry weight, not substantially different from the discriminant dose used",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "exists in insect populations that could drive resistance once crops expressing Vip3Aa are introduced unless appropriate resistance management measures are implemented (mean expression levels of Vip3Aa",
+      "confidence": "medium"
+    },
+    {
+      "point": "It is possible that the different r frequencies from these methods reflect actual changes in frequencies over time but unlikely given the absence of Bt-crops that could impact on selection for Vip3A resistance (although see above for alternative explanations).",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "It is possible that the different r frequencies from these methods reflect actual changes in frequencies over time but unlikely given the absence of Bt-crops that could impact on selection for Vip3A r",
+      "confidence": "medium"
+    },
+    {
+      "point": "This is in contrast to Cry2Ab which has been more variable.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "This is in contrast to Cry2Ab which has been more variable.",
+      "confidence": "medium"
+    },
+    {
+      "point": "armigera doubled compared to the baseline which could have signaled the beginning of a significant resistance problem in response to cotton expressing this toxin 48 (see also Downes et al.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "armigera doubled compared to the baseline which could have signaled the beginning of a significant resistance problem in response to cotton expressing this toxin 48 (see also Downes et al.",
+      "confidence": "medium"
+    },
+    {
+      "point": "This is one of the first demonstrations of a lack of cross-resistance to Cry proteins in a Vip3Aa resistant colony, in contrast to previous studies in which Cry-resistant colonies were tested for cross-resistance to Vip3Aa.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "This is one of the first demonstrations of a lack of cross-resistance to Cry proteins in a Vip3Aa resistant colony, in contrast to previous studies in which Cry-resistant colonies were tested for cros",
+      "confidence": "medium"
+    }
+  ],
+  "limitations": [],
+  "open_questions": [],
+  "future_directions": [],
+  "claims": [],
+  "result_discussion_links": [],
+  "coverage": {
+    "has_introduction": true,
+    "has_methods": true,
+    "has_results": true,
+    "has_discussion": true,
+    "has_key_results": false,
+    "has_discussion_points": true
+  },
+  "fallback_used": true,
+  "errors": []
+}

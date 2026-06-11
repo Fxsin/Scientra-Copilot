@@ -1,0 +1,144 @@
+{
+  "paper_id": "HT_SuperSAGE_of_the_gut_tissue_of_a_Vip3Aa_resistant_Heliothis_virescens_Lepidoptera_Noctuidae_strain_provides_insights__f687007e97f0",
+  "chunk_version": "v2",
+  "evidence_hash": "167a0037b3496334",
+  "chunk_count": 8,
+  "chunks": [
+    {
+      "chunk_id": "HT_SuperSAGE_of_the_gut_tissue_of_a_Vip3Aa_resistant_Heliothis_virescens_Lepidoptera_Noctuidae_strain_provides_insights__f687007e97f0:discussion_point:0000",
+      "paper_id": "HT_SuperSAGE_of_the_gut_tissue_of_a_Vip3Aa_resistant_Heliothis_virescens_Lepidoptera_Noctuidae_strain_provides_insights__f687007e97f0",
+      "chunk_type": "discussion_point",
+      "text": "virescens contig suggesting either cDNA digestion with NlaIII was not very efficient or a low frequency of cleavage sites for this particular 4-bp cutter enzyme in the genes of this insect.",
+      "source_section": "Discussion",
+      "quote": "virescens contig suggesting either cDNA digestion with NlaIII was not very efficient or a low frequency of cleavage sites for this particular 4-bp cutter enzyme in the genes of this insect.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "HT-SuperSAGE of the gut tissue of a Vip3Aa-resistant Heliothis virescens (Lepidoptera: Noctuidae) strain provides insights into the basis of resistance",
+        "year": 2011,
+        "journal": "Insect Science",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "HT_SuperSAGE_of_the_gut_tissue_of_a_Vip3Aa_resistant_Heliothis_virescens_Lepidoptera_Noctuidae_strain_provides_insights__f687007e97f0:discussion_point:0001",
+      "paper_id": "HT_SuperSAGE_of_the_gut_tissue_of_a_Vip3Aa_resistant_Heliothis_virescens_Lepidoptera_Noctuidae_strain_provides_insights__f687007e97f0",
+      "chunk_type": "discussion_point",
+      "text": "Any of above could have consequences in the transcription profile produced by HT-SuperSAGE.",
+      "source_section": "Discussion",
+      "quote": "Any of above could have consequences in the transcription profile produced by HT-SuperSAGE.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "HT-SuperSAGE of the gut tissue of a Vip3Aa-resistant Heliothis virescens (Lepidoptera: Noctuidae) strain provides insights into the basis of resistance",
+        "year": 2011,
+        "journal": "Insect Science",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "HT_SuperSAGE_of_the_gut_tissue_of_a_Vip3Aa_resistant_Heliothis_virescens_Lepidoptera_Noctuidae_strain_provides_insights__f687007e97f0:discussion_point:0002",
+      "paper_id": "HT_SuperSAGE_of_the_gut_tissue_of_a_Vip3Aa_resistant_Heliothis_virescens_Lepidoptera_Noctuidae_strain_provides_insights__f687007e97f0",
+      "chunk_type": "discussion_point",
+      "text": "Though NlaIII is the standard anchoring enzyme in all versions of SAGE, other 4-bp restriction enzymes could be also used, for example, DpnII and BfaI.",
+      "source_section": "Discussion",
+      "quote": "Though NlaIII is the standard anchoring enzyme in all versions of SAGE, other 4-bp restriction enzymes could be also used, for example, DpnII and BfaI.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "HT-SuperSAGE of the gut tissue of a Vip3Aa-resistant Heliothis virescens (Lepidoptera: Noctuidae) strain provides insights into the basis of resistance",
+        "year": 2011,
+        "journal": "Insect Science",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "HT_SuperSAGE_of_the_gut_tissue_of_a_Vip3Aa_resistant_Heliothis_virescens_Lepidoptera_Noctuidae_strain_provides_insights__f687007e97f0:discussion_point:0003",
+      "paper_id": "HT_SuperSAGE_of_the_gut_tissue_of_a_Vip3Aa_resistant_Heliothis_virescens_Lepidoptera_Noctuidae_strain_provides_insights__f687007e97f0",
+      "chunk_type": "discussion_point",
+      "text": "However, cDNA of certain organisms is frequently not efficiently digested by NlaIII but instead by DpnII (Sharbel et al., 2010).",
+      "source_section": "Discussion",
+      "quote": "However, cDNA of certain organisms is frequently not efficiently digested by NlaIII but instead by DpnII (Sharbel et al., 2010).",
+      "confidence": "medium",
+      "metadata": {
+        "title": "HT-SuperSAGE of the gut tissue of a Vip3Aa-resistant Heliothis virescens (Lepidoptera: Noctuidae) strain provides insights into the basis of resistance",
+        "year": 2011,
+        "journal": "Insect Science",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "HT_SuperSAGE_of_the_gut_tissue_of_a_Vip3Aa_resistant_Heliothis_virescens_Lepidoptera_Noctuidae_strain_provides_insights__f687007e97f0:discussion_point:0004",
+      "paper_id": "HT_SuperSAGE_of_the_gut_tissue_of_a_Vip3Aa_resistant_Heliothis_virescens_Lepidoptera_Noctuidae_strain_provides_insights__f687007e97f0",
+      "chunk_type": "discussion_point",
+      "text": "We found the amount of underexpressed unigenes in Vip-Sel was significantly greater (more than three times) than those found constitutively overexpressed, suggesting a decreased translation rate could be an important adaptation for Vip3Aa resistance in this strain of H.",
+      "source_section": "Discussion",
+      "quote": "We found the amount of underexpressed unigenes in Vip-Sel was significantly greater (more than three times) than those found constitutively overexpressed, suggesting a decreased translation rate could",
+      "confidence": "medium",
+      "metadata": {
+        "title": "HT-SuperSAGE of the gut tissue of a Vip3Aa-resistant Heliothis virescens (Lepidoptera: Noctuidae) strain provides insights into the basis of resistance",
+        "year": 2011,
+        "journal": "Insect Science",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "HT_SuperSAGE_of_the_gut_tissue_of_a_Vip3Aa_resistant_Heliothis_virescens_Lepidoptera_Noctuidae_strain_provides_insights__f687007e97f0:discussion_point:0005",
+      "paper_id": "HT_SuperSAGE_of_the_gut_tissue_of_a_Vip3Aa_resistant_Heliothis_virescens_Lepidoptera_Noctuidae_strain_provides_insights__f687007e97f0",
+      "chunk_type": "discussion_point",
+      "text": "Comparison between studies using different insect and transcriptomic approaches is not straightforward but a wider transcriptional change in susceptible insects after Vip3Aa exposure may represent a less specific response triggered to cope with general stress rather than a signature of specific adap",
+      "source_section": "Discussion",
+      "quote": "Comparison between studies using different insect and transcriptomic approaches is not straightforward but a wider transcriptional change in susceptible insects after Vip3Aa exposure may represent a l",
+      "confidence": "medium",
+      "metadata": {
+        "title": "HT-SuperSAGE of the gut tissue of a Vip3Aa-resistant Heliothis virescens (Lepidoptera: Noctuidae) strain provides insights into the basis of resistance",
+        "year": 2011,
+        "journal": "Insect Science",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "HT_SuperSAGE_of_the_gut_tissue_of_a_Vip3Aa_resistant_Heliothis_virescens_Lepidoptera_Noctuidae_strain_provides_insights__f687007e97f0:discussion_point:0006",
+      "paper_id": "HT_SuperSAGE_of_the_gut_tissue_of_a_Vip3Aa_resistant_Heliothis_virescens_Lepidoptera_Noctuidae_strain_provides_insights__f687007e97f0",
+      "chunk_type": "discussion_point",
+      "text": "On the contrary, constitutive transcriptional alterations detected in the gut of Vip3Aa-resistant (unexposed) insects may better reflect the outcome of adaptation following toxin selection.",
+      "source_section": "Discussion",
+      "quote": "On the contrary, constitutive transcriptional alterations detected in the gut of Vip3Aa-resistant (unexposed) insects may better reflect the outcome of adaptation following toxin selection.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "HT-SuperSAGE of the gut tissue of a Vip3Aa-resistant Heliothis virescens (Lepidoptera: Noctuidae) strain provides insights into the basis of resistance",
+        "year": 2011,
+        "journal": "Insect Science",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "HT_SuperSAGE_of_the_gut_tissue_of_a_Vip3Aa_resistant_Heliothis_virescens_Lepidoptera_Noctuidae_strain_provides_insights__f687007e97f0:discussion_point:0007",
+      "paper_id": "HT_SuperSAGE_of_the_gut_tissue_of_a_Vip3Aa_resistant_Heliothis_virescens_Lepidoptera_Noctuidae_strain_provides_insights__f687007e97f0",
+      "chunk_type": "discussion_point",
+      "text": "This hypothesis has been supported for Bt-resistant strains of S.",
+      "source_section": "Discussion",
+      "quote": "This hypothesis has been supported for Bt-resistant strains of S.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "HT-SuperSAGE of the gut tissue of a Vip3Aa-resistant Heliothis virescens (Lepidoptera: Noctuidae) strain provides insights into the basis of resistance",
+        "year": 2011,
+        "journal": "Insect Science",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    }
+  ]
+}

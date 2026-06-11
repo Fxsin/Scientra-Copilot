@@ -1,0 +1,87 @@
+{
+  "paper_id": "Insights_into_the_structural_changes_that_trigger_receptor_binding_upon_proteolytic_activation_of_Bacillus_thuringiensis_4a4e46f2d19e",
+  "title": "Insights into the structural changes that trigger receptor binding upon proteolytic activation of Bacillus thuringiensis Vip3Aa insecticidal protein",
+  "year": 2024,
+  "journal": "PLOS Pathogens",
+  "evidence_version": "v1",
+  "status": "partial",
+  "research_question": "",
+  "study_objective": "",
+  "research_gap": "",
+  "methods": [],
+  "key_results": [],
+  "core_findings": [],
+  "discussion_points": [
+    {
+      "point": "It has been suggested that proteolytic activation of Vip3Aa insecticidal protein is a necessary step to exert insecticidal activity [25].",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "It has been suggested that proteolytic activation of Vip3Aa insecticidal protein is a necessary step to exert insecticidal activity [25].",
+      "confidence": "medium"
+    },
+    {
+      "point": "In agreement, it was shown that Vip3Bc-protoxin shows no pore-formation activity in contrast to Vip3Bc-activated toxin that showed high pore formation activity in synthetic liposomes vesicles [16].",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "In agreement, it was shown that Vip3Bc-protoxin shows no pore-formation activity in contrast to Vip3Bc-activated toxin that showed high pore formation activity in synthetic liposomes vesicles [16].",
+      "confidence": "medium"
+    },
+    {
+      "point": "We show here that Vip3Aa-protoxin shows very low or no toxicity to Sf9 cells in contrast to Vip3Aa-activated toxin that showed higher toxicity (Fig 2).",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "We show here that Vip3Aa-protoxin shows very low or no toxicity to Sf9 cells in contrast to Vip3Aa-activated toxin that showed higher toxicity (Fig 2).",
+      "confidence": "medium"
+    },
+    {
+      "point": "However, other reports have shown variable toxicity levels of Vip3A-protoxins to insect cell lines [12,13,26,27,28,29].",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "However, other reports have shown variable toxicity levels of Vip3A-protoxins to insect cell lines [12,13,26,27,28,29].",
+      "confidence": "medium"
+    },
+    {
+      "point": "The different mortality rates of the Vip3-protoxin observed in these reports as well as the low mortality of Vip3Aa-protoxin shown here (Fig 2), could be due to the different assays used to assess cell mortality or to the fact that the different protoxin samples assayed could be contaminated with ac",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "The different mortality rates of the Vip3-protoxin observed in these reports as well as the low mortality of Vip3Aa-protoxin shown here (Fig 2), could be due to the different assays used to assess cel",
+      "confidence": "medium"
+    },
+    {
+      "point": "Nevertheless, our results are consistent with the published data, showing a similar trend where the Vip3A-activated toxin shows higher toxicity than the Vip3Aa-protoxin to insect cell lines.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Nevertheless, our results are consistent with the published data, showing a similar trend where the Vip3A-activated toxin shows higher toxicity than the Vip3Aa-protoxin to insect cell lines.",
+      "confidence": "medium"
+    },
+    {
+      "point": "These results are consistent with the hypothesis that Vip3-protoxins needs to be activated to exert their toxicity.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "These results are consistent with the hypothesis that Vip3-protoxins needs to be activated to exert their toxicity.",
+      "confidence": "medium"
+    },
+    {
+      "point": "We hypothesized here that the lower mortality observed with Vip3Aa-protoxin could be related to lower binding capacity of Vip3Aa-protoxin compared to the -activated toxin.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "We hypothesized here that the lower mortality observed with Vip3Aa-protoxin could be related to lower binding capacity of Vip3Aa-protoxin compared to the -activated toxin.",
+      "confidence": "medium"
+    }
+  ],
+  "limitations": [],
+  "open_questions": [],
+  "future_directions": [],
+  "claims": [],
+  "result_discussion_links": [],
+  "coverage": {
+    "has_introduction": true,
+    "has_methods": true,
+    "has_results": true,
+    "has_discussion": true,
+    "has_key_results": false,
+    "has_discussion_points": true
+  },
+  "fallback_used": true,
+  "errors": []
+}

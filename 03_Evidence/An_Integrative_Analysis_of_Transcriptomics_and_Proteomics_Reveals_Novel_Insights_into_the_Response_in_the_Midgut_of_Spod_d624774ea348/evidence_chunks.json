@@ -1,0 +1,144 @@
+{
+  "paper_id": "An_Integrative_Analysis_of_Transcriptomics_and_Proteomics_Reveals_Novel_Insights_into_the_Response_in_the_Midgut_of_Spod_d624774ea348",
+  "chunk_version": "v2",
+  "evidence_hash": "40587423a9241a9a",
+  "chunk_count": 8,
+  "chunks": [
+    {
+      "chunk_id": "An_Integrative_Analysis_of_Transcriptomics_and_Proteomics_Reveals_Novel_Insights_into_the_Response_in_the_Midgut_of_Spod_d624774ea348:discussion_point:0000",
+      "paper_id": "An_Integrative_Analysis_of_Transcriptomics_and_Proteomics_Reveals_Novel_Insights_into_the_Response_in_the_Midgut_of_Spod_d624774ea348",
+      "chunk_type": "discussion_point",
+      "text": "The results indicated that Vip3Aa could induce the apoptosis pathway, with the involvement of the MAPK signaling and endocytosis pathways.",
+      "source_section": "Discussion",
+      "quote": "The results indicated that Vip3Aa could induce the apoptosis pathway, with the involvement of the MAPK signaling and endocytosis pathways.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "An Integrative Analysis of Transcriptomics and Proteomics Reveals Novel Insights into the Response in the Midgut of Spodoptera frugiperda Larvae to Vip3Aa",
+        "year": 2022,
+        "journal": "Toxins",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "An_Integrative_Analysis_of_Transcriptomics_and_Proteomics_Reveals_Novel_Insights_into_the_Response_in_the_Midgut_of_Spod_d624774ea348:discussion_point:0001",
+      "paper_id": "An_Integrative_Analysis_of_Transcriptomics_and_Proteomics_Reveals_Novel_Insights_into_the_Response_in_the_Midgut_of_Spod_d624774ea348",
+      "chunk_type": "discussion_point",
+      "text": "On the other hand, Vip3Aa could significantly downregulate the insect hormone biosynthesis pathway.",
+      "source_section": "Discussion",
+      "quote": "On the other hand, Vip3Aa could significantly downregulate the insect hormone biosynthesis pathway.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "An Integrative Analysis of Transcriptomics and Proteomics Reveals Novel Insights into the Response in the Midgut of Spodoptera frugiperda Larvae to Vip3Aa",
+        "year": 2022,
+        "journal": "Toxins",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "An_Integrative_Analysis_of_Transcriptomics_and_Proteomics_Reveals_Novel_Insights_into_the_Response_in_the_Midgut_of_Spod_d624774ea348:discussion_point:0002",
+      "paper_id": "An_Integrative_Analysis_of_Transcriptomics_and_Proteomics_Reveals_Novel_Insights_into_the_Response_in_the_Midgut_of_Spod_d624774ea348",
+      "chunk_type": "discussion_point",
+      "text": "In this study, we identified 873 significant differentially expressed genes under the treatment with 10 µg/g Vip3Aa, whereas 2227 significant differentially expressed genes were identified under the 50 µg/g Vip3Aa treatment, suggesting that the host response increased with the increase in Vip3Aa con",
+      "source_section": "Discussion",
+      "quote": "In this study, we identified 873 significant differentially expressed genes under the treatment with 10 µg/g Vip3Aa, whereas 2227 significant differentially expressed genes were identified under the 5",
+      "confidence": "medium",
+      "metadata": {
+        "title": "An Integrative Analysis of Transcriptomics and Proteomics Reveals Novel Insights into the Response in the Midgut of Spodoptera frugiperda Larvae to Vip3Aa",
+        "year": 2022,
+        "journal": "Toxins",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "An_Integrative_Analysis_of_Transcriptomics_and_Proteomics_Reveals_Novel_Insights_into_the_Response_in_the_Midgut_of_Spod_d624774ea348:discussion_point:0003",
+      "paper_id": "An_Integrative_Analysis_of_Transcriptomics_and_Proteomics_Reveals_Novel_Insights_into_the_Response_in_the_Midgut_of_Spod_d624774ea348",
+      "chunk_type": "discussion_point",
+      "text": "Combined with previous reports, we speculated that Vip3Aa may activate caspase-mediated apoptosis via the MAPK signaling pathway.",
+      "source_section": "Discussion",
+      "quote": "Combined with previous reports, we speculated that Vip3Aa may activate caspase-mediated apoptosis via the MAPK signaling pathway.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "An Integrative Analysis of Transcriptomics and Proteomics Reveals Novel Insights into the Response in the Midgut of Spodoptera frugiperda Larvae to Vip3Aa",
+        "year": 2022,
+        "journal": "Toxins",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "An_Integrative_Analysis_of_Transcriptomics_and_Proteomics_Reveals_Novel_Insights_into_the_Response_in_the_Midgut_of_Spod_d624774ea348:discussion_point:0004",
+      "paper_id": "An_Integrative_Analysis_of_Transcriptomics_and_Proteomics_Reveals_Novel_Insights_into_the_Response_in_the_Midgut_of_Spod_d624774ea348",
+      "chunk_type": "discussion_point",
+      "text": "Functional analysis of two significantly enriched profiles (p-value < 0.05) indicated that the apoptosis and endocytosis pathways were enriched in profile 7, while the insect hormone synthesis pathway was enriched in profile 0.",
+      "source_section": "Discussion",
+      "quote": "Functional analysis of two significantly enriched profiles (p-value < 0.05) indicated that the apoptosis and endocytosis pathways were enriched in profile 7, while the insect hormone synthesis pathway",
+      "confidence": "medium",
+      "metadata": {
+        "title": "An Integrative Analysis of Transcriptomics and Proteomics Reveals Novel Insights into the Response in the Midgut of Spodoptera frugiperda Larvae to Vip3Aa",
+        "year": 2022,
+        "journal": "Toxins",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "An_Integrative_Analysis_of_Transcriptomics_and_Proteomics_Reveals_Novel_Insights_into_the_Response_in_the_Midgut_of_Spod_d624774ea348:discussion_point:0005",
+      "paper_id": "An_Integrative_Analysis_of_Transcriptomics_and_Proteomics_Reveals_Novel_Insights_into_the_Response_in_the_Midgut_of_Spod_d624774ea348",
+      "chunk_type": "discussion_point",
+      "text": "The expression levels of mRNAs may not fully represent the expression levels of proteins, due to the post-translational modifications.",
+      "source_section": "Discussion",
+      "quote": "The expression levels of mRNAs may not fully represent the expression levels of proteins, due to the post-translational modifications.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "An Integrative Analysis of Transcriptomics and Proteomics Reveals Novel Insights into the Response in the Midgut of Spodoptera frugiperda Larvae to Vip3Aa",
+        "year": 2022,
+        "journal": "Toxins",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "An_Integrative_Analysis_of_Transcriptomics_and_Proteomics_Reveals_Novel_Insights_into_the_Response_in_the_Midgut_of_Spod_d624774ea348:discussion_point:0006",
+      "paper_id": "An_Integrative_Analysis_of_Transcriptomics_and_Proteomics_Reveals_Novel_Insights_into_the_Response_in_the_Midgut_of_Spod_d624774ea348",
+      "chunk_type": "discussion_point",
+      "text": "This protein set may provide information for higher quality genome annotation.",
+      "source_section": "Discussion",
+      "quote": "This protein set may provide information for higher quality genome annotation.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "An Integrative Analysis of Transcriptomics and Proteomics Reveals Novel Insights into the Response in the Midgut of Spodoptera frugiperda Larvae to Vip3Aa",
+        "year": 2022,
+        "journal": "Toxins",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "An_Integrative_Analysis_of_Transcriptomics_and_Proteomics_Reveals_Novel_Insights_into_the_Response_in_the_Midgut_of_Spod_d624774ea348:discussion_point:0007",
+      "paper_id": "An_Integrative_Analysis_of_Transcriptomics_and_Proteomics_Reveals_Novel_Insights_into_the_Response_in_the_Midgut_of_Spod_d624774ea348",
+      "chunk_type": "discussion_point",
+      "text": "These results are consistent with the results of RNA-Seq.",
+      "source_section": "Discussion",
+      "quote": "These results are consistent with the results of RNA-Seq.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "An Integrative Analysis of Transcriptomics and Proteomics Reveals Novel Insights into the Response in the Midgut of Spodoptera frugiperda Larvae to Vip3Aa",
+        "year": 2022,
+        "journal": "Toxins",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    }
+  ]
+}

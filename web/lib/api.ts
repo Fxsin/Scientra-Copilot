@@ -7,6 +7,7 @@ import type {
   QueryRequest,
   QueryResponse,
   QueryResultItem,
+  ResearchMapTopic,
   StatsResponse,
 } from "./types";
 import { sanitizeResult } from "./types";
@@ -307,6 +308,10 @@ export async function getClusterContext(
 
 export async function getResearchMap(): Promise<ResearchMapResponse> {
   return fetchJson<ResearchMapResponse>("/research-map").then((r) => r.data);
+}
+
+export async function getResearchMapTopic(topicId: string): Promise<{ topic: ResearchMapTopic }> {
+  return fetchJson<{ topic: ResearchMapTopic }>(`/research-map/topic/${encodeURIComponent(topicId)}`).then((r) => r.data);
 }
 
 /** Exposed via `export const` at the top of this file. */

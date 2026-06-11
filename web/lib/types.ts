@@ -195,6 +195,21 @@ export interface ResearchMapTopic {
   connected_to?: string[];
   opportunity?: string;
   year_span?: string;
+  year_distribution?: YearCount[];
+  recent_ratio?: number;
+  trend_label?: "emerging" | "active" | "stable" | "dormant" | "sparse" | "unknown";
+  trend_reason?: string;
+  evolution_phases?: TopicEvolutionPhase[];
+}
+
+export interface YearCount { year: number; count: number; }
+export interface TopicEvolutionPhase {
+  phase: "early" | "middle" | "recent";
+  label: string;
+  year_range: [number, number];
+  paper_count: number;
+  keywords: string[];
+  representative_papers: RelatedPaper[];
 }
 
 export interface TopicRelationship {
@@ -267,6 +282,7 @@ export interface RelatedPaper {
   doi?: string | null;
   similarity?: number;
   reason?: string;
+  summary?: string | null;
 }
 
 export interface SimilarityNode {

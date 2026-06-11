@@ -1,0 +1,78 @@
+{
+  "paper_id": "Domain-guided_engineering_of_a_thermoresistant_Vip3A_toxin_for_enhanced_functional_robustness_e40fdb25032d",
+  "title": "Domain-guided engineering of a thermoresistant Vip3A toxin for enhanced functional robustness",
+  "year": 2020,
+  "journal": "Scientific Reports",
+  "evidence_version": "v1",
+  "status": "partial",
+  "research_question": "",
+  "study_objective": "",
+  "research_gap": "",
+  "methods": [
+    {
+      "name": "product purification were conducted",
+      "section": "Methods",
+      "quote": "product purification were conducted"
+    },
+    {
+      "name": "coli DH5α was used",
+      "section": "Methods",
+      "quote": "coli DH5α was used"
+    },
+    {
+      "name": "library Random mutagenesis was performed",
+      "section": "Methods",
+      "quote": "library Random mutagenesis was performed"
+    },
+    {
+      "name": "Measurements were conducted",
+      "section": "Methods",
+      "quote": "Measurements were conducted"
+    },
+    {
+      "name": "and three independent experiments were performed",
+      "section": "Methods",
+      "quote": "and three independent experiments were performed"
+    },
+    {
+      "name": "Each bioassay was performed",
+      "section": "Methods",
+      "quote": "Each bioassay was performed"
+    },
+    {
+      "name": "and three replications were performed",
+      "section": "Methods",
+      "quote": "and three replications were performed"
+    },
+    {
+      "name": "replicates were measured and that 36 larvae were used",
+      "section": "Methods",
+      "quote": "replicates were measured and that 36 larvae were used"
+    }
+  ],
+  "key_results": [
+    {
+      "result": "# Domain-guided engineering of a thermoresistant Vip3A toxin for enhanced functional robustness Authors: Thanapon Kunlawatwimon; Florian Bourdeaux; Panadda Boonserm; Sumarin Soonsanga; Julian Luka; Boonhiang Promdonkoy; Ulrich Schwaneberg Year: 2020 DOI: 10.1038/s41598-026-47865-0",
+      "section": "Results",
+      "quote": "# Domain-guided engineering of a thermoresistant Vip3A toxin for enhanced functional robustness Authors: Thanapon Kunlawatwimon; Florian Bourdeaux; Panadda Boonserm; Sumarin Soonsanga; Julian Luka; Bo",
+      "confidence": "medium"
+    }
+  ],
+  "core_findings": [],
+  "discussion_points": [],
+  "limitations": [],
+  "open_questions": [],
+  "future_directions": [],
+  "claims": [],
+  "result_discussion_links": [],
+  "coverage": {
+    "has_introduction": true,
+    "has_methods": true,
+    "has_results": true,
+    "has_discussion": true,
+    "has_key_results": true,
+    "has_discussion_points": false
+  },
+  "fallback_used": true,
+  "errors": []
+}

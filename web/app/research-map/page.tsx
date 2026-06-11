@@ -6,7 +6,7 @@ import { Search, ChevronRight, ExternalLink, Hash, Calendar, BookOpen, Users } f
 import { useApiWithFallback } from "@/lib/use-api";
 import { getResearchMap } from "@/lib/api";
 import { DemoBanner } from "@/components/demo-banner";
-import type { ResearchMapResponse, ResearchMapTopic, TopicRelationship, RelatedPaper } from "@/lib/types";
+import type { ResearchMapResponse, ResearchMapTopic, TopicRelationship, RelatedPaper, YearCount, TopicEvolutionPhase } from "@/lib/types";
 
 /* ═══════════════════════════════════════════════════════
    Helpers
@@ -41,6 +41,77 @@ function cleanKeywords(kw: string[] | undefined): string[] {
   return kw
     .filter((k) => k && k.length >= 3 && !/^S\d{3,}$/i.test(k) && !JUNK_TOKENS.has(k.toLowerCase()) && !/^\d+$/.test(k))
     .slice(0, 6);
+}
+
+/* ─── Timeline / trend computation (frontend only, no API change) ─── */
+
+function computeYearDistribution(papers: RelatedPaper[]): YearCount[] {
+  const thisYear = new Date().getFullYear();
+  const counts: Record<number, number> = {};
+  for (const p of papers) {
+    const y = p.year;
+    if (y && y >= 1800 && y <= thisYear + 1) {
+      counts[y] = (counts[y] || 0) + 1;
+    }
+  }
+  return Object.entries(counts).map(([year, count]) => ({ year: parseInt(year), count })).sort((a, b) => a.year - b.year);
+}
+
+function computeTrend(topic: ResearchMapTopic): { label: string; recentCount: number; recentRatio: number; reason: string } {
+  const papers = tpapers(topic);
+  const thisYear = new Date().getFullYear();
+  const years = papers.map((p) => p.year).filter((y): y is number => y != null && y >= 1800 && y <= thisYear + 1);
+  const total = years.length || topic.paper_count || 0;
+  const recentCount = years.filter((y) => y >= thisYear - 5).length;
+  const recentRatio = total > 0 ? recentCount / total : 0;
+
+  let label = "unknown";
+  let reason = "Trend could not be determined from available data.";
+  if (total < 3) { label = "sparse"; reason = "Sparse because there are too few papers to infer a stable trend."; }
+  else if (total <= 5 && recentRatio >= 0.6) { label = "emerging"; reason = "Emerging because most papers were published recently."; }
+  else if (recentRatio >= 0.4) { label = "active"; reason = "Active because recent papers make up a large share of this topic."; }
+  else if (recentCount === 0) { label = "dormant"; reason = "Dormant because no papers were published in the recent window."; }
+  else { label = "stable"; reason = "Stable because the topic spans multiple years and still has recent activity."; }
+
+  return { label, recentCount, recentRatio, reason };
+}
+
+function computeEvolutionPhases(topic: ResearchMapTopic): TopicEvolutionPhase[] {
+  const papers = tpapers(topic);
+  const thisYear = new Date().getFullYear();
+  const validYears = papers.map((p) => p.year).filter((y): y is number => y != null && y >= 1800 && y <= thisYear + 1);
+  if (validYears.length === 0) return [];
+
+  const minY = Math.min(...validYears);
+  const maxY = Math.max(...validYears);
+  if (maxY <= minY) return [];
+
+  const span = maxY - minY;
+  const third = Math.max(1, Math.ceil(span / 3));
+  const phases: { phase: "early" | "middle" | "recent"; label: string; start: number; end: number }[] = [
+    { phase: "early", label: "Early phase", start: minY, end: minY + third },
+    { phase: "middle", label: "Middle phase", start: minY + third + 1, end: minY + third * 2 },
+    { phase: "recent", label: "Recent phase", start: minY + third * 2 + 1, end: maxY },
+  ];
+
+  return phases.map((ph) => {
+    const phasePapers = papers.filter((p) => p.year != null && p.year >= ph.start && p.year <= ph.end);
+    // Extract keywords from phase paper titles
+    const text = phasePapers.map((p) => p.title || "").join(" ");
+    const words = text.toLowerCase().replace(/[.,:;()]/g, " ").split(/\s+/).filter((w) => w.length > 3 && !JUNK_TOKENS.has(w));
+    const freq: Record<string, number> = {};
+    for (const w of words) freq[w] = (freq[w] || 0) + 1;
+    const kw = Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k]) => k);
+
+    return {
+      phase: ph.phase,
+      label: ph.label,
+      year_range: [ph.start, ph.end] as [number, number],
+      paper_count: phasePapers.length,
+      keywords: kw,
+      representative_papers: phasePapers.slice(0, 2),
+    };
+  }).filter((ph) => ph.paper_count > 0);
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -192,6 +263,7 @@ export default function ResearchMapPage() {
                 allTopics={allTopics}
                 onTopicClick={(id) => setSelectedId(id)}
                 onPaperClick={(pid) => router.push(`/paper/${pid}`)}
+                onViewFullTopic={(id) => router.push(`/research-map/topic/${id}`)}
               />
             ) : (
               <div className="rounded-xl border border-slate-200/50 bg-white/80 p-6 text-center">
@@ -249,6 +321,7 @@ function TopicCard({ topic, selected, onClick, onPaperClick }: { topic: Research
   const kw = cleanKeywords(topic.keywords);
   const typeColors: Record<string, string> = { mature: "bg-emerald-50 text-emerald-600", growing: "bg-blue-50 text-blue-600", gap: "bg-amber-50 text-amber-600" };
   const papers = tpapers(topic);
+  const trend = computeTrend(topic);
 
   return (
     <div onClick={onClick}
@@ -258,7 +331,7 @@ function TopicCard({ topic, selected, onClick, onPaperClick }: { topic: Research
         <div className="flex items-start justify-between gap-1.5">
           <h3 className="text-[13px] font-semibold text-slate-800 leading-snug line-clamp-2 flex-1">{topic.name || `Topic ${id.slice(-3)}`}</h3>
           <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium shrink-0 ${typeColors[topic.type || "mature"] || typeColors.mature}`}>
-            {topic.type || "mature"}
+            {topic.type || "mature"}{trend.label !== "unknown" ? ` · ${trend.label}` : ""}
           </span>
         </div>
 
@@ -293,14 +366,16 @@ function TopicCard({ topic, selected, onClick, onPaperClick }: { topic: Research
 
 /* ─── Topic Detail Panel ─── */
 
-function TopicDetailPanel({ topic, relatedTopics, allTopics, onTopicClick, onPaperClick }: {
+function TopicDetailPanel({ topic, relatedTopics, allTopics, onTopicClick, onPaperClick, onViewFullTopic }: {
   topic: ResearchMapTopic;
   relatedTopics: any[];
   allTopics: ResearchMapTopic[];
   onTopicClick: (id: string) => void;
   onPaperClick: (pid: string) => void;
+  onViewFullTopic?: (id: string) => void;
 }) {
   const id = tid(topic) || "";
+  const router = useRouter();
   const kw = cleanKeywords(topic.keywords);
   const papers = tpapers(topic);
   const typeColors: Record<string, string> = { mature: "bg-emerald-50 text-emerald-600", growing: "bg-blue-50 text-blue-600", gap: "bg-amber-50 text-amber-600" };
@@ -379,6 +454,13 @@ function TopicDetailPanel({ topic, relatedTopics, allTopics, onTopicClick, onPap
           <p className="text-xs text-slate-300 italic">No strong topic relationships detected yet.</p>
         )}
       </div>
+      {onViewFullTopic && (
+        <div className="p-3.5 pt-0">
+          <button onClick={() => onViewFullTopic(id)} className="w-full text-center text-[11px] text-blue-600 hover:text-blue-800 border border-blue-200 rounded-lg py-2 hover:bg-blue-50 transition-colors">
+            View full topic →
+          </button>
+        </div>
+      )}
     </div>
   );
 }

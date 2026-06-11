@@ -1,0 +1,87 @@
+{
+  "paper_id": "Identification_of_vip3A-type_genes_from_Bacillus_thuringiensis_strains_and_characterization_of_a_novel_vip3A-type_gene_b6ffa595fa21",
+  "title": "Identification of vip3A-type genes from Bacillus thuringiensis strains and characterization of a novel vip3A-type gene",
+  "year": 1999,
+  "journal": "Letters in Applied Microbiology",
+  "evidence_version": "v1",
+  "status": "partial",
+  "research_question": "",
+  "study_objective": "",
+  "research_gap": "",
+  "methods": [],
+  "key_results": [],
+  "core_findings": [],
+  "discussion_points": [
+    {
+      "point": "Our results indicated that vip3A gene was found in 382 B.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Our results indicated that vip3A gene was found in 382 B.",
+      "confidence": "medium"
+    },
+    {
+      "point": "Sequence analysis showed that the PCR fragment shared the highest sequence homology (83%), among known vip3A-type genes, with the vip3Af1 (isp3a) gene, which suggested that B.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Sequence analysis showed that the PCR fragment shared the highest sequence homology (83%), among known vip3A-type genes, with the vip3Af1 (isp3a) gene, which suggested that B.",
+      "confidence": "medium"
+    },
+    {
+      "point": "thuringiensis Bt41 might contain a novel vip3A holotype gene.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "thuringiensis Bt41 might contain a novel vip3A holotype gene.",
+      "confidence": "medium"
+    },
+    {
+      "point": "This may have resulted from the mismatch of primers with vip3A genes of some B.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "This may have resulted from the mismatch of primers with vip3A genes of some B.",
+      "confidence": "medium"
+    },
+    {
+      "point": "However, the expressed Vip3Aa19 protein was toxic to S.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "However, the expressed Vip3Aa19 protein was toxic to S.",
+      "confidence": "medium"
+    },
+    {
+      "point": "However, the research on fragment swapping between Vip3Aa19 and Vip3Aa11 toxins could make for M 1 2 3 200 -116 -97 -66 -45 -Figure 2 Sodium dodecyl sulfate-polyacrylamide gel electrophoresis (8% polyacrylamide gel) of proteins from recombinant Escherichia coli BL21 (DE3).",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "However, the research on fragment swapping between Vip3Aa19 and Vip3Aa11 toxins could make for M 1 2 3 200 -116 -97 -66 -45 -Figure 2 Sodium dodecyl sulfate-polyacrylamide gel electrophoresis (8% poly",
+      "confidence": "medium"
+    },
+    {
+      "point": "Previous reports have also demonstrated that changes in several amino acid residues in other Vip3A proteins could affect protein insecticidal activity (Estruch et al.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Previous reports have also demonstrated that changes in several amino acid residues in other Vip3A proteins could affect protein insecticidal activity (Estruch et al.",
+      "confidence": "medium"
+    },
+    {
+      "point": "These results suggest that different regions of Vip3A protein may confer different insecticidal activities.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "These results suggest that different regions of Vip3A protein may confer different insecticidal activities.",
+      "confidence": "medium"
+    }
+  ],
+  "limitations": [],
+  "open_questions": [],
+  "future_directions": [],
+  "claims": [],
+  "result_discussion_links": [],
+  "coverage": {
+    "has_introduction": true,
+    "has_methods": true,
+    "has_results": true,
+    "has_discussion": true,
+    "has_key_results": false,
+    "has_discussion_points": true
+  },
+  "fallback_used": true,
+  "errors": []
+}

@@ -1,0 +1,87 @@
+{
+  "paper_id": "Diverse_genetic_basis_of_Vip3Aa_resistance_in_five_independent_field-derived_strains_of_Helicoverpa_zea_in_the_US_934b595523b2",
+  "title": "Diverse genetic basis of Vip3Aa resistance in five independent field-derived strains of Helicoverpa zea in the US",
+  "year": 2024,
+  "journal": "Pest Management Science",
+  "evidence_version": "v1",
+  "status": "partial",
+  "research_question": "",
+  "study_objective": "",
+  "research_gap": "",
+  "methods": [],
+  "key_results": [],
+  "core_findings": [],
+  "discussion_points": [
+    {
+      "point": "37 These results suggest that autosomal recessive inheritance of Vip3Aa resistance may be a common occurrence in H.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "37 These results suggest that autosomal recessive inheritance of Vip3Aa resistance may be a common occurrence in H.",
+      "confidence": "medium"
+    },
+    {
+      "point": "17,38,39 Gene-pyramiding as another main IRM strategy for 6 Collectively, these findings suggest that both high-dose refuge and gene-pyramiding strategies should be effective in managing Vip3Aa resistance in H.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "17,38,39 Gene-pyramiding as another main IRM strategy for 6 Collectively, these findings suggest that both high-dose refuge and gene-pyramiding strategies should be effective in managing Vip3Aa resist",
+      "confidence": "medium"
+    },
+    {
+      "point": "However, it is important to acknowledge that resistance to Cry1 and Cry2 is currently widespread in H.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "However, it is important to acknowledge that resistance to Cry1 and Cry2 is currently widespread in H.",
+      "confidence": "medium"
+    },
+    {
+      "point": "zea resistance in the US might face limitations.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "zea resistance in the US might face limitations.",
+      "confidence": "medium"
+    },
+    {
+      "point": "frugiperda in China showed autosomal and partially recessive resistance with a degree of dominance, h, of 0.13 (h = 0 indicates completely recessive resistance, h = 1 indicates completely dominant resistance).",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "frugiperda in China showed autosomal and partially recessive resistance with a degree of dominance, h, of 0.13 (h = 0 indicates completely recessive resistance, h = 1 indicates completely dominant res",
+      "confidence": "medium"
+    },
+    {
+      "point": "46 However, this degree of dominance in S.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "46 However, this degree of dominance in S.",
+      "confidence": "medium"
+    },
+    {
+      "point": "36 These diverse outcomes suggest that the genetic basis of Vip3Aa resistance in a target insect pest may vary based on the methodologies used to establish resistant strains.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "36 These diverse outcomes suggest that the genetic basis of Vip3Aa resistance in a target insect pest may vary based on the methodologies used to establish resistant strains.",
+      "confidence": "medium"
+    },
+    {
+      "point": "Nevertheless, these published studies collectively suggest that Vip3Aa resistance in these lepidopteran insects tends to be autosomal and recessive, especially for strains derived from F 2 screening.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Nevertheless, these published studies collectively suggest that Vip3Aa resistance in these lepidopteran insects tends to be autosomal and recessive, especially for strains derived from F 2 screening.",
+      "confidence": "medium"
+    }
+  ],
+  "limitations": [],
+  "open_questions": [],
+  "future_directions": [],
+  "claims": [],
+  "result_discussion_links": [],
+  "coverage": {
+    "has_introduction": true,
+    "has_methods": true,
+    "has_results": true,
+    "has_discussion": true,
+    "has_key_results": false,
+    "has_discussion_points": true
+  },
+  "fallback_used": true,
+  "errors": []
+}

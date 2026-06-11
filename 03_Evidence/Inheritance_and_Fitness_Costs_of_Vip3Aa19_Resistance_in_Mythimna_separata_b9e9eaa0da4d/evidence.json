@@ -1,0 +1,87 @@
+{
+  "paper_id": "Inheritance_and_Fitness_Costs_of_Vip3Aa19_Resistance_in_Mythimna_separata_b9e9eaa0da4d",
+  "title": "Inheritance and Fitness Costs of Vip3Aa19 Resistance in Mythimna separata",
+  "year": 2022,
+  "journal": "Toxins",
+  "evidence_version": "v1",
+  "status": "partial",
+  "research_question": "",
+  "study_objective": "",
+  "research_gap": "",
+  "methods": [],
+  "key_results": [],
+  "core_findings": [],
+  "discussion_points": [
+    {
+      "point": "These significant lower LC 50 value of the F 1 progeny from SS female × RR male cross compared with the RR female × SS male cross indicated that resistance to Vip3Aa19 was inherited with maternal effects rather than autosomal.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "These significant lower LC 50 value of the F 1 progeny from SS female × RR male cross compared with the RR female × SS male cross indicated that resistance to Vip3Aa19 was inherited with maternal effe",
+      "confidence": "medium"
+    },
+    {
+      "point": "However, there is a report where the gender of the resistant parents had a strong paternal influence on Vip3Aa resistance in Heliothis virescens (Lepidoptera: Noctuidae) [25].",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "However, there is a report where the gender of the resistant parents had a strong paternal influence on Vip3Aa resistance in Heliothis virescens (Lepidoptera: Noctuidae) [25].",
+      "confidence": "medium"
+    },
+    {
+      "point": "With the possible parental influence on resistance, reduced mating success may help to limit an increase in the frequency of the resistant allele, thus contribute to delays the evolution of resistance.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "With the possible parental influence on resistance, reduced mating success may help to limit an increase in the frequency of the resistant allele, thus contribute to delays the evolution of resistance",
+      "confidence": "medium"
+    },
+    {
+      "point": "Many studies suggested that autosomal inheritance of resistance is common in numerous lepidopterous insects, including P.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Many studies suggested that autosomal inheritance of resistance is common in numerous lepidopterous insects, including P.",
+      "confidence": "medium"
+    },
+    {
+      "point": "Greenhouse tests indicated that dominance may vary depending on different levels of Bt toxin expression in tissues during different plant stages (e.g., vegetative-stage and reproductive-stage).",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Greenhouse tests indicated that dominance may vary depending on different levels of Bt toxin expression in tissues during different plant stages (e.g., vegetative-stage and reproductive-stage).",
+      "confidence": "medium"
+    },
+    {
+      "point": "This suggests that a high dose in transgenic maize is necessary for a refuge strategy to be successful in delaying resistance [30].",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "This suggests that a high dose in transgenic maize is necessary for a refuge strategy to be successful in delaying resistance [30].",
+      "confidence": "medium"
+    },
+    {
+      "point": "When recessive resistance appears not to be achieved, increasing refuge abundance can still substantially delay resistance [10].",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "When recessive resistance appears not to be achieved, increasing refuge abundance can still substantially delay resistance [10].",
+      "confidence": "medium"
+    },
+    {
+      "point": "For example, modeling results suggest that resistance can be delayed for >20 years with ≥5% refuges if resistance is completely recessive (h = 0) and with >50% refuges if resistance is partially dominant (h ≥ 0.4) [33].",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "For example, modeling results suggest that resistance can be delayed for >20 years with ≥5% refuges if resistance is completely recessive (h = 0) and with >50% refuges if resistance is partially domin",
+      "confidence": "medium"
+    }
+  ],
+  "limitations": [],
+  "open_questions": [],
+  "future_directions": [],
+  "claims": [],
+  "result_discussion_links": [],
+  "coverage": {
+    "has_introduction": true,
+    "has_methods": true,
+    "has_results": true,
+    "has_discussion": true,
+    "has_key_results": false,
+    "has_discussion_points": true
+  },
+  "fallback_used": true,
+  "errors": []
+}

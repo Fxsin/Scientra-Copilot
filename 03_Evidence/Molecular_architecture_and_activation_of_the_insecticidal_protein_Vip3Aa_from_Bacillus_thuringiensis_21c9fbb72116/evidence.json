@@ -1,0 +1,113 @@
+{
+  "paper_id": "Molecular_architecture_and_activation_of_the_insecticidal_protein_Vip3Aa_from_Bacillus_thuringiensis_21c9fbb72116",
+  "title": "Molecular architecture and activation of the insecticidal protein Vip3Aa from Bacillus thuringiensis",
+  "year": 2014,
+  "journal": "Nature Communications",
+  "evidence_version": "v1",
+  "status": "partial",
+  "research_question": "",
+  "study_objective": "",
+  "research_gap": "",
+  "methods": [
+    {
+      "name": "affinity chromatography was performed",
+      "section": "Methods",
+      "quote": "affinity chromatography was performed"
+    },
+    {
+      "name": "PAGE was used",
+      "section": "Methods",
+      "quote": "PAGE was used"
+    },
+    {
+      "name": "3 µl of sample were applied",
+      "section": "Methods",
+      "quote": "3 µl of sample were applied"
+    },
+    {
+      "name": "density showing better quality and best connectivity was used",
+      "section": "Methods",
+      "quote": "density showing better quality and best connectivity was used"
+    },
+    {
+      "name": "the Robetta server 59 was used",
+      "section": "Methods",
+      "quote": "the Robetta server 59 was used"
+    }
+  ],
+  "key_results": [],
+  "core_findings": [],
+  "discussion_points": [
+    {
+      "point": "In contrast, structural studies of Vip3A have lagged behind limiting the understanding of their function.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "In contrast, structural studies of Vip3A have lagged behind limiting the understanding of their function.",
+      "confidence": "medium"
+    },
+    {
+      "point": "The results presented here solve many long-standing questions concerning the molecular organization and activation of the Vip3 family of toxins and help to explain and reconcile some difficult-to-interpret functional and biological data obtained during the last decades.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "The results presented here solve many long-standing questions concerning the molecular organization and activation of the Vip3 family of toxins and help to explain and reconcile some difficult-to-inte",
+      "confidence": "medium"
+    },
+    {
+      "point": "Moreover, the structures explain why the exchange of this first domain between Vip3 variants can produce stable chimeras 12,40 , since the replacement of this highly conserved domain probably has a minor effect on the overall structure of the protein, and it also clarifies why attempts to produce Vi",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Moreover, the structures explain why the exchange of this first domain between Vip3 variants can produce stable chimeras 12,40 , since the replacement of this highly conserved domain probably has a mi",
+      "confidence": "medium"
+    },
+    {
+      "point": "Residues E168A, F229A, Y272A, and E483 maintain fundamentally the same contacts in the protoxin and toxin structures and most likely contribute to the stabilization of the protein during the needle formation.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Residues E168A, F229A, Y272A, and E483 maintain fundamentally the same contacts in the protoxin and toxin structures and most likely contribute to the stabilization of the protein during the needle fo",
+      "confidence": "medium"
+    },
+    {
+      "point": "4f) that seems to maintain α4 bound to the core of the tetramer upon needle formation.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "4f) that seems to maintain α4 bound to the core of the tetramer upon needle formation.",
+      "confidence": "medium"
+    },
+    {
+      "point": "Overall, the structural transformations observed during Vip3 activation allow us to propose a spring-loaded mechanism that shares numerous similarities with that of influenza haemagglutinin and other viral fusion proteins 42,43 .",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Overall, the structural transformations observed during Vip3 activation allow us to propose a spring-loaded mechanism that shares numerous similarities with that of influenza haemagglutinin and other ",
+      "confidence": "medium"
+    },
+    {
+      "point": "The N-terminus of the protein detaches from a pocket formed between domain III and the main body of the tetramer, a process that could be further stimulated by other factors like the interaction of the membrane receptors with the Cterminal region of Vip3, which could also increase the concentration ",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "The N-terminus of the protein detaches from a pocket formed between domain III and the main body of the tetramer, a process that could be further stimulated by other factors like the interaction of th",
+      "confidence": "medium"
+    },
+    {
+      "point": "Notably, the coiled-coil observed upon trypsin digestion forms a 160 Å-long dipole that can accommodate small ions in the inner cavity and, therefore, the dimension of this four-helix needle would be sufficient to reach and pierce the lipid bilayer.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Notably, the coiled-coil observed upon trypsin digestion forms a 160 Å-long dipole that can accommodate small ions in the inner cavity and, therefore, the dimension of this four-helix needle would be ",
+      "confidence": "medium"
+    }
+  ],
+  "limitations": [],
+  "open_questions": [],
+  "future_directions": [],
+  "claims": [],
+  "result_discussion_links": [],
+  "coverage": {
+    "has_introduction": true,
+    "has_methods": true,
+    "has_results": true,
+    "has_discussion": true,
+    "has_key_results": false,
+    "has_discussion_points": true
+  },
+  "fallback_used": true,
+  "errors": []
+}

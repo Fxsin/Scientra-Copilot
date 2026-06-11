@@ -1,0 +1,116 @@
+{
+  "paper_id": "Performance_of_cotton_expressing_Cry1Ac_Cry1F_and_Vip3Aa19_insecticidal_proteins_against_Helicoverpa_armigera_H._zea_and_7dba62edae1e",
+  "title": "Performance of cotton expressing Cry1Ac, Cry1F and Vip3Aa19 insecticidal proteins against Helicoverpa armigera, H. zea and their hybrid progeny, and evidence of reduced susceptibility of a field population of H. zea to Cry1 and Vip3Aa in Brazil",
+  "year": 2023,
+  "journal": "PLOS ONE",
+  "evidence_version": "v1",
+  "status": "partial",
+  "research_question": "",
+  "study_objective": "",
+  "research_gap": "",
+  "methods": [],
+  "key_results": [
+    {
+      "result": "zea and their hybrid progeny, and evidence of reduced susceptibility of a field population of H.",
+      "section": "Results",
+      "quote": "zea and their hybrid progeny, and evidence of reduced susceptibility of a field population of H.",
+      "confidence": "medium"
+    }
+  ],
+  "core_findings": [],
+  "discussion_points": [
+    {
+      "point": "armigera, indicating that H.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "armigera, indicating that H.",
+      "confidence": "medium"
+    },
+    {
+      "point": "This 3-gene Bt cotton technology also improved protection against square damage caused by Helicoverpa species and hybrids compared to 2-gene Bt cotton and should improve yield protection, since larvae may prefer to attack reproductive structures of cotton [37,38].",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "This 3-gene Bt cotton technology also improved protection against square damage caused by Helicoverpa species and hybrids compared to 2-gene Bt cotton and should improve yield protection, since larvae",
+      "confidence": "medium"
+    },
+    {
+      "point": "[7], there is chance of interspecific crosses in Helicoverpa species, with interspecific crossing probably occurring when pest populations are at high densities, suggesting that populations of these pests should be maintained low levels in the field.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "[7], there is chance of interspecific crosses in Helicoverpa species, with interspecific crossing probably occurring when pest populations are at high densities, suggesting that populations of these p",
+      "confidence": "medium"
+    },
+    {
+      "point": "Therefore, the effectiveness of DAS-21023-5 × DAS-24236-5 × SYN-IR102-7 cotton in Table 5.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Therefore, the effectiveness of DAS-21023-5 × DAS-24236-5 × SYN-IR102-7 cotton in Table 5.",
+      "confidence": "medium"
+    },
+    {
+      "point": "controlling Helicoverpa species may reduce population levels across the landscape, favoring that the 'species identities' will be maintained under field conditions.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "controlling Helicoverpa species may reduce population levels across the landscape, favoring that the 'species identities' will be maintained under field conditions.",
+      "confidence": "medium"
+    },
+    {
+      "point": "Our findings suggest that the Hz-field population collected from a Bt cotton field expressing Cry1, Cry2 and Vip3 in Bahia has lower susceptibility to Cry1 and Vip3Aa in comparison to the Hz-Lab.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Our findings suggest that the Hz-field population collected from a Bt cotton field expressing Cry1, Cry2 and Vip3 in Bahia has lower susceptibility to Cry1 and Vip3Aa in comparison to the Hz-Lab.",
+      "confidence": "medium"
+    },
+    {
+      "point": "armigera to produce hybrid offspring may also have implications for the development of resistance to Bt proteins in cotton-infesting populations of H.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "armigera to produce hybrid offspring may also have implications for the development of resistance to Bt proteins in cotton-infesting populations of H.",
+      "confidence": "medium"
+    },
+    {
+      "point": "armigera, indicating that broad adoption of Bt plants reduced population levels of this species.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "armigera, indicating that broad adoption of Bt plants reduced population levels of this species.",
+      "confidence": "medium"
+    }
+  ],
+  "limitations": [],
+  "open_questions": [],
+  "future_directions": [],
+  "claims": [],
+  "result_discussion_links": [
+    {
+      "result_index": 0,
+      "discussion_index": 4,
+      "link_type": "interprets",
+      "basis": "Shared terms: field, population",
+      "confidence": "low"
+    },
+    {
+      "result_index": 0,
+      "discussion_index": 5,
+      "link_type": "interprets",
+      "basis": "Shared terms: field, population, susceptibility",
+      "confidence": "low"
+    },
+    {
+      "result_index": 0,
+      "discussion_index": 7,
+      "link_type": "interprets",
+      "basis": "Shared terms: population, reduced",
+      "confidence": "low"
+    }
+  ],
+  "coverage": {
+    "has_introduction": true,
+    "has_methods": true,
+    "has_results": true,
+    "has_discussion": true,
+    "has_key_results": true,
+    "has_discussion_points": true
+  },
+  "fallback_used": true,
+  "errors": []
+}

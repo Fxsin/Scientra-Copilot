@@ -1,0 +1,144 @@
+{
+  "paper_id": "Functional_characterization_of_Vip3Aa_from_Bacillus_thuringiensis_reveals_the_contribution_of_specific_domains_to_insect_721f57c74d43",
+  "chunk_version": "v2",
+  "evidence_hash": "08245e816d57c384",
+  "chunk_count": 8,
+  "chunks": [
+    {
+      "chunk_id": "Functional_characterization_of_Vip3Aa_from_Bacillus_thuringiensis_reveals_the_contribution_of_specific_domains_to_insect_721f57c74d43:discussion_point:0000",
+      "paper_id": "Functional_characterization_of_Vip3Aa_from_Bacillus_thuringiensis_reveals_the_contribution_of_specific_domains_to_insect_721f57c74d43",
+      "chunk_type": "discussion_point",
+      "text": "However, only Cry proteins have been extensively studied and successfully used worldwide (7, 8, 11-13).",
+      "source_section": "Discussion",
+      "quote": "However, only Cry proteins have been extensively studied and successfully used worldwide (7, 8, 11-13).",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Functional characterization of Vip3Aa from Bacillus thuringiensis reveals the contributions of specific domains to its insecticidal activity",
+        "year": 2017,
+        "journal": "Journal of Biological Chemistry",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Functional_characterization_of_Vip3Aa_from_Bacillus_thuringiensis_reveals_the_contribution_of_specific_domains_to_insect_721f57c74d43:discussion_point:0001",
+      "paper_id": "Functional_characterization_of_Vip3Aa_from_Bacillus_thuringiensis_reveals_the_contribution_of_specific_domains_to_insect_721f57c74d43",
+      "chunk_type": "discussion_point",
+      "text": "However, the lack of clear understanding of the molecular mechanisms underlying their insecticidal activity severely restricts their broader application and rational development.",
+      "source_section": "Discussion",
+      "quote": "However, the lack of clear understanding of the molecular mechanisms underlying their insecticidal activity severely restricts their broader application and rational development.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Functional characterization of Vip3Aa from Bacillus thuringiensis reveals the contributions of specific domains to its insecticidal activity",
+        "year": 2017,
+        "journal": "Journal of Biological Chemistry",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Functional_characterization_of_Vip3Aa_from_Bacillus_thuringiensis_reveals_the_contribution_of_specific_domains_to_insect_721f57c74d43:discussion_point:0002",
+      "paper_id": "Functional_characterization_of_Vip3Aa_from_Bacillus_thuringiensis_reveals_the_contribution_of_specific_domains_to_insect_721f57c74d43",
+      "chunk_type": "discussion_point",
+      "text": "Since all members of the Vip3 family are highly conserved, these results and unique insights can likely be applied to the other members of this protein family.",
+      "source_section": "Discussion",
+      "quote": "Since all members of the Vip3 family are highly conserved, these results and unique insights can likely be applied to the other members of this protein family.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Functional characterization of Vip3Aa from Bacillus thuringiensis reveals the contributions of specific domains to its insecticidal activity",
+        "year": 2017,
+        "journal": "Journal of Biological Chemistry",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Functional_characterization_of_Vip3Aa_from_Bacillus_thuringiensis_reveals_the_contribution_of_specific_domains_to_insect_721f57c74d43:discussion_point:0003",
+      "paper_id": "Functional_characterization_of_Vip3Aa_from_Bacillus_thuringiensis_reveals_the_contribution_of_specific_domains_to_insect_721f57c74d43",
+      "chunk_type": "discussion_point",
+      "text": "(45) found a series of amino acid mutations-some located on the tetrameric interface of DI-DIII-that could significantly decrease the insecticidal activity of Vip3Af.",
+      "source_section": "Discussion",
+      "quote": "(45) found a series of amino acid mutations-some located on the tetrameric interface of DI-DIII-that could significantly decrease the insecticidal activity of Vip3Af.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Functional characterization of Vip3Aa from Bacillus thuringiensis reveals the contributions of specific domains to its insecticidal activity",
+        "year": 2017,
+        "journal": "Journal of Biological Chemistry",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Functional_characterization_of_Vip3Aa_from_Bacillus_thuringiensis_reveals_the_contribution_of_specific_domains_to_insect_721f57c74d43:discussion_point:0004",
+      "paper_id": "Functional_characterization_of_Vip3Aa_from_Bacillus_thuringiensis_reveals_the_contribution_of_specific_domains_to_insect_721f57c74d43",
+      "chunk_type": "discussion_point",
+      "text": "Some mutations in them, such as P171A and F229A, have also been found to affect the tetramerization of Vip3Af (45) and the stability of Vip3Af to trypsin (30), further indicating that proper tetramerization is required for Vip3Aa's stability in the protease-enriched host insect midgut.",
+      "source_section": "Discussion",
+      "quote": "Some mutations in them, such as P171A and F229A, have also been found to affect the tetramerization of Vip3Af (45) and the stability of Vip3Af to trypsin (30), further indicating that proper tetrameri",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Functional characterization of Vip3Aa from Bacillus thuringiensis reveals the contributions of specific domains to its insecticidal activity",
+        "year": 2017,
+        "journal": "Journal of Biological Chemistry",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Functional_characterization_of_Vip3Aa_from_Bacillus_thuringiensis_reveals_the_contribution_of_specific_domains_to_insect_721f57c74d43:discussion_point:0005",
+      "paper_id": "Functional_characterization_of_Vip3Aa_from_Bacillus_thuringiensis_reveals_the_contribution_of_specific_domains_to_insect_721f57c74d43",
+      "chunk_type": "discussion_point",
+      "text": "Truncation variants of Vip3Aa lacking DII and DIII, or containing only one of these domains, could not bind to target cells, indicating that DII and DIII together are the receptor-binding domains of Vip3.",
+      "source_section": "Discussion",
+      "quote": "Truncation variants of Vip3Aa lacking DII and DIII, or containing only one of these domains, could not bind to target cells, indicating that DII and DIII together are the receptor-binding domains of V",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Functional characterization of Vip3Aa from Bacillus thuringiensis reveals the contributions of specific domains to its insecticidal activity",
+        "year": 2017,
+        "journal": "Journal of Biological Chemistry",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Functional_characterization_of_Vip3Aa_from_Bacillus_thuringiensis_reveals_the_contribution_of_specific_domains_to_insect_721f57c74d43:discussion_point:0006",
+      "paper_id": "Functional_characterization_of_Vip3Aa_from_Bacillus_thuringiensis_reveals_the_contribution_of_specific_domains_to_insect_721f57c74d43",
+      "chunk_type": "discussion_point",
+      "text": "However, for the frozen tissue sections, we found that in addition to binding to the cell membrane, many Vip3Aa proteins are also located in midgut epithelial cells.",
+      "source_section": "Discussion",
+      "quote": "However, for the frozen tissue sections, we found that in addition to binding to the cell membrane, many Vip3Aa proteins are also located in midgut epithelial cells.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Functional characterization of Vip3Aa from Bacillus thuringiensis reveals the contributions of specific domains to its insecticidal activity",
+        "year": 2017,
+        "journal": "Journal of Biological Chemistry",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Functional_characterization_of_Vip3Aa_from_Bacillus_thuringiensis_reveals_the_contribution_of_specific_domains_to_insect_721f57c74d43:discussion_point:0007",
+      "paper_id": "Functional_characterization_of_Vip3Aa_from_Bacillus_thuringiensis_reveals_the_contribution_of_specific_domains_to_insect_721f57c74d43",
+      "chunk_type": "discussion_point",
+      "text": "We also found that DI-DIII, like full-length Vip3Aa, could be activated by trypsin or MJ proteolysis and maintain the Structural studies on Vip3 have revealed that DV contains a glycan-binding motif (33)(34)(35).",
+      "source_section": "Discussion",
+      "quote": "We also found that DI-DIII, like full-length Vip3Aa, could be activated by trypsin or MJ proteolysis and maintain the Structural studies on Vip3 have revealed that DV contains a glycan-binding motif (",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Functional characterization of Vip3Aa from Bacillus thuringiensis reveals the contributions of specific domains to its insecticidal activity",
+        "year": 2017,
+        "journal": "Journal of Biological Chemistry",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    }
+  ]
+}

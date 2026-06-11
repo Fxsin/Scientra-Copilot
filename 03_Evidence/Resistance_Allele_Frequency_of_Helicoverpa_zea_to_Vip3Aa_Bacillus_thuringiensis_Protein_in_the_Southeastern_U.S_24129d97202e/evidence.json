@@ -1,0 +1,87 @@
+{
+  "paper_id": "Resistance_Allele_Frequency_of_Helicoverpa_zea_to_Vip3Aa_Bacillus_thuringiensis_Protein_in_the_Southeastern_U.S_24129d97202e",
+  "title": "Resistance Allele Frequency of Helicoverpa zea to Vip3Aa Bacillus thuringiensis Protein in the Southeastern U.S",
+  "year": 2023,
+  "journal": "Insects",
+  "evidence_version": "v1",
+  "status": "partial",
+  "research_question": "",
+  "study_objective": "",
+  "research_gap": "",
+  "methods": [],
+  "key_results": [],
+  "core_findings": [],
+  "discussion_points": [
+    {
+      "point": "However, one limitation of this modified F 2 screen method is that it only represents the genetics of male insects of the field population.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "However, one limitation of this modified F 2 screen method is that it only represents the genetics of male insects of the field population.",
+      "confidence": "medium"
+    },
+    {
+      "point": "In contrast, the light trap F 2 screen method used only female insects of the field population, and these female moths could be fertilized by multiple male moths in the field.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "In contrast, the light trap F 2 screen method used only female insects of the field population, and these female moths could be fertilized by multiple male moths in the field.",
+      "confidence": "medium"
+    },
+    {
+      "point": "Based on the survival of F 2 neonates in the bioassays and recessive inheritance data (Yang et al., Unpublished data), surprisingly, F 0 feral larvae of LA-M1, LA-AC4, and MS-R15 were presumed to possess two recessive resistance alleles to Vip3Aa39, suggesting these H.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Based on the survival of F 2 neonates in the bioassays and recessive inheritance data (Yang et al., Unpublished data), surprisingly, F 0 feral larvae of LA-M1, LA-AC4, and MS-R15 were presumed to poss",
+      "confidence": "medium"
+    },
+    {
+      "point": "Thus three out of 16 larvae of H.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Thus three out of 16 larvae of H.",
+      "confidence": "medium"
+    },
+    {
+      "point": "In general, these results suggest that the resistance allele frequency of Vip3Aa in H.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "In general, these results suggest that the resistance allele frequency of Vip3Aa in H.",
+      "confidence": "medium"
+    },
+    {
+      "point": "zea is high in Louisiana and Mississippi, which could explain the observation of unexpected occurrence and damage of H.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "zea is high in Louisiana and Mississippi, which could explain the observation of unexpected occurrence and damage of H.",
+      "confidence": "medium"
+    },
+    {
+      "point": "Data from the present study and previous studies suggest that resistance allele frequency for Vip3Aa in H.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Data from the present study and previous studies suggest that resistance allele frequency for Vip3Aa in H.",
+      "confidence": "medium"
+    },
+    {
+      "point": "However, field efficacy data indicated that Bt crops expressing Vip3Aa protein are still very effective for the management of H.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "However, field efficacy data indicated that Bt crops expressing Vip3Aa protein are still very effective for the management of H.",
+      "confidence": "medium"
+    }
+  ],
+  "limitations": [],
+  "open_questions": [],
+  "future_directions": [],
+  "claims": [],
+  "result_discussion_links": [],
+  "coverage": {
+    "has_introduction": true,
+    "has_methods": true,
+    "has_results": true,
+    "has_discussion": true,
+    "has_key_results": false,
+    "has_discussion_points": true
+  },
+  "fallback_used": true,
+  "errors": []
+}

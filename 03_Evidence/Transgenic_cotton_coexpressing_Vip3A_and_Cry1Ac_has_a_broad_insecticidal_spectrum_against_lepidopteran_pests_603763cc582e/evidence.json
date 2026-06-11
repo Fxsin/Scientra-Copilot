@@ -1,0 +1,87 @@
+{
+  "paper_id": "Transgenic_cotton_coexpressing_Vip3A_and_Cry1Ac_has_a_broad_insecticidal_spectrum_against_lepidopteran_pests_603763cc582e",
+  "title": "Transgenic cotton coexpressing Vip3A and Cry1Ac has a broad insecticidal spectrum against lepidopteran pests",
+  "year": 2017,
+  "journal": "Journal of Invertebrate Pathology",
+  "evidence_version": "v1",
+  "status": "partial",
+  "research_question": "",
+  "study_objective": "",
+  "research_gap": "",
+  "methods": [],
+  "key_results": [],
+  "core_findings": [],
+  "discussion_points": [
+    {
+      "point": "A previous study indicated that S.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "A previous study indicated that S.",
+      "confidence": "medium"
+    },
+    {
+      "point": "A peritrophic matrix baffle, Cry toxin degradation by midgut proteases and gut defensive responses during ingestion of the toxin could contribute to the lack of susceptibility toward Cry1A toxins in some insects (Rees et al., 2009;Jurat-Fuentes and Crickmore, 2016;Lu et al., 2017;Shu et al., 2017).",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "A peritrophic matrix baffle, Cry toxin degradation by midgut proteases and gut defensive responses during ingestion of the toxin could contribute to the lack of susceptibility toward Cry1A toxins in s",
+      "confidence": "medium"
+    },
+    {
+      "point": "The protein activation step involved in differential susceptibility of Ephestia kuehniella and Spodoptera littoralis to the Vip3Aa16 toxin and the subsequent zymogram analysis suggested that the difference between proteolysis products was due to variability in the proteases from the larvae of these ",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "The protein activation step involved in differential susceptibility of Ephestia kuehniella and Spodoptera littoralis to the Vip3Aa16 toxin and the subsequent zymogram analysis suggested that the diffe",
+      "confidence": "medium"
+    },
+    {
+      "point": "So previous published data about the proteolysis of Vip3A proteins might have given the false impression that the Vip3A proteins had been degraded during the proteolytic reactions.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "So previous published data about the proteolysis of Vip3A proteins might have given the false impression that the Vip3A proteins had been degraded during the proteolytic reactions.",
+      "confidence": "medium"
+    },
+    {
+      "point": "Our bioassay results indicated that the protease pretreatment did not have a significant influence on susceptibility against the same pest.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Our bioassay results indicated that the protease pretreatment did not have a significant influence on susceptibility against the same pest.",
+      "confidence": "medium"
+    },
+    {
+      "point": "Because binding of Cry toxin with receptors plays an important role in the mode of action (Pardo-López et al., 2013), Vip3A binding to the larval midgut epithelium is likely to be important in toxicity.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Because binding of Cry toxin with receptors plays an important role in the mode of action (Pardo-López et al., 2013), Vip3A binding to the larval midgut epithelium is likely to be important in toxicit",
+      "confidence": "medium"
+    },
+    {
+      "point": "ipsilon, called tenascin, has been identified and could be associated with apoptotic processes (Estruch and Yu, 2001).",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "ipsilon, called tenascin, has been identified and could be associated with apoptotic processes (Estruch and Yu, 2001).",
+      "confidence": "medium"
+    },
+    {
+      "point": "ipsilon; suggested that the Vip3AcAa has similar size receptors (34-36 kDa) in these three pests, and they are probably the same type of binding receptors.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "ipsilon; suggested that the Vip3AcAa has similar size receptors (34-36 kDa) in these three pests, and they are probably the same type of binding receptors.",
+      "confidence": "medium"
+    }
+  ],
+  "limitations": [],
+  "open_questions": [],
+  "future_directions": [],
+  "claims": [],
+  "result_discussion_links": [],
+  "coverage": {
+    "has_introduction": true,
+    "has_methods": true,
+    "has_results": true,
+    "has_discussion": true,
+    "has_key_results": false,
+    "has_discussion_points": true
+  },
+  "fallback_used": true,
+  "errors": []
+}

@@ -1,0 +1,144 @@
+{
+  "paper_id": "N-Terminal_-Helices_in_Domain_I_of_Bacillus_thuringiensis_Vip3Aa_Play_Crucial_Roles_in_Disruption_of_Liposomal_Membrane_5c934cdcbd61",
+  "chunk_version": "v2",
+  "evidence_hash": "ba9985f23aeff41c",
+  "chunk_count": 8,
+  "chunks": [
+    {
+      "chunk_id": "N-Terminal_-Helices_in_Domain_I_of_Bacillus_thuringiensis_Vip3Aa_Play_Crucial_Roles_in_Disruption_of_Liposomal_Membrane_5c934cdcbd61:discussion_point:0000",
+      "paper_id": "N-Terminal_-Helices_in_Domain_I_of_Bacillus_thuringiensis_Vip3Aa_Play_Crucial_Roles_in_Disruption_of_Liposomal_Membrane_5c934cdcbd61",
+      "chunk_type": "discussion_point",
+      "text": "Structural analyses suggest that domain I-III maintains the spontaneous conformation of both the protoxin and activated toxin [11].",
+      "source_section": "Discussion",
+      "quote": "Structural analyses suggest that domain I-III maintains the spontaneous conformation of both the protoxin and activated toxin [11].",
+      "confidence": "medium",
+      "metadata": {
+        "title": "N-Terminal α-Helices in Domain I of Bacillus thuringiensis Vip3Aa Play Crucial Roles in Disruption of Liposomal Membrane",
+        "year": 2024,
+        "journal": "Toxins",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "N-Terminal_-Helices_in_Domain_I_of_Bacillus_thuringiensis_Vip3Aa_Play_Crucial_Roles_in_Disruption_of_Liposomal_Membrane_5c934cdcbd61:discussion_point:0001",
+      "paper_id": "N-Terminal_-Helices_in_Domain_I_of_Bacillus_thuringiensis_Vip3Aa_Play_Crucial_Roles_in_Disruption_of_Liposomal_Membrane_5c934cdcbd61",
+      "chunk_type": "discussion_point",
+      "text": "In this study, deleting the first three α-helices (α1-α3) likely destabilized the protein, leading to complete degradation by trypsin or midgut proteases.",
+      "source_section": "Discussion",
+      "quote": "In this study, deleting the first three α-helices (α1-α3) likely destabilized the protein, leading to complete degradation by trypsin or midgut proteases.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "N-Terminal α-Helices in Domain I of Bacillus thuringiensis Vip3Aa Play Crucial Roles in Disruption of Liposomal Membrane",
+        "year": 2024,
+        "journal": "Toxins",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "N-Terminal_-Helices_in_Domain_I_of_Bacillus_thuringiensis_Vip3Aa_Play_Crucial_Roles_in_Disruption_of_Liposomal_Membrane_5c934cdcbd61:discussion_point:0002",
+      "paper_id": "N-Terminal_-Helices_in_Domain_I_of_Bacillus_thuringiensis_Vip3Aa_Play_Crucial_Roles_in_Disruption_of_Liposomal_Membrane_5c934cdcbd61",
+      "chunk_type": "discussion_point",
+      "text": "The deletion of the first one or two α-helices, however, preserved the proteolytic stability but prevented r processing into active fragments.",
+      "source_section": "Discussion",
+      "quote": "The deletion of the first one or two α-helices, however, preserved the proteolytic stability but prevented r processing into active fragments.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "N-Terminal α-Helices in Domain I of Bacillus thuringiensis Vip3Aa Play Crucial Roles in Disruption of Liposomal Membrane",
+        "year": 2024,
+        "journal": "Toxins",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "N-Terminal_-Helices_in_Domain_I_of_Bacillus_thuringiensis_Vip3Aa_Play_Crucial_Roles_in_Disruption_of_Liposomal_Membrane_5c934cdcbd61:discussion_point:0003",
+      "paper_id": "N-Terminal_-Helices_in_Domain_I_of_Bacillus_thuringiensis_Vip3Aa_Play_Crucial_Roles_in_Disruption_of_Liposomal_Membrane_5c934cdcbd61",
+      "chunk_type": "discussion_point",
+      "text": "However, the high activity of renatured Trx-His-Vα1-4-GFP in permeating liposomes highlights the highly hydrophobic nature of Vip3Aa domain I.",
+      "source_section": "Discussion",
+      "quote": "However, the high activity of renatured Trx-His-Vα1-4-GFP in permeating liposomes highlights the highly hydrophobic nature of Vip3Aa domain I.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "N-Terminal α-Helices in Domain I of Bacillus thuringiensis Vip3Aa Play Crucial Roles in Disruption of Liposomal Membrane",
+        "year": 2024,
+        "journal": "Toxins",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "N-Terminal_-Helices_in_Domain_I_of_Bacillus_thuringiensis_Vip3Aa_Play_Crucial_Roles_in_Disruption_of_Liposomal_Membrane_5c934cdcbd61:discussion_point:0004",
+      "paper_id": "N-Terminal_-Helices_in_Domain_I_of_Bacillus_thuringiensis_Vip3Aa_Play_Crucial_Roles_in_Disruption_of_Liposomal_Membrane_5c934cdcbd61",
+      "chunk_type": "discussion_point",
+      "text": "The striking structural homology between the Vip3 and 3D-Cry toxins suggests similar functional roles for their respective domains [15].",
+      "source_section": "Discussion",
+      "quote": "The striking structural homology between the Vip3 and 3D-Cry toxins suggests similar functional roles for their respective domains [15].",
+      "confidence": "medium",
+      "metadata": {
+        "title": "N-Terminal α-Helices in Domain I of Bacillus thuringiensis Vip3Aa Play Crucial Roles in Disruption of Liposomal Membrane",
+        "year": 2024,
+        "journal": "Toxins",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "N-Terminal_-Helices_in_Domain_I_of_Bacillus_thuringiensis_Vip3Aa_Play_Crucial_Roles_in_Disruption_of_Liposomal_Membrane_5c934cdcbd61:discussion_point:0005",
+      "paper_id": "N-Terminal_-Helices_in_Domain_I_of_Bacillus_thuringiensis_Vip3Aa_Play_Crucial_Roles_in_Disruption_of_Liposomal_Membrane_5c934cdcbd61",
+      "chunk_type": "discussion_point",
+      "text": "We hypothesize that the highly hydrophobic helix α1 of Vip3Aa might be folded and become unexposed due to structural changes in VdIα5-7-CdIIdIII and VdIdII-CdIIdIII, leading to the loss of liposome permeation activity.",
+      "source_section": "Discussion",
+      "quote": "We hypothesize that the highly hydrophobic helix α1 of Vip3Aa might be folded and become unexposed due to structural changes in VdIα5-7-CdIIdIII and VdIdII-CdIIdIII, leading to the loss of liposome pe",
+      "confidence": "medium",
+      "metadata": {
+        "title": "N-Terminal α-Helices in Domain I of Bacillus thuringiensis Vip3Aa Play Crucial Roles in Disruption of Liposomal Membrane",
+        "year": 2024,
+        "journal": "Toxins",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "N-Terminal_-Helices_in_Domain_I_of_Bacillus_thuringiensis_Vip3Aa_Play_Crucial_Roles_in_Disruption_of_Liposomal_Membrane_5c934cdcbd61:discussion_point:0006",
+      "paper_id": "N-Terminal_-Helices_in_Domain_I_of_Bacillus_thuringiensis_Vip3Aa_Play_Crucial_Roles_in_Disruption_of_Liposomal_Membrane_5c934cdcbd61",
+      "chunk_type": "discussion_point",
+      "text": "Urea denaturation and the subsequent renaturation may not lead to the formation of the tetrameric complex as the full-length Vip3Aa toxin.",
+      "source_section": "Discussion",
+      "quote": "Urea denaturation and the subsequent renaturation may not lead to the formation of the tetrameric complex as the full-length Vip3Aa toxin.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "N-Terminal α-Helices in Domain I of Bacillus thuringiensis Vip3Aa Play Crucial Roles in Disruption of Liposomal Membrane",
+        "year": 2024,
+        "journal": "Toxins",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "N-Terminal_-Helices_in_Domain_I_of_Bacillus_thuringiensis_Vip3Aa_Play_Crucial_Roles_in_Disruption_of_Liposomal_Membrane_5c934cdcbd61:discussion_point:0007",
+      "paper_id": "N-Terminal_-Helices_in_Domain_I_of_Bacillus_thuringiensis_Vip3Aa_Play_Crucial_Roles_in_Disruption_of_Liposomal_Membrane_5c934cdcbd61",
+      "chunk_type": "discussion_point",
+      "text": "The activity of these fusions to rupture artificial liposome membranes indicated that the monomeric form of Vip3Aa domain I, the core component of the coiled-coil structure in the Vip3Aa tetramers, possesses sufficient membrane-destabilizing activity even in the absence of pore formation.",
+      "source_section": "Discussion",
+      "quote": "The activity of these fusions to rupture artificial liposome membranes indicated that the monomeric form of Vip3Aa domain I, the core component of the coiled-coil structure in the Vip3Aa tetramers, po",
+      "confidence": "medium",
+      "metadata": {
+        "title": "N-Terminal α-Helices in Domain I of Bacillus thuringiensis Vip3Aa Play Crucial Roles in Disruption of Liposomal Membrane",
+        "year": 2024,
+        "journal": "Toxins",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    }
+  ]
+}

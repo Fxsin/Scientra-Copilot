@@ -1,0 +1,144 @@
+{
+  "paper_id": "Changes_in_gene_expression_and_apoptotic_response_in_Spodoptera_exigua_larvae_exposed_to_sublethal_concentrations_of_Vip_c34e1b4502a1",
+  "chunk_version": "v2",
+  "evidence_hash": "c45f06a50e109add",
+  "chunk_count": 8,
+  "chunks": [
+    {
+      "chunk_id": "Changes_in_gene_expression_and_apoptotic_response_in_Spodoptera_exigua_larvae_exposed_to_sublethal_concentrations_of_Vip_c34e1b4502a1:discussion_point:0000",
+      "paper_id": "Changes_in_gene_expression_and_apoptotic_response_in_Spodoptera_exigua_larvae_exposed_to_sublethal_concentrations_of_Vip_c34e1b4502a1",
+      "chunk_type": "discussion_point",
+      "text": "thuringiensis proteins will broaden our understanding of how larvae response might help to reduce the damage produced by these insecticidal proteins.",
+      "source_section": "Discussion",
+      "quote": "thuringiensis proteins will broaden our understanding of how larvae response might help to reduce the damage produced by these insecticidal proteins.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Changes in gene expression and apoptotic response in Spodoptera exigua larvae exposed to sublethal concentrations of Vip3 insecticidal proteins",
+        "year": 2017,
+        "journal": "Scientific Reports",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Changes_in_gene_expression_and_apoptotic_response_in_Spodoptera_exigua_larvae_exposed_to_sublethal_concentrations_of_Vip_c34e1b4502a1:discussion_point:0001",
+      "paper_id": "Changes_in_gene_expression_and_apoptotic_response_in_Spodoptera_exigua_larvae_exposed_to_sublethal_concentrations_of_Vip_c34e1b4502a1",
+      "chunk_type": "discussion_point",
+      "text": "Thus, the data obtained could help understand whether the S.",
+      "source_section": "Discussion",
+      "quote": "Thus, the data obtained could help understand whether the S.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Changes in gene expression and apoptotic response in Spodoptera exigua larvae exposed to sublethal concentrations of Vip3 insecticidal proteins",
+        "year": 2017,
+        "journal": "Scientific Reports",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Changes_in_gene_expression_and_apoptotic_response_in_Spodoptera_exigua_larvae_exposed_to_sublethal_concentrations_of_Vip_c34e1b4502a1:discussion_point:0002",
+      "paper_id": "Changes_in_gene_expression_and_apoptotic_response_in_Spodoptera_exigua_larvae_exposed_to_sublethal_concentrations_of_Vip_c34e1b4502a1",
+      "chunk_type": "discussion_point",
+      "text": "Moreover, almost all the regulated genes at 100 and 1000 ng/cm 2 were also found regulated at 10000 ng/cm 2 of Vip3Ca, suggesting that the host response is dose-dependent.",
+      "source_section": "Discussion",
+      "quote": "Moreover, almost all the regulated genes at 100 and 1000 ng/cm 2 were also found regulated at 10000 ng/cm 2 of Vip3Ca, suggesting that the host response is dose-dependent.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Changes in gene expression and apoptotic response in Spodoptera exigua larvae exposed to sublethal concentrations of Vip3 insecticidal proteins",
+        "year": 2017,
+        "journal": "Scientific Reports",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Changes_in_gene_expression_and_apoptotic_response_in_Spodoptera_exigua_larvae_exposed_to_sublethal_concentrations_of_Vip_c34e1b4502a1:discussion_point:0003",
+      "paper_id": "Changes_in_gene_expression_and_apoptotic_response_in_Spodoptera_exigua_larvae_exposed_to_sublethal_concentrations_of_Vip_c34e1b4502a1",
+      "chunk_type": "discussion_point",
+      "text": "Significant differences were indicated by an asterisk.",
+      "source_section": "Discussion",
+      "quote": "Significant differences were indicated by an asterisk.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Changes in gene expression and apoptotic response in Spodoptera exigua larvae exposed to sublethal concentrations of Vip3 insecticidal proteins",
+        "year": 2017,
+        "journal": "Scientific Reports",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Changes_in_gene_expression_and_apoptotic_response_in_Spodoptera_exigua_larvae_exposed_to_sublethal_concentrations_of_Vip_c34e1b4502a1:discussion_point:0004",
+      "paper_id": "Changes_in_gene_expression_and_apoptotic_response_in_Spodoptera_exigua_larvae_exposed_to_sublethal_concentrations_of_Vip_c34e1b4502a1",
+      "chunk_type": "discussion_point",
+      "text": "exigua larvae might be associated to the level of cell damage produced by the different B.",
+      "source_section": "Discussion",
+      "quote": "exigua larvae might be associated to the level of cell damage produced by the different B.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Changes in gene expression and apoptotic response in Spodoptera exigua larvae exposed to sublethal concentrations of Vip3 insecticidal proteins",
+        "year": 2017,
+        "journal": "Scientific Reports",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Changes_in_gene_expression_and_apoptotic_response_in_Spodoptera_exigua_larvae_exposed_to_sublethal_concentrations_of_Vip_c34e1b4502a1:discussion_point:0005",
+      "paper_id": "Changes_in_gene_expression_and_apoptotic_response_in_Spodoptera_exigua_larvae_exposed_to_sublethal_concentrations_of_Vip_c34e1b4502a1",
+      "chunk_type": "discussion_point",
+      "text": "In contrast, the gene encoding a component of the JAK-STAT pathway was down-regulated after 24 h exposure to 1000 ng/cm 2 of Vip3Ca.",
+      "source_section": "Discussion",
+      "quote": "In contrast, the gene encoding a component of the JAK-STAT pathway was down-regulated after 24 h exposure to 1000 ng/cm 2 of Vip3Ca.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Changes in gene expression and apoptotic response in Spodoptera exigua larvae exposed to sublethal concentrations of Vip3 insecticidal proteins",
+        "year": 2017,
+        "journal": "Scientific Reports",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Changes_in_gene_expression_and_apoptotic_response_in_Spodoptera_exigua_larvae_exposed_to_sublethal_concentrations_of_Vip_c34e1b4502a1:discussion_point:0006",
+      "paper_id": "Changes_in_gene_expression_and_apoptotic_response_in_Spodoptera_exigua_larvae_exposed_to_sublethal_concentrations_of_Vip_c34e1b4502a1",
+      "chunk_type": "discussion_point",
+      "text": "Thus, we speculate that the negative regulation of this pathway might be affecting the renewal of the midgut cells that have been damaged by the action of the Vip3Ca protein.",
+      "source_section": "Discussion",
+      "quote": "Thus, we speculate that the negative regulation of this pathway might be affecting the renewal of the midgut cells that have been damaged by the action of the Vip3Ca protein.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Changes in gene expression and apoptotic response in Spodoptera exigua larvae exposed to sublethal concentrations of Vip3 insecticidal proteins",
+        "year": 2017,
+        "journal": "Scientific Reports",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Changes_in_gene_expression_and_apoptotic_response_in_Spodoptera_exigua_larvae_exposed_to_sublethal_concentrations_of_Vip_c34e1b4502a1:discussion_point:0007",
+      "paper_id": "Changes_in_gene_expression_and_apoptotic_response_in_Spodoptera_exigua_larvae_exposed_to_sublethal_concentrations_of_Vip_c34e1b4502a1",
+      "chunk_type": "discussion_point",
+      "text": "This negative regulation might be a host defense response for gut healing processes after entomopathogen exposure 39 .",
+      "source_section": "Discussion",
+      "quote": "This negative regulation might be a host defense response for gut healing processes after entomopathogen exposure 39 .",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Changes in gene expression and apoptotic response in Spodoptera exigua larvae exposed to sublethal concentrations of Vip3 insecticidal proteins",
+        "year": 2017,
+        "journal": "Scientific Reports",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    }
+  ]
+}

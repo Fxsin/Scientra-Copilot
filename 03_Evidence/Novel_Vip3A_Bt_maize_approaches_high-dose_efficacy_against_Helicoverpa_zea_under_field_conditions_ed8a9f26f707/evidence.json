@@ -1,0 +1,78 @@
+{
+  "paper_id": "Novel_Vip3A_Bt_maize_approaches_high-dose_efficacy_against_Helicoverpa_zea_under_field_conditions_ed8a9f26f707",
+  "title": "Novel Vip3A Bacillus thuringiensis (Bt) maize approaches high-dose efficacy against Helicoverpa zea (Lepidoptera: Noctuidae) under field conditions: Implications for resistance management",
+  "year": 2010,
+  "journal": "GM Crops",
+  "evidence_version": "v1",
+  "status": "partial",
+  "research_question": "",
+  "study_objective": "",
+  "research_gap": "",
+  "methods": [
+    {
+      "name": "2010 sweet corn trials were conducted",
+      "section": "Methods",
+      "quote": "2010 sweet corn trials were conducted"
+    },
+    {
+      "name": "Trials were conducted",
+      "section": "Methods",
+      "quote": "Trials were conducted"
+    },
+    {
+      "name": "overhead or drip irrigation and no insecticides were applied",
+      "section": "Methods",
+      "quote": "overhead or drip irrigation and no insecticides were applied"
+    },
+    {
+      "name": "sweet corn trials were conducted",
+      "section": "Methods",
+      "quote": "sweet corn trials were conducted"
+    },
+    {
+      "name": "using a RANK procedure",
+      "section": "Methods",
+      "quote": "using a RANK procedure"
+    }
+  ],
+  "key_results": [],
+  "core_findings": [],
+  "discussion_points": [
+    {
+      "point": "For example, kernel feeding by sap beetle and silk fly larvae and silk feeding by corn rootworm adults can cause ear quality problems and may need to be controlled with supplemental insecticide applications.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "For example, kernel feeding by sap beetle and silk fly larvae and silk feeding by corn rootworm adults can cause ear quality problems and may need to be controlled with supplemental insecticide applic",
+      "confidence": "medium"
+    },
+    {
+      "point": "Conversely, some secondary pests may be less likely to infest ears that lack damage by Lepidopteran pests but further investigation would be required to verify this assertion.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Conversely, some secondary pests may be less likely to infest ears that lack damage by Lepidopteran pests but further investigation would be required to verify this assertion.",
+      "confidence": "medium"
+    },
+    {
+      "point": "However, the use of Vip3A and other insecticidal proteins will continue to require a keen focus on stewardship and research to maintain the effectiveness of these technologies in the future by mitigating resistance development.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "However, the use of Vip3A and other insecticidal proteins will continue to require a keen focus on stewardship and research to maintain the effectiveness of these technologies in the future by mitigat",
+      "confidence": "medium"
+    }
+  ],
+  "limitations": [],
+  "open_questions": [],
+  "future_directions": [],
+  "claims": [],
+  "result_discussion_links": [],
+  "coverage": {
+    "has_introduction": true,
+    "has_methods": true,
+    "has_results": true,
+    "has_discussion": true,
+    "has_key_results": false,
+    "has_discussion_points": true
+  },
+  "fallback_used": true,
+  "errors": []
+}

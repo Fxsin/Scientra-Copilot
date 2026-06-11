@@ -1,0 +1,365 @@
+{
+  "paper_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41",
+  "chunk_version": "v2",
+  "evidence_hash": "2cf4cc28867c789d",
+  "chunk_count": 21,
+  "chunks": [
+    {
+      "chunk_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41:key_result:0000",
+      "paper_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41",
+      "chunk_type": "key_result",
+      "text": "Screening of a collection of Bacillus strains with primers Vipϩ and VipϪ revealed the presence of a 1-kb PCR product for strain ucr8, which was cloned in pGEM-T Easy for sequencing.",
+      "source_section": "Results",
+      "quote": "Screening of a collection of Bacillus strains with primers Vipϩ and VipϪ revealed the presence of a 1-kb PCR product for strain ucr8, which was cloned in pGEM-T Easy for sequencing.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Novel Vip3-Related Protein from Bacillus thuringiensis †",
+        "year": 2005,
+        "journal": "Applied and Environmental Microbiology",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41:key_result:0001",
+      "paper_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41",
+      "chunk_type": "key_result",
+      "text": "Seven clones were analyzed by digestion with EcoRI, and two patterns were observed.",
+      "source_section": "Results",
+      "quote": "Seven clones were analyzed by digestion with EcoRI, and two patterns were observed.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Novel Vip3-Related Protein from Bacillus thuringiensis †",
+        "year": 2005,
+        "journal": "Applied and Environmental Microbiology",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41:key_result:0002",
+      "paper_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41",
+      "chunk_type": "key_result",
+      "text": "Six of the clones, 8V1 to 8V6, had two EcoRI sites that generated 200-bp and 900-bp fragments, whereas clone 8VA had only one EcoRI site (data not shown).",
+      "source_section": "Results",
+      "quote": "Six of the clones, 8V1 to 8V6, had two EcoRI sites that generated 200-bp and 900-bp fragments, whereas clone 8VA had only one EcoRI site (data not shown).",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Novel Vip3-Related Protein from Bacillus thuringiensis †",
+        "year": 2005,
+        "journal": "Applied and Environmental Microbiology",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41:key_result:0003",
+      "paper_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41",
+      "chunk_type": "key_result",
+      "text": "Alignment of the predicted expression product of fragment Vip3Ba1 with the various Vip3A proteins showed that the sequence of fragment Vip3Ba1 from those of the other Vip3A proteins (data not shown).",
+      "source_section": "Results",
+      "quote": "Alignment of the predicted expression product of fragment Vip3Ba1 with the various Vip3A proteins showed that the sequence of fragment Vip3Ba1 from those of the other Vip3A proteins (data not shown).",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Novel Vip3-Related Protein from Bacillus thuringiensis †",
+        "year": 2005,
+        "journal": "Applied and Environmental Microbiology",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41:key_result:0004",
+      "paper_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41",
+      "chunk_type": "key_result",
+      "text": "The sequence of clone pUCR200 showed that this clone contained the first 1,374 bases of the vip3Ba1 gene and 2,905 bases of the 5Ј flanking region.",
+      "source_section": "Results",
+      "quote": "The sequence of clone pUCR200 showed that this clone contained the first 1,374 bases of the vip3Ba1 gene and 2,905 bases of the 5Ј flanking region.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Novel Vip3-Related Protein from Bacillus thuringiensis †",
+        "year": 2005,
+        "journal": "Applied and Environmental Microbiology",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41:key_result:0005",
+      "paper_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41",
+      "chunk_type": "key_result",
+      "text": "1 shows that there are three separate clusters associated with high bootstrap values (982 to 1,000) and that these clusters comprise the Vip1, Vip2, and Vip3 proteins.",
+      "source_section": "Results",
+      "quote": "1 shows that there are three separate clusters associated with high bootstrap values (982 to 1,000) and that these clusters comprise the Vip1, Vip2, and Vip3 proteins.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Novel Vip3-Related Protein from Bacillus thuringiensis †",
+        "year": 2005,
+        "journal": "Applied and Environmental Microbiology",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41:key_result:0006",
+      "paper_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41",
+      "chunk_type": "key_result",
+      "text": "The differences between Vip3Ba1 and the Vip3A proteins are spread throughout the sequence but the rate is higher between amino acid 456 and the C terminus of the protein (Fig.",
+      "source_section": "Results",
+      "quote": "The differences between Vip3Ba1 and the Vip3A proteins are spread throughout the sequence but the rate is higher between amino acid 456 and the C terminus of the protein (Fig.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Novel Vip3-Related Protein from Bacillus thuringiensis †",
+        "year": 2005,
+        "journal": "Applied and Environmental Microbiology",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41:key_result:0007",
+      "paper_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41",
+      "chunk_type": "key_result",
+      "text": "This region is not conserved in Vip3Ba1, in which the sequence 198-NFTEDVI-206 is found instead (Fig.",
+      "source_section": "Results",
+      "quote": "This region is not conserved in Vip3Ba1, in which the sequence 198-NFTEDVI-206 is found instead (Fig.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Novel Vip3-Related Protein from Bacillus thuringiensis †",
+        "year": 2005,
+        "journal": "Applied and Environmental Microbiology",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41:discussion_point:0000",
+      "paper_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41",
+      "chunk_type": "discussion_point",
+      "text": "It is likely that some of these cysteines are involved in disulfide bridges and may play a role in the stability of Vip3Ba1.",
+      "source_section": "Discussion",
+      "quote": "It is likely that some of these cysteines are involved in disulfide bridges and may play a role in the stability of Vip3Ba1.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Novel Vip3-Related Protein from Bacillus thuringiensis †",
+        "year": 2005,
+        "journal": "Applied and Environmental Microbiology",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41:discussion_point:0001",
+      "paper_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41",
+      "chunk_type": "discussion_point",
+      "text": "Deletion analyses of both the N terminus and the C terminus might provide more detailed information about the insecticidal moiety of the protein, as they have for Vip3A proteins (22).",
+      "source_section": "Discussion",
+      "quote": "Deletion analyses of both the N terminus and the C terminus might provide more detailed information about the insecticidal moiety of the protein, as they have for Vip3A proteins (22).",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Novel Vip3-Related Protein from Bacillus thuringiensis †",
+        "year": 2005,
+        "journal": "Applied and Environmental Microbiology",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41:discussion_point:0002",
+      "paper_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41",
+      "chunk_type": "discussion_point",
+      "text": "Since Vip3Ba1 is closely related to Vip3A proteins, it most likely acts as a single toxin.",
+      "source_section": "Discussion",
+      "quote": "Since Vip3Ba1 is closely related to Vip3A proteins, it most likely acts as a single toxin.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Novel Vip3-Related Protein from Bacillus thuringiensis †",
+        "year": 2005,
+        "journal": "Applied and Environmental Microbiology",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41:discussion_point:0003",
+      "paper_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41",
+      "chunk_type": "discussion_point",
+      "text": "However, due to the failure to demonstrate lethal activity, the involvement of a partner protein cannot be formally excluded.",
+      "source_section": "Discussion",
+      "quote": "However, due to the failure to demonstrate lethal activity, the involvement of a partner protein cannot be formally excluded.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Novel Vip3-Related Protein from Bacillus thuringiensis †",
+        "year": 2005,
+        "journal": "Applied and Environmental Microbiology",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41:discussion_point:0004",
+      "paper_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41",
+      "chunk_type": "discussion_point",
+      "text": "Further investigation is therefore needed to unravel the mode of action of Vip3Ba1 and to understand the role of the specific features observed.",
+      "source_section": "Discussion",
+      "quote": "Further investigation is therefore needed to unravel the mode of action of Vip3Ba1 and to understand the role of the specific features observed.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Novel Vip3-Related Protein from Bacillus thuringiensis †",
+        "year": 2005,
+        "journal": "Applied and Environmental Microbiology",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41:method:0000",
+      "paper_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41",
+      "chunk_type": "method",
+      "text": "Lambda DE3 were used",
+      "source_section": "Methods",
+      "quote": "Lambda DE3 were used",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Novel Vip3-Related Protein from Bacillus thuringiensis †",
+        "year": 2005,
+        "journal": "Applied and Environmental Microbiology",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41:method:0001",
+      "paper_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41",
+      "chunk_type": "method",
+      "text": "1TOPO were used",
+      "source_section": "Methods",
+      "quote": "1TOPO were used",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Novel Vip3-Related Protein from Bacillus thuringiensis †",
+        "year": 2005,
+        "journal": "Applied and Environmental Microbiology",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41:method:0002",
+      "paper_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41",
+      "chunk_type": "method",
+      "text": "The pET11a expression vector was used",
+      "source_section": "Methods",
+      "quote": "The pET11a expression vector was used",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Novel Vip3-Related Protein from Bacillus thuringiensis †",
+        "year": 2005,
+        "journal": "Applied and Environmental Microbiology",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41:method:0003",
+      "paper_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41",
+      "chunk_type": "method",
+      "text": "Standard recombinant DNA techniques were used",
+      "source_section": "Methods",
+      "quote": "Standard recombinant DNA techniques were used",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Novel Vip3-Related Protein from Bacillus thuringiensis †",
+        "year": 2005,
+        "journal": "Applied and Environmental Microbiology",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41:method:0004",
+      "paper_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41",
+      "chunk_type": "method",
+      "text": "and each PCR was performed",
+      "source_section": "Methods",
+      "quote": "and each PCR was performed",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Novel Vip3-Related Protein from Bacillus thuringiensis †",
+        "year": 2005,
+        "journal": "Applied and Environmental Microbiology",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41:method:0005",
+      "paper_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41",
+      "chunk_type": "method",
+      "text": "Digestion was performed",
+      "source_section": "Methods",
+      "quote": "Digestion was performed",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Novel Vip3-Related Protein from Bacillus thuringiensis †",
+        "year": 2005,
+        "journal": "Applied and Environmental Microbiology",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41:method:0006",
+      "paper_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41",
+      "chunk_type": "method",
+      "text": "Standard procedures were used",
+      "source_section": "Methods",
+      "quote": "Standard procedures were used",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Novel Vip3-Related Protein from Bacillus thuringiensis †",
+        "year": 2005,
+        "journal": "Applied and Environmental Microbiology",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41:method:0007",
+      "paper_id": "Novel_Vip3-Related_Protein_from_Bacillus_thuringiensis_37af500ebf41",
+      "chunk_type": "method",
+      "text": "The PCR was performed",
+      "source_section": "Methods",
+      "quote": "The PCR was performed",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Novel Vip3-Related Protein from Bacillus thuringiensis †",
+        "year": 2005,
+        "journal": "Applied and Environmental Microbiology",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    }
+  ]
+}

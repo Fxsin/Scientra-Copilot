@@ -1,0 +1,144 @@
+{
+  "paper_id": "Bacillus_thuringiensis_Vip3_mutant_proteins_Insecticidal_activity_and_trypsin_sensitivity_59ddd2d1d6db",
+  "chunk_version": "v2",
+  "evidence_hash": "beecca8a430e6cb3",
+  "chunk_count": 8,
+  "chunks": [
+    {
+      "chunk_id": "Bacillus_thuringiensis_Vip3_mutant_proteins_Insecticidal_activity_and_trypsin_sensitivity_59ddd2d1d6db:discussion_point:0000",
+      "paper_id": "Bacillus_thuringiensis_Vip3_mutant_proteins_Insecticidal_activity_and_trypsin_sensitivity_59ddd2d1d6db",
+      "chunk_type": "discussion_point",
+      "text": "This study suggests that the Vip3 C-terminus is critical to its insecticidal activity and might be the region for protein engineering for activity improvement.",
+      "source_section": "Discussion",
+      "quote": "This study suggests that the Vip3 C-terminus is critical to its insecticidal activity and might be the region for protein engineering for activity improvement.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Bacillus thuringiensis Vip3 mutant proteins: Insecticidal activity and trypsin sensitivity",
+        "year": 2015,
+        "journal": "Biocontrol Science and Technology",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Bacillus_thuringiensis_Vip3_mutant_proteins_Insecticidal_activity_and_trypsin_sensitivity_59ddd2d1d6db:discussion_point:0001",
+      "paper_id": "Bacillus_thuringiensis_Vip3_mutant_proteins_Insecticidal_activity_and_trypsin_sensitivity_59ddd2d1d6db",
+      "chunk_type": "discussion_point",
+      "text": "The same might be done in Vip3.",
+      "source_section": "Discussion",
+      "quote": "The same might be done in Vip3.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Bacillus thuringiensis Vip3 mutant proteins: Insecticidal activity and trypsin sensitivity",
+        "year": 2015,
+        "journal": "Biocontrol Science and Technology",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Bacillus_thuringiensis_Vip3_mutant_proteins_Insecticidal_activity_and_trypsin_sensitivity_59ddd2d1d6db:discussion_point:0002",
+      "paper_id": "Bacillus_thuringiensis_Vip3_mutant_proteins_Insecticidal_activity_and_trypsin_sensitivity_59ddd2d1d6db",
+      "chunk_type": "discussion_point",
+      "text": "The black triangle indicates the gradient concentration of trypsin in the reaction, including final concentration of 0, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, and 10 mg/mL (from left to right).",
+      "source_section": "Discussion",
+      "quote": "The black triangle indicates the gradient concentration of trypsin in the reaction, including final concentration of 0, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, and 10 mg/mL (from left",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Bacillus thuringiensis Vip3 mutant proteins: Insecticidal activity and trypsin sensitivity",
+        "year": 2015,
+        "journal": "Biocontrol Science and Technology",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Bacillus_thuringiensis_Vip3_mutant_proteins_Insecticidal_activity_and_trypsin_sensitivity_59ddd2d1d6db:discussion_point:0003",
+      "paper_id": "Bacillus_thuringiensis_Vip3_mutant_proteins_Insecticidal_activity_and_trypsin_sensitivity_59ddd2d1d6db",
+      "chunk_type": "discussion_point",
+      "text": "One might infer that the C-terminus might be more tolerant to the mutations.",
+      "source_section": "Discussion",
+      "quote": "One might infer that the C-terminus might be more tolerant to the mutations.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Bacillus thuringiensis Vip3 mutant proteins: Insecticidal activity and trypsin sensitivity",
+        "year": 2015,
+        "journal": "Biocontrol Science and Technology",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Bacillus_thuringiensis_Vip3_mutant_proteins_Insecticidal_activity_and_trypsin_sensitivity_59ddd2d1d6db:discussion_point:0004",
+      "paper_id": "Bacillus_thuringiensis_Vip3_mutant_proteins_Insecticidal_activity_and_trypsin_sensitivity_59ddd2d1d6db",
+      "chunk_type": "discussion_point",
+      "text": "However, our study suggested the opposite; the C-terminal part is critical for maintaining the activity, as demonstrated by the loss of activity by the addition or deletion of a few amino acid residues at the C-terminus.",
+      "source_section": "Discussion",
+      "quote": "However, our study suggested the opposite; the C-terminal part is critical for maintaining the activity, as demonstrated by the loss of activity by the addition or deletion of a few amino acid residue",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Bacillus thuringiensis Vip3 mutant proteins: Insecticidal activity and trypsin sensitivity",
+        "year": 2015,
+        "journal": "Biocontrol Science and Technology",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Bacillus_thuringiensis_Vip3_mutant_proteins_Insecticidal_activity_and_trypsin_sensitivity_59ddd2d1d6db:discussion_point:0005",
+      "paper_id": "Bacillus_thuringiensis_Vip3_mutant_proteins_Insecticidal_activity_and_trypsin_sensitivity_59ddd2d1d6db",
+      "chunk_type": "discussion_point",
+      "text": "Thus, the C-terminal variations among the different Vip3 proteins may have resulted from the selection for diversified activities rather than the accumulation of random mutations during the evolution of the vip3 family.",
+      "source_section": "Discussion",
+      "quote": "Thus, the C-terminal variations among the different Vip3 proteins may have resulted from the selection for diversified activities rather than the accumulation of random mutations during the evolution ",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Bacillus thuringiensis Vip3 mutant proteins: Insecticidal activity and trypsin sensitivity",
+        "year": 2015,
+        "journal": "Biocontrol Science and Technology",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Bacillus_thuringiensis_Vip3_mutant_proteins_Insecticidal_activity_and_trypsin_sensitivity_59ddd2d1d6db:discussion_point:0006",
+      "paper_id": "Bacillus_thuringiensis_Vip3_mutant_proteins_Insecticidal_activity_and_trypsin_sensitivity_59ddd2d1d6db",
+      "chunk_type": "discussion_point",
+      "text": "The increased degradation rate of the Bt toxin may also account for its loss of sensitivity to fifth instar larvae (Keller et al.",
+      "source_section": "Discussion",
+      "quote": "The increased degradation rate of the Bt toxin may also account for its loss of sensitivity to fifth instar larvae (Keller et al.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Bacillus thuringiensis Vip3 mutant proteins: Insecticidal activity and trypsin sensitivity",
+        "year": 2015,
+        "journal": "Biocontrol Science and Technology",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Bacillus_thuringiensis_Vip3_mutant_proteins_Insecticidal_activity_and_trypsin_sensitivity_59ddd2d1d6db:discussion_point:0007",
+      "paper_id": "Bacillus_thuringiensis_Vip3_mutant_proteins_Insecticidal_activity_and_trypsin_sensitivity_59ddd2d1d6db",
+      "chunk_type": "discussion_point",
+      "text": "The rightly folded Vip3 may form a tightly structured protease resistant core, while the deletion, addition and some mutations at the C-terminus may have resulted to the disruption of the three dimensional structures of the Vip3s, which rendered them sensitive for attacks by proteases.",
+      "source_section": "Discussion",
+      "quote": "The rightly folded Vip3 may form a tightly structured protease resistant core, while the deletion, addition and some mutations at the C-terminus may have resulted to the disruption of the three dimens",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Bacillus thuringiensis Vip3 mutant proteins: Insecticidal activity and trypsin sensitivity",
+        "year": 2015,
+        "journal": "Biocontrol Science and Technology",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    }
+  ]
+}

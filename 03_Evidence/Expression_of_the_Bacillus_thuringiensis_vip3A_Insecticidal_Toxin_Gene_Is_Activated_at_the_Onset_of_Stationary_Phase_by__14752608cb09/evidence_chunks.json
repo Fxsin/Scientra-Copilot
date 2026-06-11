@@ -1,0 +1,416 @@
+{
+  "paper_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09",
+  "chunk_version": "v2",
+  "evidence_hash": "fa018427944cb4dd",
+  "chunk_count": 24,
+  "chunks": [
+    {
+      "chunk_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09:key_result:0000",
+      "paper_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09",
+      "chunk_type": "key_result",
+      "text": "HD73 2 (pHT-P vip3 ) bacteria were isolated on LB plates containing X-gal (50 mg/mL), and the plates were observed after 24 h of growth at 37°C.",
+      "source_section": "Results",
+      "quote": "HD73 2 (pHT-P vip3 ) bacteria were isolated on LB plates containing X-gal (50 mg/mL), and the plates were observed after 24 h of growth at 37°C.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Expression of the Bacillus thuringiensis vip3A Insecticidal Toxin Gene Is Activated at the Onset of Stationary Phase by VipR, an Autoregulated Transcription Factor",
+        "year": 2022,
+        "journal": "Microbiology Spectrum",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09:key_result:0001",
+      "paper_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09",
+      "chunk_type": "key_result",
+      "text": "No blue colonies were observed, indicating that the bacterial cells did not produce b-galactosidase activity (Fig.",
+      "source_section": "Results",
+      "quote": "No blue colonies were observed, indicating that the bacterial cells did not produce b-galactosidase activity (Fig.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Expression of the Bacillus thuringiensis vip3A Insecticidal Toxin Gene Is Activated at the Onset of Stationary Phase by VipR, an Autoregulated Transcription Factor",
+        "year": 2022,
+        "journal": "Microbiology Spectrum",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09:key_result:0002",
+      "paper_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09",
+      "chunk_type": "key_result",
+      "text": "This result suggested that a specific regulator required for vip3A expression was absent from the HD73 2 strain while it was present in the parental HD1 strain.",
+      "source_section": "Results",
+      "quote": "This result suggested that a specific regulator required for vip3A expression was absent from the HD73 2 strain while it was present in the parental HD1 strain.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Expression of the Bacillus thuringiensis vip3A Insecticidal Toxin Gene Is Activated at the Onset of Stationary Phase by VipR, an Autoregulated Transcription Factor",
+        "year": 2022,
+        "journal": "Microbiology Spectrum",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09:key_result:0003",
+      "paper_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09",
+      "chunk_type": "key_result",
+      "text": "An in silico analysis of genes encoded on the pBMB299 revealed that a putative conjugal transfer protein (TraG) was present and suggested that this plasmid was conjugative.",
+      "source_section": "Results",
+      "quote": "An in silico analysis of genes encoded on the pBMB299 revealed that a putative conjugal transfer protein (TraG) was present and suggested that this plasmid was conjugative.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Expression of the Bacillus thuringiensis vip3A Insecticidal Toxin Gene Is Activated at the Onset of Stationary Phase by VipR, an Autoregulated Transcription Factor",
+        "year": 2022,
+        "journal": "Microbiology Spectrum",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09:key_result:0004",
+      "paper_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09",
+      "chunk_type": "key_result",
+      "text": "Indeed, it has been shown previously that the Gram-positive pBC16 replicon constituting pHT1618 is mobilizable by conjugation between B.",
+      "source_section": "Results",
+      "quote": "Indeed, it has been shown previously that the Gram-positive pBC16 replicon constituting pHT1618 is mobilizable by conjugation between B.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Expression of the Bacillus thuringiensis vip3A Insecticidal Toxin Gene Is Activated at the Onset of Stationary Phase by VipR, an Autoregulated Transcription Factor",
+        "year": 2022,
+        "journal": "Microbiology Spectrum",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09:key_result:0005",
+      "paper_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09",
+      "chunk_type": "key_result",
+      "text": "However, the Vip3A protein was detected in both the supernatant and the cell protein extract of the HD73 2 Sm r (pBMB299) strain.",
+      "source_section": "Results",
+      "quote": "However, the Vip3A protein was detected in both the supernatant and the cell protein extract of the HD73 2 Sm r (pBMB299) strain.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Expression of the Bacillus thuringiensis vip3A Insecticidal Toxin Gene Is Activated at the Onset of Stationary Phase by VipR, an Autoregulated Transcription Factor",
+        "year": 2022,
+        "journal": "Microbiology Spectrum",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09:key_result:0006",
+      "paper_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09",
+      "chunk_type": "key_result",
+      "text": "thuringiensis strains studied, and the gene sequences displayed 90% to 100% of identity between strains (not shown).",
+      "source_section": "Results",
+      "quote": "thuringiensis strains studied, and the gene sequences displayed 90% to 100% of identity between strains (not shown).",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Expression of the Bacillus thuringiensis vip3A Insecticidal Toxin Gene Is Activated at the Onset of Stationary Phase by VipR, an Autoregulated Transcription Factor",
+        "year": 2022,
+        "journal": "Microbiology Spectrum",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09:key_result:0007",
+      "paper_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09",
+      "chunk_type": "key_result",
+      "text": "This gene was identified previously through a genomic analysis of the B.",
+      "source_section": "Results",
+      "quote": "This gene was identified previously through a genomic analysis of the B.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Expression of the Bacillus thuringiensis vip3A Insecticidal Toxin Gene Is Activated at the Onset of Stationary Phase by VipR, an Autoregulated Transcription Factor",
+        "year": 2022,
+        "journal": "Microbiology Spectrum",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09:discussion_point:0000",
+      "paper_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09",
+      "chunk_type": "discussion_point",
+      "text": "Therefore, we assume that the results we describe in this study should be valid for all these B.",
+      "source_section": "Discussion",
+      "quote": "Therefore, we assume that the results we describe in this study should be valid for all these B.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Expression of the Bacillus thuringiensis vip3A Insecticidal Toxin Gene Is Activated at the Onset of Stationary Phase by VipR, an Autoregulated Transcription Factor",
+        "year": 2022,
+        "journal": "Microbiology Spectrum",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09:discussion_point:0001",
+      "paper_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09",
+      "chunk_type": "discussion_point",
+      "text": "2B and 4B) might be due to the weak VipR-independent transcription from the vipR promoter region (Fig.",
+      "source_section": "Discussion",
+      "quote": "2B and 4B) might be due to the weak VipR-independent transcription from the vipR promoter region (Fig.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Expression of the Bacillus thuringiensis vip3A Insecticidal Toxin Gene Is Activated at the Onset of Stationary Phase by VipR, an Autoregulated Transcription Factor",
+        "year": 2022,
+        "journal": "Microbiology Spectrum",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09:discussion_point:0002",
+      "paper_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09",
+      "chunk_type": "discussion_point",
+      "text": "This hypothesis is supported by the fact that mutations in the HTH domain of VipR (Fig.",
+      "source_section": "Discussion",
+      "quote": "This hypothesis is supported by the fact that mutations in the HTH domain of VipR (Fig.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Expression of the Bacillus thuringiensis vip3A Insecticidal Toxin Gene Is Activated at the Onset of Stationary Phase by VipR, an Autoregulated Transcription Factor",
+        "year": 2022,
+        "journal": "Microbiology Spectrum",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09:discussion_point:0003",
+      "paper_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09",
+      "chunk_type": "discussion_point",
+      "text": "Moreover, a transcriptional fusion between the DNA fragment P vipR and the lacZ gene yielded a low but significant production of b-galactosidase in the absence of VipR, thus reflecting a VipR-independent transcription from this promoter region (Fig.",
+      "source_section": "Discussion",
+      "quote": "Moreover, a transcriptional fusion between the DNA fragment P vipR and the lacZ gene yielded a low but significant production of b-galactosidase in the absence of VipR, thus reflecting a VipR-independ",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Expression of the Bacillus thuringiensis vip3A Insecticidal Toxin Gene Is Activated at the Onset of Stationary Phase by VipR, an Autoregulated Transcription Factor",
+        "year": 2022,
+        "journal": "Microbiology Spectrum",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09:discussion_point:0004",
+      "paper_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09",
+      "chunk_type": "discussion_point",
+      "text": "The determination of the two putative transcription start sites upstream from vipR indeed reveals a putative SigA-dependent promoter (P2) which might be responsible for this low transcription.",
+      "source_section": "Discussion",
+      "quote": "The determination of the two putative transcription start sites upstream from vipR indeed reveals a putative SigA-dependent promoter (P2) which might be responsible for this low transcription.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Expression of the Bacillus thuringiensis vip3A Insecticidal Toxin Gene Is Activated at the Onset of Stationary Phase by VipR, an Autoregulated Transcription Factor",
+        "year": 2022,
+        "journal": "Microbiology Spectrum",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09:discussion_point:0005",
+      "paper_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09",
+      "chunk_type": "discussion_point",
+      "text": "The characterization of the main vip3A and vipR promoters indicates the presence of a putative 210 box resembling that recognized by the vegetative Sigma A factor of Bacillus (TATAAT) (36).",
+      "source_section": "Discussion",
+      "quote": "The characterization of the main vip3A and vipR promoters indicates the presence of a putative 210 box resembling that recognized by the vegetative Sigma A factor of Bacillus (TATAAT) (36).",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Expression of the Bacillus thuringiensis vip3A Insecticidal Toxin Gene Is Activated at the Onset of Stationary Phase by VipR, an Autoregulated Transcription Factor",
+        "year": 2022,
+        "journal": "Microbiology Spectrum",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09:discussion_point:0006",
+      "paper_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09",
+      "chunk_type": "discussion_point",
+      "text": "However, the 235 region of both promoters does not match the consensus sequence of Sigma A promoters (TTGACA).",
+      "source_section": "Discussion",
+      "quote": "However, the 235 region of both promoters does not match the consensus sequence of Sigma A promoters (TTGACA).",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Expression of the Bacillus thuringiensis vip3A Insecticidal Toxin Gene Is Activated at the Onset of Stationary Phase by VipR, an Autoregulated Transcription Factor",
+        "year": 2022,
+        "journal": "Microbiology Spectrum",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09:discussion_point:0007",
+      "paper_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09",
+      "chunk_type": "discussion_point",
+      "text": "The putative binding of VipR a few nucleotides upstream of the vip3A and vipR promoters may compensate for the lack of the 235 box by recruiting the RNA polymerase to the promoter, thereby allowing the initiation of transcription (37).",
+      "source_section": "Discussion",
+      "quote": "The putative binding of VipR a few nucleotides upstream of the vip3A and vipR promoters may compensate for the lack of the 235 box by recruiting the RNA polymerase to the promoter, thereby allowing th",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Expression of the Bacillus thuringiensis vip3A Insecticidal Toxin Gene Is Activated at the Onset of Stationary Phase by VipR, an Autoregulated Transcription Factor",
+        "year": 2022,
+        "journal": "Microbiology Spectrum",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09:method:0000",
+      "paper_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09",
+      "chunk_type": "method",
+      "text": "Escherichia coli strain DH5a was used",
+      "source_section": "Methods",
+      "quote": "Escherichia coli strain DH5a was used",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Expression of the Bacillus thuringiensis vip3A Insecticidal Toxin Gene Is Activated at the Onset of Stationary Phase by VipR, an Autoregulated Transcription Factor",
+        "year": 2022,
+        "journal": "Microbiology Spectrum",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09:method:0001",
+      "paper_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09",
+      "chunk_type": "method",
+      "text": "The following antibiotics were used",
+      "source_section": "Methods",
+      "quote": "The following antibiotics were used",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Expression of the Bacillus thuringiensis vip3A Insecticidal Toxin Gene Is Activated at the Onset of Stationary Phase by VipR, an Autoregulated Transcription Factor",
+        "year": 2022,
+        "journal": "Microbiology Spectrum",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09:method:0002",
+      "paper_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09",
+      "chunk_type": "method",
+      "text": "PCR was performed",
+      "source_section": "Methods",
+      "quote": "PCR was performed",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Expression of the Bacillus thuringiensis vip3A Insecticidal Toxin Gene Is Activated at the Onset of Stationary Phase by VipR, an Autoregulated Transcription Factor",
+        "year": 2022,
+        "journal": "Microbiology Spectrum",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09:method:0003",
+      "paper_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09",
+      "chunk_type": "method",
+      "text": "Sequencing was performed",
+      "source_section": "Methods",
+      "quote": "Sequencing was performed",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Expression of the Bacillus thuringiensis vip3A Insecticidal Toxin Gene Is Activated at the Onset of Stationary Phase by VipR, an Autoregulated Transcription Factor",
+        "year": 2022,
+        "journal": "Microbiology Spectrum",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09:method:0004",
+      "paper_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09",
+      "chunk_type": "method",
+      "text": "strain was used",
+      "source_section": "Methods",
+      "quote": "strain was used",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Expression of the Bacillus thuringiensis vip3A Insecticidal Toxin Gene Is Activated at the Onset of Stationary Phase by VipR, an Autoregulated Transcription Factor",
+        "year": 2022,
+        "journal": "Microbiology Spectrum",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09:method:0005",
+      "paper_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09",
+      "chunk_type": "method",
+      "text": "resistant HD73 2 Sm r was used",
+      "source_section": "Methods",
+      "quote": "resistant HD73 2 Sm r was used",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Expression of the Bacillus thuringiensis vip3A Insecticidal Toxin Gene Is Activated at the Onset of Stationary Phase by VipR, an Autoregulated Transcription Factor",
+        "year": 2022,
+        "journal": "Microbiology Spectrum",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09:method:0006",
+      "paper_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09",
+      "chunk_type": "method",
+      "text": "This strain was used",
+      "source_section": "Methods",
+      "quote": "This strain was used",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Expression of the Bacillus thuringiensis vip3A Insecticidal Toxin Gene Is Activated at the Onset of Stationary Phase by VipR, an Autoregulated Transcription Factor",
+        "year": 2022,
+        "journal": "Microbiology Spectrum",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09:method:0007",
+      "paper_id": "Expression_of_the_Bacillus_thuringiensis_vip3A_Insecticidal_Toxin_Gene_Is_Activated_at_the_Onset_of_Stationary_Phase_by__14752608cb09",
+      "chunk_type": "method",
+      "text": "the preculture was used",
+      "source_section": "Methods",
+      "quote": "the preculture was used",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Expression of the Bacillus thuringiensis vip3A Insecticidal Toxin Gene Is Activated at the Onset of Stationary Phase by VipR, an Autoregulated Transcription Factor",
+        "year": 2022,
+        "journal": "Microbiology Spectrum",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    }
+  ]
+}

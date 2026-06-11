@@ -1,0 +1,144 @@
+{
+  "paper_id": "Characterization_of_Bacillus_thuringiensis_isolates_by_their_insecticidal_activity_and_their_production_of_Cry_and_Vip3__2344cb317b4d",
+  "chunk_version": "v2",
+  "evidence_hash": "9ed3374d6a3fa81e",
+  "chunk_count": 8,
+  "chunks": [
+    {
+      "chunk_id": "Characterization_of_Bacillus_thuringiensis_isolates_by_their_insecticidal_activity_and_their_production_of_Cry_and_Vip3__2344cb317b4d:discussion_point:0000",
+      "paper_id": "Characterization_of_Bacillus_thuringiensis_isolates_by_their_insecticidal_activity_and_their_production_of_Cry_and_Vip3__2344cb317b4d",
+      "chunk_type": "discussion_point",
+      "text": "Therefore, Bt collections are a source of new strains with interesting insecticidal properties and also a source for novel genes coding for insecticidal proteins.",
+      "source_section": "Discussion",
+      "quote": "Therefore, Bt collections are a source of new strains with interesting insecticidal properties and also a source for novel genes coding for insecticidal proteins.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Characterization of Bacillus thuringiensis isolates by their insecticidal activity and their production of Cry and Vip3 proteins",
+        "year": 2018,
+        "journal": "PLOS ONE",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Characterization_of_Bacillus_thuringiensis_isolates_by_their_insecticidal_activity_and_their_production_of_Cry_and_Vip3__2344cb317b4d:discussion_point:0001",
+      "paper_id": "Characterization_of_Bacillus_thuringiensis_isolates_by_their_insecticidal_activity_and_their_production_of_Cry_and_Vip3__2344cb317b4d",
+      "chunk_type": "discussion_point",
+      "text": "molesta Vip3Aa65 0.99±0.11 49 22-115 Vip3Aa16 1.04±0.11 45 26-90 https://doi.org/10.1371/journal.pone.0206813.t006 vip3 genes may be due to differences in geographical habitats and environmental conditions.",
+      "source_section": "Discussion",
+      "quote": "molesta Vip3Aa65 0.99±0.11 49 22-115 Vip3Aa16 1.04±0.11 45 26-90 https://doi.org/10.1371/journal.pone.0206813.t006 vip3 genes may be due to differences in geographical habitats and environmental condi",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Characterization of Bacillus thuringiensis isolates by their insecticidal activity and their production of Cry and Vip3 proteins",
+        "year": 2018,
+        "journal": "PLOS ONE",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Characterization_of_Bacillus_thuringiensis_isolates_by_their_insecticidal_activity_and_their_production_of_Cry_and_Vip3__2344cb317b4d:discussion_point:0002",
+      "paper_id": "Characterization_of_Bacillus_thuringiensis_isolates_by_their_insecticidal_activity_and_their_production_of_Cry_and_Vip3__2344cb317b4d",
+      "chunk_type": "discussion_point",
+      "text": "In our study, preliminary assays indicated that some of the 18 selected isolates in the collection had high toxicity against Lepidoptera.",
+      "source_section": "Discussion",
+      "quote": "In our study, preliminary assays indicated that some of the 18 selected isolates in the collection had high toxicity against Lepidoptera.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Characterization of Bacillus thuringiensis isolates by their insecticidal activity and their production of Cry and Vip3 proteins",
+        "year": 2018,
+        "journal": "PLOS ONE",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Characterization_of_Bacillus_thuringiensis_isolates_by_their_insecticidal_activity_and_their_production_of_Cry_and_Vip3__2344cb317b4d:discussion_point:0003",
+      "paper_id": "Characterization_of_Bacillus_thuringiensis_isolates_by_their_insecticidal_activity_and_their_production_of_Cry_and_Vip3__2344cb317b4d",
+      "chunk_type": "discussion_point",
+      "text": "However, due to limitations in this type of analysis and the high homology among Cry proteins, we cannot discard the presence of other proteins in the crystal.",
+      "source_section": "Discussion",
+      "quote": "However, due to limitations in this type of analysis and the high homology among Cry proteins, we cannot discard the presence of other proteins in the crystal.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Characterization of Bacillus thuringiensis isolates by their insecticidal activity and their production of Cry and Vip3 proteins",
+        "year": 2018,
+        "journal": "PLOS ONE",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Characterization_of_Bacillus_thuringiensis_isolates_by_their_insecticidal_activity_and_their_production_of_Cry_and_Vip3__2344cb317b4d:discussion_point:0004",
+      "paper_id": "Characterization_of_Bacillus_thuringiensis_isolates_by_their_insecticidal_activity_and_their_production_of_Cry_and_Vip3__2344cb317b4d",
+      "chunk_type": "discussion_point",
+      "text": "The supernatants resulting from culturing the 18 selected Bt isolates were tested in bioassays to determine whether they could have insecticidal activity.",
+      "source_section": "Discussion",
+      "quote": "The supernatants resulting from culturing the 18 selected Bt isolates were tested in bioassays to determine whether they could have insecticidal activity.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Characterization of Bacillus thuringiensis isolates by their insecticidal activity and their production of Cry and Vip3 proteins",
+        "year": 2018,
+        "journal": "PLOS ONE",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Characterization_of_Bacillus_thuringiensis_isolates_by_their_insecticidal_activity_and_their_production_of_Cry_and_Vip3__2344cb317b4d:discussion_point:0005",
+      "paper_id": "Characterization_of_Bacillus_thuringiensis_isolates_by_their_insecticidal_activity_and_their_production_of_Cry_and_Vip3__2344cb317b4d",
+      "chunk_type": "discussion_point",
+      "text": "The results indicated that five isolates were highly toxic (90-97% mortality in the assay conditions), two of them (6A and 45MY) to both S.",
+      "source_section": "Discussion",
+      "quote": "The results indicated that five isolates were highly toxic (90-97% mortality in the assay conditions), two of them (6A and 45MY) to both S.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Characterization of Bacillus thuringiensis isolates by their insecticidal activity and their production of Cry and Vip3 proteins",
+        "year": 2018,
+        "journal": "PLOS ONE",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Characterization_of_Bacillus_thuringiensis_isolates_by_their_insecticidal_activity_and_their_production_of_Cry_and_Vip3__2344cb317b4d:discussion_point:0006",
+      "paper_id": "Characterization_of_Bacillus_thuringiensis_isolates_by_their_insecticidal_activity_and_their_production_of_Cry_and_Vip3__2344cb317b4d",
+      "chunk_type": "discussion_point",
+      "text": "The fact that these supernatants lost all activity after being autoclaved, along with the absence of β-exotoxin as revealed by LC-MS/MS, is a strong suggestion of the activity being due to the presence of the Vip3Aa protein.",
+      "source_section": "Discussion",
+      "quote": "The fact that these supernatants lost all activity after being autoclaved, along with the absence of β-exotoxin as revealed by LC-MS/MS, is a strong suggestion of the activity being due to the presenc",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Characterization of Bacillus thuringiensis isolates by their insecticidal activity and their production of Cry and Vip3 proteins",
+        "year": 2018,
+        "journal": "PLOS ONE",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Characterization_of_Bacillus_thuringiensis_isolates_by_their_insecticidal_activity_and_their_production_of_Cry_and_Vip3__2344cb317b4d:discussion_point:0007",
+      "paper_id": "Characterization_of_Bacillus_thuringiensis_isolates_by_their_insecticidal_activity_and_their_production_of_Cry_and_Vip3__2344cb317b4d",
+      "chunk_type": "discussion_point",
+      "text": "Since it is well known that this insect species is non susceptible to Vip3Aa [37,38,39], the mortality observed could be due to another heat-labile component in the supernatant different from Vip3Aa, which would also explain the toxicity of the Bt-KH3 isolate.",
+      "source_section": "Discussion",
+      "quote": "Since it is well known that this insect species is non susceptible to Vip3Aa [37,38,39], the mortality observed could be due to another heat-labile component in the supernatant different from Vip3Aa, ",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Characterization of Bacillus thuringiensis isolates by their insecticidal activity and their production of Cry and Vip3 proteins",
+        "year": 2018,
+        "journal": "PLOS ONE",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    }
+  ]
+}

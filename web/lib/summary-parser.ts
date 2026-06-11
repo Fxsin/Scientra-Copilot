@@ -87,9 +87,29 @@ export function parseAISummary(raw: string | null | undefined): ParsedSummary | 
    Input normalization
    ═══════════════════════════════════════════════════════ */
 
+function removeBOM(s: string): string {
+  return s.replace(/^﻿/, "").replace(/﻿/g, "");
+}
+
+function stripJsonCodeFence(s: string): string {
+  let t = s.trim();
+  // Remove opening fence: ```json, ```JSON, or plain ```
+  if (t.startsWith("```")) {
+    const firstNewline = t.indexOf("\n");
+    if (firstNewline > 0) {
+      t = t.slice(firstNewline + 1);
+    }
+  }
+  // Remove closing fence
+  if (t.endsWith("```")) {
+    t = t.slice(0, t.lastIndexOf("```")).trim();
+  }
+  return t.trim();
+}
+
 function normalizeSummaryInput(input: string): string {
   // Explicit BOM removal — String.trim() does NOT remove ﻿ in JS
-  let s = input.replace(/^﻿/, "").replace(/﻿/g, "");
+  let s = removeBOM(input);
   // Normalize line endings
   s = s.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
   return s.trim();
@@ -103,11 +123,12 @@ function stripFrontmatter(text: string): string {
     if (closing > 0) {
       s = s.slice(closing + 4).trim();
     } else {
-      // Try "---" on its own line later
       const re = /^---[\s\S]*?\n---\s*/;
       s = s.replace(re, "").trim();
     }
   }
+  // Strip BOM that may appear after frontmatter removal
+  s = removeBOM(s);
   return s;
 }
 
@@ -117,6 +138,8 @@ function stripFrontmatter(text: string): string {
 
 function isJsonLikeSummary(text: string): boolean {
   const s = text.trim();
+  // Check if it's fenced JSON
+  if (s.startsWith("```")) return true;
   if (s.startsWith("{")) return true;
   // Heuristic: contains JSON quoted keys with structured fields
   if (/"(Core Finding|Evidence|Method|Limitation|Gap|text|citations)"/i.test(s) && s.includes("{")) return true;
@@ -124,10 +147,13 @@ function isJsonLikeSummary(text: string): boolean {
 }
 
 function safeJsonParse(input: string): Record<string, unknown> | null {
-  let cleaned = input.trim();
-  // 1. Direct parse
+  let cleaned = removeBOM(input.trim());
+  // 1. Strip code fence
+  cleaned = stripJsonCodeFence(cleaned);
+  cleaned = removeBOM(cleaned);
+  // 2. Direct parse
   try { return JSON.parse(cleaned) as Record<string, unknown>; } catch { /* ok */ }
-  // 2. Extract { … }
+  // 3. Extract { … }
   const fb = cleaned.indexOf("{");
   const lb = cleaned.lastIndexOf("}");
   if (fb >= 0 && lb > fb) {
@@ -143,13 +169,18 @@ function safeJsonParse(input: string): Record<string, unknown> | null {
    ═══════════════════════════════════════════════════════ */
 
 function extractFromBrokenJsonLike(text: string): ParsedSummary | null {
+  // Clean BOM + code fence before extraction
+  let cleaned = removeBOM(text.trim());
+  cleaned = stripJsonCodeFence(cleaned);
+  cleaned = removeBOM(cleaned);
+
   const result = emptyResult();
 
   // Find all complete "text": "..." strings
   const textRe = /"text"\s*:\s*"((?:[^"\\]|\\.)*)"/g;
   const allTexts: string[] = [];
   let m: RegExpExecArray | null;
-  while ((m = textRe.exec(text)) !== null) {
+  while ((m = textRe.exec(cleaned)) !== null) {
     const val = m[1].replace(/\\"/g, '"').replace(/\\n/g, " ");
     if (val.trim().length > 4 && !_isJsonStructural(val)) {
       allTexts.push(val.trim());
@@ -170,8 +201,8 @@ function extractFromBrokenJsonLike(text: string): ParsedSummary | null {
 
   for (const t of allTexts) {
     // Find the nearest section heading before this text
-    const idx = text.indexOf(t);
-    const before = idx >= 0 ? text.slice(Math.max(0, idx - 500), idx) : "";
+    const idx = cleaned.indexOf(t);
+    const before = idx >= 0 ? cleaned.slice(Math.max(0, idx - 500), idx) : "";
     let assigned = false;
     for (const head of sectionHeads) {
       if (head.re.test(before)) {

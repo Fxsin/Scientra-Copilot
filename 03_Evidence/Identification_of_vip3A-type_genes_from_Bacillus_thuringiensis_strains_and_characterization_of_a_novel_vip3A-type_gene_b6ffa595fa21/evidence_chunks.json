@@ -1,0 +1,144 @@
+{
+  "paper_id": "Identification_of_vip3A-type_genes_from_Bacillus_thuringiensis_strains_and_characterization_of_a_novel_vip3A-type_gene_b6ffa595fa21",
+  "chunk_version": "v2",
+  "evidence_hash": "7ff425256103b630",
+  "chunk_count": 8,
+  "chunks": [
+    {
+      "chunk_id": "Identification_of_vip3A-type_genes_from_Bacillus_thuringiensis_strains_and_characterization_of_a_novel_vip3A-type_gene_b6ffa595fa21:discussion_point:0000",
+      "paper_id": "Identification_of_vip3A-type_genes_from_Bacillus_thuringiensis_strains_and_characterization_of_a_novel_vip3A-type_gene_b6ffa595fa21",
+      "chunk_type": "discussion_point",
+      "text": "Our results indicated that vip3A gene was found in 382 B.",
+      "source_section": "Discussion",
+      "quote": "Our results indicated that vip3A gene was found in 382 B.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Identification of vip3A-type genes from Bacillus thuringiensis strains and characterization of a novel vip3A-type gene",
+        "year": 1999,
+        "journal": "Letters in Applied Microbiology",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Identification_of_vip3A-type_genes_from_Bacillus_thuringiensis_strains_and_characterization_of_a_novel_vip3A-type_gene_b6ffa595fa21:discussion_point:0001",
+      "paper_id": "Identification_of_vip3A-type_genes_from_Bacillus_thuringiensis_strains_and_characterization_of_a_novel_vip3A-type_gene_b6ffa595fa21",
+      "chunk_type": "discussion_point",
+      "text": "Sequence analysis showed that the PCR fragment shared the highest sequence homology (83%), among known vip3A-type genes, with the vip3Af1 (isp3a) gene, which suggested that B.",
+      "source_section": "Discussion",
+      "quote": "Sequence analysis showed that the PCR fragment shared the highest sequence homology (83%), among known vip3A-type genes, with the vip3Af1 (isp3a) gene, which suggested that B.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Identification of vip3A-type genes from Bacillus thuringiensis strains and characterization of a novel vip3A-type gene",
+        "year": 1999,
+        "journal": "Letters in Applied Microbiology",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Identification_of_vip3A-type_genes_from_Bacillus_thuringiensis_strains_and_characterization_of_a_novel_vip3A-type_gene_b6ffa595fa21:discussion_point:0002",
+      "paper_id": "Identification_of_vip3A-type_genes_from_Bacillus_thuringiensis_strains_and_characterization_of_a_novel_vip3A-type_gene_b6ffa595fa21",
+      "chunk_type": "discussion_point",
+      "text": "thuringiensis Bt41 might contain a novel vip3A holotype gene.",
+      "source_section": "Discussion",
+      "quote": "thuringiensis Bt41 might contain a novel vip3A holotype gene.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Identification of vip3A-type genes from Bacillus thuringiensis strains and characterization of a novel vip3A-type gene",
+        "year": 1999,
+        "journal": "Letters in Applied Microbiology",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Identification_of_vip3A-type_genes_from_Bacillus_thuringiensis_strains_and_characterization_of_a_novel_vip3A-type_gene_b6ffa595fa21:discussion_point:0003",
+      "paper_id": "Identification_of_vip3A-type_genes_from_Bacillus_thuringiensis_strains_and_characterization_of_a_novel_vip3A-type_gene_b6ffa595fa21",
+      "chunk_type": "discussion_point",
+      "text": "This may have resulted from the mismatch of primers with vip3A genes of some B.",
+      "source_section": "Discussion",
+      "quote": "This may have resulted from the mismatch of primers with vip3A genes of some B.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Identification of vip3A-type genes from Bacillus thuringiensis strains and characterization of a novel vip3A-type gene",
+        "year": 1999,
+        "journal": "Letters in Applied Microbiology",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Identification_of_vip3A-type_genes_from_Bacillus_thuringiensis_strains_and_characterization_of_a_novel_vip3A-type_gene_b6ffa595fa21:discussion_point:0004",
+      "paper_id": "Identification_of_vip3A-type_genes_from_Bacillus_thuringiensis_strains_and_characterization_of_a_novel_vip3A-type_gene_b6ffa595fa21",
+      "chunk_type": "discussion_point",
+      "text": "However, the expressed Vip3Aa19 protein was toxic to S.",
+      "source_section": "Discussion",
+      "quote": "However, the expressed Vip3Aa19 protein was toxic to S.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Identification of vip3A-type genes from Bacillus thuringiensis strains and characterization of a novel vip3A-type gene",
+        "year": 1999,
+        "journal": "Letters in Applied Microbiology",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Identification_of_vip3A-type_genes_from_Bacillus_thuringiensis_strains_and_characterization_of_a_novel_vip3A-type_gene_b6ffa595fa21:discussion_point:0005",
+      "paper_id": "Identification_of_vip3A-type_genes_from_Bacillus_thuringiensis_strains_and_characterization_of_a_novel_vip3A-type_gene_b6ffa595fa21",
+      "chunk_type": "discussion_point",
+      "text": "However, the research on fragment swapping between Vip3Aa19 and Vip3Aa11 toxins could make for M 1 2 3 200 -116 -97 -66 -45 -Figure 2 Sodium dodecyl sulfate-polyacrylamide gel electrophoresis (8% polyacrylamide gel) of proteins from recombinant Escherichia coli BL21 (DE3).",
+      "source_section": "Discussion",
+      "quote": "However, the research on fragment swapping between Vip3Aa19 and Vip3Aa11 toxins could make for M 1 2 3 200 -116 -97 -66 -45 -Figure 2 Sodium dodecyl sulfate-polyacrylamide gel electrophoresis (8% poly",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Identification of vip3A-type genes from Bacillus thuringiensis strains and characterization of a novel vip3A-type gene",
+        "year": 1999,
+        "journal": "Letters in Applied Microbiology",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Identification_of_vip3A-type_genes_from_Bacillus_thuringiensis_strains_and_characterization_of_a_novel_vip3A-type_gene_b6ffa595fa21:discussion_point:0006",
+      "paper_id": "Identification_of_vip3A-type_genes_from_Bacillus_thuringiensis_strains_and_characterization_of_a_novel_vip3A-type_gene_b6ffa595fa21",
+      "chunk_type": "discussion_point",
+      "text": "Previous reports have also demonstrated that changes in several amino acid residues in other Vip3A proteins could affect protein insecticidal activity (Estruch et al.",
+      "source_section": "Discussion",
+      "quote": "Previous reports have also demonstrated that changes in several amino acid residues in other Vip3A proteins could affect protein insecticidal activity (Estruch et al.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Identification of vip3A-type genes from Bacillus thuringiensis strains and characterization of a novel vip3A-type gene",
+        "year": 1999,
+        "journal": "Letters in Applied Microbiology",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Identification_of_vip3A-type_genes_from_Bacillus_thuringiensis_strains_and_characterization_of_a_novel_vip3A-type_gene_b6ffa595fa21:discussion_point:0007",
+      "paper_id": "Identification_of_vip3A-type_genes_from_Bacillus_thuringiensis_strains_and_characterization_of_a_novel_vip3A-type_gene_b6ffa595fa21",
+      "chunk_type": "discussion_point",
+      "text": "These results suggest that different regions of Vip3A protein may confer different insecticidal activities.",
+      "source_section": "Discussion",
+      "quote": "These results suggest that different regions of Vip3A protein may confer different insecticidal activities.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Identification of vip3A-type genes from Bacillus thuringiensis strains and characterization of a novel vip3A-type gene",
+        "year": 1999,
+        "journal": "Letters in Applied Microbiology",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    }
+  ]
+}

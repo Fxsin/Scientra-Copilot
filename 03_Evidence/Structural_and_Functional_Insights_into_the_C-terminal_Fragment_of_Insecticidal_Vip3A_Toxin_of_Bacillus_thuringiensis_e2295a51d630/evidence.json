@@ -1,0 +1,87 @@
+{
+  "paper_id": "Structural_and_Functional_Insights_into_the_C-terminal_Fragment_of_Insecticidal_Vip3A_Toxin_of_Bacillus_thuringiensis_e2295a51d630",
+  "title": "Structural and Functional Insights into the C-terminal Fragment of Insecticidal Vip3A Toxin of Bacillus thuringiensis",
+  "year": 2020,
+  "journal": "Toxins",
+  "evidence_version": "v1",
+  "status": "partial",
+  "research_question": "",
+  "study_objective": "",
+  "research_gap": "",
+  "methods": [],
+  "key_results": [],
+  "core_findings": [],
+  "discussion_points": [
+    {
+      "point": "However, despite the fact that Vip3A toxins were identified almost 25 years ago [24], their mode of action remains poorly understood.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "However, despite the fact that Vip3A toxins were identified almost 25 years ago [24], their mode of action remains poorly understood.",
+      "confidence": "medium"
+    },
+    {
+      "point": "One of the main reasons for this is the lack of a high-resolution three-dimensional structure, which significantly impedes detailed molecular-level functional and mechanistic studies, and thus limits the development of their insecticidal potential.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "One of the main reasons for this is the lack of a high-resolution three-dimensional structure, which significantly impedes detailed molecular-level functional and mechanistic studies, and thus limits ",
+      "confidence": "medium"
+    },
+    {
+      "point": "This therefore Vip3A toxins show a wide spectrum of specific insecticidal activities and are functionally distinct compared to the Cry toxins.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "This therefore Vip3A toxins show a wide spectrum of specific insecticidal activities and are functionally distinct compared to the Cry toxins.",
+      "confidence": "medium"
+    },
+    {
+      "point": "However, despite the fact that Vip3A toxins were identified almost 25 years ago [24], their mode of action remains poorly understood.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "However, despite the fact that Vip3A toxins were identified almost 25 years ago [24], their mode of action remains poorly understood.",
+      "confidence": "medium"
+    },
+    {
+      "point": "One of the main reasons for this is the lack of a high-resolution three-dimensional structure, which significantly impedes detailed molecular-level functional and mechanistic studies, and thus limits the development of their insecticidal potential.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "One of the main reasons for this is the lack of a high-resolution three-dimensional structure, which significantly impedes detailed molecular-level functional and mechanistic studies, and thus limits ",
+      "confidence": "medium"
+    },
+    {
+      "point": "This therefore suggests that domain II of Vip3A may also take part in these processes through its conserved hydrophobic α-helices.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "This therefore suggests that domain II of Vip3A may also take part in these processes through its conserved hydrophobic α-helices.",
+      "confidence": "medium"
+    },
+    {
+      "point": "Our structural analysis indicates that the putative glycan-binding pockets of these two domains differ significantly, suggesting that they are likely to have different glycan binding specificities.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Our structural analysis indicates that the putative glycan-binding pockets of these two domains differ significantly, suggesting that they are likely to have different glycan binding specificities.",
+      "confidence": "medium"
+    },
+    {
+      "point": "This multiplicity of CBMs in Vip3A toxins may increase the diversity of their target polysaccharides.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "This multiplicity of CBMs in Vip3A toxins may increase the diversity of their target polysaccharides.",
+      "confidence": "medium"
+    }
+  ],
+  "limitations": [],
+  "open_questions": [],
+  "future_directions": [],
+  "claims": [],
+  "result_discussion_links": [],
+  "coverage": {
+    "has_introduction": true,
+    "has_methods": true,
+    "has_results": true,
+    "has_discussion": true,
+    "has_key_results": false,
+    "has_discussion_points": true
+  },
+  "fallback_used": true,
+  "errors": []
+}

@@ -1,0 +1,25 @@
+{
+  "paper_id": "Cryo-EM_structures_of_an_insecticidal_Bt_toxin_reveal_its_mechanism_of_action_on_the_membrane_41e78794bf9b",
+  "chunk_version": "v2",
+  "evidence_hash": "dedd41b43d8f6ccf",
+  "chunk_count": 1,
+  "chunks": [
+    {
+      "chunk_id": "Cryo-EM_structures_of_an_insecticidal_Bt_toxin_reveal_its_mechanism_of_action_on_the_membrane_41e78794bf9b:discussion_point:0000",
+      "paper_id": "Cryo-EM_structures_of_an_insecticidal_Bt_toxin_reveal_its_mechanism_of_action_on_the_membrane_41e78794bf9b",
+      "chunk_type": "discussion_point",
+      "text": "# Cryo-EM structures of an insecticidal Bt toxin reveal its mechanism of action on the membrane Authors: Matthew J Byrne; Matthew G Iadanza; Marcos Arribas Perez; Daniel P Maskell; Rachel M George; Emma L Hesketh; Paul A Beales; Marc D Zack; Colin Berry; Rebecca F Thompson; Research Complex at Harwe",
+      "source_section": "Discussion",
+      "quote": "# Cryo-EM structures of an insecticidal Bt toxin reveal its mechanism of action on the membrane Authors: Matthew J Byrne; Matthew G Iadanza; Marcos Arribas Perez; Daniel P Maskell; Rachel M George; Em",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Cryo-EM structures of an insecticidal Bt toxin reveal its mechanism of action on the membrane",
+        "year": 2017,
+        "journal": "Nature Communications",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    }
+  ]
+}

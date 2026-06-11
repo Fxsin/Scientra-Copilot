@@ -1,0 +1,66 @@
+{
+  "paper_id": "Vip3A_a_novel_Bacillus_thuringiensis_vegetative_insecticidal_protein_with_a_wide_spectrum_of_activities_against_lepidopt_7fa7c3a45e6e",
+  "title": "Vip3A, a novel Bacillus thuringiensis vegetative insecticidal protein with a wide spectrum of activities against lepidopteran insects",
+  "year": 1996,
+  "journal": "Proceedings of the National Academy of Sciences",
+  "evidence_version": "v1",
+  "status": "partial",
+  "research_question": "",
+  "study_objective": "",
+  "research_gap": "",
+  "methods": [
+    {
+      "name": "richia coli strain DH5a was used",
+      "section": "Methods",
+      "quote": "richia coli strain DH5a was used"
+    },
+    {
+      "name": "thuringiensis was used",
+      "section": "Methods",
+      "quote": "thuringiensis was used"
+    },
+    {
+      "name": "Hybridization was carried out",
+      "section": "Methods",
+      "quote": "Hybridization was carried out"
+    },
+    {
+      "name": "Hybridization and washing conditions were performed",
+      "section": "Methods",
+      "quote": "Hybridization and washing conditions were performed"
+    },
+    {
+      "name": "added to molten diet and the combination was used",
+      "section": "Methods",
+      "quote": "added to molten diet and the combination was used"
+    },
+    {
+      "name": "phosphate and nitroblue tetrazolium were used",
+      "section": "Methods",
+      "quote": "phosphate and nitroblue tetrazolium were used"
+    },
+    {
+      "name": "Hybridization and washes were performed",
+      "section": "Methods",
+      "quote": "Hybridization and washes were performed"
+    }
+  ],
+  "key_results": [],
+  "core_findings": [],
+  "discussion_points": [],
+  "limitations": [],
+  "open_questions": [],
+  "future_directions": [],
+  "claims": [],
+  "result_discussion_links": [],
+  "coverage": {
+    "has_introduction": true,
+    "has_methods": true,
+    "has_results": true,
+    "has_discussion": true,
+    "has_key_results": false,
+    "has_discussion_points": false
+  },
+  "fallback_used": true,
+  "errors": []
+}

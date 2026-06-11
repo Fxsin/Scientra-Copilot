@@ -1,0 +1,87 @@
+{
+  "paper_id": "HT_SuperSAGE_of_the_gut_tissue_of_a_Vip3Aa_resistant_Heliothis_virescens_Lepidoptera_Noctuidae_strain_provides_insights__f687007e97f0",
+  "title": "HT-SuperSAGE of the gut tissue of a Vip3Aa-resistant Heliothis virescens (Lepidoptera: Noctuidae) strain provides insights into the basis of resistance",
+  "year": 2011,
+  "journal": "Insect Science",
+  "evidence_version": "v1",
+  "status": "partial",
+  "research_question": "",
+  "study_objective": "",
+  "research_gap": "",
+  "methods": [],
+  "key_results": [],
+  "core_findings": [],
+  "discussion_points": [
+    {
+      "point": "virescens contig suggesting either cDNA digestion with NlaIII was not very efficient or a low frequency of cleavage sites for this particular 4-bp cutter enzyme in the genes of this insect.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "virescens contig suggesting either cDNA digestion with NlaIII was not very efficient or a low frequency of cleavage sites for this particular 4-bp cutter enzyme in the genes of this insect.",
+      "confidence": "medium"
+    },
+    {
+      "point": "Any of above could have consequences in the transcription profile produced by HT-SuperSAGE.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Any of above could have consequences in the transcription profile produced by HT-SuperSAGE.",
+      "confidence": "medium"
+    },
+    {
+      "point": "Though NlaIII is the standard anchoring enzyme in all versions of SAGE, other 4-bp restriction enzymes could be also used, for example, DpnII and BfaI.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Though NlaIII is the standard anchoring enzyme in all versions of SAGE, other 4-bp restriction enzymes could be also used, for example, DpnII and BfaI.",
+      "confidence": "medium"
+    },
+    {
+      "point": "However, cDNA of certain organisms is frequently not efficiently digested by NlaIII but instead by DpnII (Sharbel et al., 2010).",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "However, cDNA of certain organisms is frequently not efficiently digested by NlaIII but instead by DpnII (Sharbel et al., 2010).",
+      "confidence": "medium"
+    },
+    {
+      "point": "We found the amount of underexpressed unigenes in Vip-Sel was significantly greater (more than three times) than those found constitutively overexpressed, suggesting a decreased translation rate could be an important adaptation for Vip3Aa resistance in this strain of H.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "We found the amount of underexpressed unigenes in Vip-Sel was significantly greater (more than three times) than those found constitutively overexpressed, suggesting a decreased translation rate could",
+      "confidence": "medium"
+    },
+    {
+      "point": "Comparison between studies using different insect and transcriptomic approaches is not straightforward but a wider transcriptional change in susceptible insects after Vip3Aa exposure may represent a less specific response triggered to cope with general stress rather than a signature of specific adap",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Comparison between studies using different insect and transcriptomic approaches is not straightforward but a wider transcriptional change in susceptible insects after Vip3Aa exposure may represent a l",
+      "confidence": "medium"
+    },
+    {
+      "point": "On the contrary, constitutive transcriptional alterations detected in the gut of Vip3Aa-resistant (unexposed) insects may better reflect the outcome of adaptation following toxin selection.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "On the contrary, constitutive transcriptional alterations detected in the gut of Vip3Aa-resistant (unexposed) insects may better reflect the outcome of adaptation following toxin selection.",
+      "confidence": "medium"
+    },
+    {
+      "point": "This hypothesis has been supported for Bt-resistant strains of S.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "This hypothesis has been supported for Bt-resistant strains of S.",
+      "confidence": "medium"
+    }
+  ],
+  "limitations": [],
+  "open_questions": [],
+  "future_directions": [],
+  "claims": [],
+  "result_discussion_links": [],
+  "coverage": {
+    "has_introduction": true,
+    "has_methods": true,
+    "has_results": true,
+    "has_discussion": true,
+    "has_key_results": false,
+    "has_discussion_points": true
+  },
+  "fallback_used": true,
+  "errors": []
+}

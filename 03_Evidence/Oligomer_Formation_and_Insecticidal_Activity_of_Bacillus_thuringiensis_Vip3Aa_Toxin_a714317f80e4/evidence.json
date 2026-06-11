@@ -1,0 +1,87 @@
+{
+  "paper_id": "Oligomer_Formation_and_Insecticidal_Activity_of_Bacillus_thuringiensis_Vip3Aa_Toxin_a714317f80e4",
+  "title": "Oligomer Formation and Insecticidal Activity of Bacillus thuringiensis Vip3Aa Toxin",
+  "year": 2020,
+  "journal": "Toxins",
+  "evidence_version": "v1",
+  "status": "partial",
+  "research_question": "",
+  "study_objective": "",
+  "research_gap": "",
+  "methods": [],
+  "key_results": [],
+  "core_findings": [],
+  "discussion_points": [
+    {
+      "point": "Previous studies have indicated that proteolytic processing of Vip3A proteins in insect midgut is a key step to exert the insecticidal activity [3,13].",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Previous studies have indicated that proteolytic processing of Vip3A proteins in insect midgut is a key step to exert the insecticidal activity [3,13].",
+      "confidence": "medium"
+    },
+    {
+      "point": "However, a recent study indicated that deletion of the first 198 residues at the N-terminus outside the ~65 kDa fragment region could lead to a complete loss of insecticidal activity and the resulting Vip3Aa fragments became sensitive to trypsin degradation [28].",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "However, a recent study indicated that deletion of the first 198 residues at the N-terminus outside the ~65 kDa fragment region could lead to a complete loss of insecticidal activity and the resulting",
+      "confidence": "medium"
+    },
+    {
+      "point": "Current studies have also shown that with treatment of Vip3A by trypsin, a 19~20 kDa peptide from the N-terminal region could bind with the C-terminal 62~65 kDa peptide, leading to the formation of a ~360 kDa homo-tetramer, which was tolerant to degradation in the protease-rich environment [29].",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Current studies have also shown that with treatment of Vip3A by trypsin, a 19~20 kDa peptide from the N-terminal region could bind with the C-terminal 62~65 kDa peptide, leading to the formation of a ",
+      "confidence": "medium"
+    },
+    {
+      "point": "We interpret that the 95 kDa fragment is complexed with a 15 kDa peptide in protein complex 1 or a 19 kDa peptide in protein complex 3 with a 65 kDa peptide (Figure 3).",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "We interpret that the 95 kDa fragment is complexed with a 15 kDa peptide in protein complex 1 or a 19 kDa peptide in protein complex 3 with a 65 kDa peptide (Figure 3).",
+      "confidence": "medium"
+    },
+    {
+      "point": "LC-MS/MS analysis of the peptides between 15~19 KDa from the complexes indicated that the 15 kDa, 17 kDa and 19 kDa peptides were all from the N terminus of Vip3Aa protein, which corresponds to the previous reported domain I in Vip3Af protein [21].",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "LC-MS/MS analysis of the peptides between 15~19 KDa from the complexes indicated that the 15 kDa, 17 kDa and 19 kDa peptides were all from the N terminus of Vip3Aa protein, which corresponds to the pr",
+      "confidence": "medium"
+    },
+    {
+      "point": "Vip3Aa protoxin could be processed in vivo by the midgut proteases of S.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Vip3Aa protoxin could be processed in vivo by the midgut proteases of S.",
+      "confidence": "medium"
+    },
+    {
+      "point": "segetum has been suggested to correlate with the transient formation of a tetramer composed of 20 kDa and 62 kDa peptides before the final processing to smaller fragments [14,21].",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "segetum has been suggested to correlate with the transient formation of a tetramer composed of 20 kDa and 62 kDa peptides before the final processing to smaller fragments [14,21].",
+      "confidence": "medium"
+    },
+    {
+      "point": "The protein complex 3 (composed of the 19 and 65 kDa fragments but not the 17 and 65 kDa fragments) could only be observed in tryptic Vip3Aa-WT or Vip3Aa-S164T (Figure 3).",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "The protein complex 3 (composed of the 19 and 65 kDa fragments but not the 17 and 65 kDa fragments) could only be observed in tryptic Vip3Aa-WT or Vip3Aa-S164T (Figure 3).",
+      "confidence": "medium"
+    }
+  ],
+  "limitations": [],
+  "open_questions": [],
+  "future_directions": [],
+  "claims": [],
+  "result_discussion_links": [],
+  "coverage": {
+    "has_introduction": true,
+    "has_methods": true,
+    "has_results": true,
+    "has_discussion": true,
+    "has_key_results": false,
+    "has_discussion_points": true
+  },
+  "fallback_used": true,
+  "errors": []
+}

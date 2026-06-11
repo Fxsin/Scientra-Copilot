@@ -92,29 +92,47 @@ def _cosine_distance(a: list[float], b: list[float]) -> float:
 
 # ── Stopwords for keyword extraction ──
 _TOPIC_STOPWORDS = {
+    # English function words
     "the", "a", "an", "of", "in", "on", "at", "to", "for", "with", "and", "or",
     "is", "are", "was", "were", "be", "been", "being", "have", "has", "had",
     "do", "does", "did", "will", "would", "could", "should", "may", "might",
     "can", "shall", "this", "that", "these", "those", "it", "its", "from",
     "by", "as", "into", "through", "during", "before", "after", "between",
-    "study", "analysis", "results", "paper", "research", "method", "methods",
-    "data", "effect", "effects", "using", "based", "novel", "current",
-    "role", "new", "two", "one", "also", "found", "show", "shown",
-    "report", "reported", "used", "use", "et", "al", "doi", "approach",
-    "protein", "proteins", "bacillus", "thuringiensis",
-    "citations", "citation", "source", "sources", "text", "title",
+    "against", "not", "without", "onto", "among", "via",
+    # Academic filler words
+    "study", "studies", "paper", "papers", "research", "result", "results",
+    "finding", "findings", "evidence", "method", "methods", "data", "analysis",
+    "effect", "effects", "role", "roles", "response", "responses",
+    "gene", "genes", "protein", "proteins", "expression", "activity",
+    "using", "based", "novel", "current", "new", "two", "one", "also",
+    "found", "show", "shown", "report", "reported", "used", "use",
+    "et", "al", "doi", "approach", "important", "various", "different", "many",
+    "bacillus", "thuringiensis",
+    # JSON / parser artifacts
+    "citations", "citation", "source", "sources", "text", "title", "content",
+    "field", "fields", "value", "values", "null", "undefined", "true", "false",
     "s001", "s002", "s003", "s004", "s005", "s006", "s007", "s008",
-    "found", "important", "various", "different", "many",
+    "s009", "s010", "s011", "s012", "s013", "s014", "s015", "s016",
+    # JSON artifact fragments
+    "{\"text", "text\"", "\"text", "\"content", "\"citations",
+    "than", "this", "that", "these", "those",
 }
 
 
 def _extract_keywords_from_text(text: str) -> list[str]:
     """Extract meaningful keywords from text, filtering stopwords and short tokens."""
-    words = text.lower().replace(",", " ").replace(".", " ").replace(":", " ").replace(";", " ").replace("(", " ").replace(")", " ").split()
+    # Clean: remove JSON artifacts, code fences, markdown
+    cleaned = text.lower()
+    cleaned = cleaned.replace("{", " ").replace("}", " ").replace("[", " ").replace("]", " ")
+    cleaned = cleaned.replace('"', " ").replace("'", " ").replace("`", " ")
+    words = cleaned.replace(",", " ").replace(".", " ").replace(":", " ").replace(";", " ").replace("(", " ").replace(")", " ").replace("-", " ").replace("/", " ").split()
     freq: dict[str, int] = {}
     for w in words:
-        w = w.strip("'\"-")
-        if len(w) < 3 or w in _TOPIC_STOPWORDS or w.isdigit():
+        w = w.strip()
+        # Minimum 4 chars, filter stopwords, digits, JSON artifact fragments
+        if len(w) < 4 or w in _TOPIC_STOPWORDS or w.isdigit():
+            continue
+        if w.startswith("{") or w.endswith("}"):
             continue
         freq[w] = freq.get(w, 0) + 1
     return [w for w, _ in sorted(freq.items(), key=lambda x: x[1], reverse=True)]
@@ -124,6 +142,7 @@ def _extract_cluster_keywords(
     pids: list[str],
     paper_map: dict[str, dict[str, Any]],
     root: Path,
+    all_pids: list[str] | None = None,
 ) -> list[str]:
     """Extract top keywords from a cluster's papers (titles + tags + abstracts + summaries)."""
     all_text: list[str] = []
@@ -145,13 +164,64 @@ def _extract_cluster_keywords(
 def _build_topic_name(keywords: list[str]) -> str:
     """Build a human-readable topic name from top keywords."""
     if not keywords:
-        return "Topic"
-    top = keywords[:4]
-    if len(top) == 1:
-        return top[0].title()
-    if len(top) == 2:
-        return f"{top[0].title()} / {top[1].title()}"
-    return ", ".join(w.title() for w in top[:3])
+        return "Mixed research topic"
+    # Filter: remove very short, purely numeric, or artifact tokens
+    clean = [k for k in keywords if len(k) >= 3 and not k.isdigit() and k.lower() not in _TOPIC_STOPWORDS]
+    if not clean:
+        return "Mixed research topic"
+    top = clean[:4]
+    # Capitalize each word properly
+    titled = [w[0].upper() + w[1:] if len(w) > 1 else w.upper() for w in top]
+    if len(titled) == 1:
+        return titled[0]
+    if len(titled) == 2:
+        return f"{titled[0]} and {titled[1]}"
+    return f"{titled[0]}, {titled[1]}, and {titled[2]}"
+
+
+def _load_evidence_summary(root: Path, paper_id: str) -> dict[str, Any] | None:
+    """Load a lightweight evidence summary for a paper (searches by paper_id suffix)."""
+    evidence_root = root / "03_Evidence"
+    if not evidence_root.exists():
+        return None
+    # Try exact match first
+    ev_path = evidence_root / paper_id / "evidence.json"
+    if not ev_path.exists():
+        # Search by paper_id suffix (evidence dirs use paper_key naming with hash suffix)
+        search_id = paper_id.replace("paper_", "") if paper_id.startswith("paper_") else paper_id
+        for d in evidence_root.iterdir():
+            if d.is_dir() and (d.name.endswith(search_id) or d.name.endswith(paper_id)):
+                ev_path = d / "evidence.json"
+                break
+    if not ev_path.exists():
+        return None
+    try:
+        ev = json.loads(ev_path.read_text(encoding="utf-8"))
+        return {
+            "status": ev.get("status", "unknown"),
+            "core_findings": [c.get("finding", c.get("text", ""))[:200] for c in ev.get("core_findings", [])[:3]],
+            "key_results": [r.get("result", "")[:200] for r in ev.get("key_results", [])[:3]],
+            "methods": [m.get("name", "")[:150] for m in ev.get("methods", [])[:3]],
+            "limitations": [l.get("limitation", "")[:200] for l in ev.get("limitations", [])[:2]],
+            "coverage": ev.get("coverage", {}),
+        }
+    except Exception:
+        return None
+
+
+def _build_topic_paper_payload(root: Path, paper_record: dict[str, Any]) -> dict[str, Any]:
+    """Build a paper dict with summary included for topic detail APIs."""
+    pid = paper_record.get("paper_id") or paper_record.get("id", "")
+    return {
+        "paper_id": str(pid),
+        "title": str(paper_record.get("title", "")),
+        "authors": paper_record.get("authors", []) or [],
+        "year": paper_record.get("year"),
+        "journal": str(paper_record.get("journal", "")),
+        "doi": str(paper_record.get("doi", "")),
+        "summary": _load_summary_text(root, str(pid)) if pid else "",
+        "evidence": _load_evidence_summary(root, str(pid)) if pid else None,
+    }
 
 
 def _empty_cluster_result() -> dict[str, Any]:
@@ -794,7 +864,7 @@ def create_app(root: Path | None = None) -> FastAPI:
 
             # ── Extract keywords ──
             cluster_paper_ids = list(cluster_pids)
-            keywords = _extract_cluster_keywords(cluster_paper_ids, paper_map, root)
+            keywords = _extract_cluster_keywords(cluster_paper_ids, paper_map, root, paper_ids)
             topic_name = _build_topic_name(keywords) if keywords else f"Topic {len(clusters) + 1}"
 
             # ── Build summary ──
@@ -898,6 +968,252 @@ def create_app(root: Path | None = None) -> FastAPI:
                 "total_edges": int(len(topic_relationships)),
             },
         }
+
+    # ── /paper/{id}/evidence ──
+
+    @api.get("/paper/{paper_id}/evidence")
+    def paper_evidence(paper_id: str) -> dict[str, Any]:
+        evidence_path = root / "03_Evidence" / paper_id / "evidence.json"
+        if evidence_path.exists():
+            try:
+                return json.loads(evidence_path.read_text(encoding="utf-8"))
+            except Exception:
+                pass
+        # Fallback: return empty evidence structure
+        return {"paper_id": paper_id, "status": "not_found", "fallback_used": True, "core_findings": [], "key_results": [], "limits": []}
+
+    @api.get("/paper/{paper_id}/evidence-chunks")
+    def paper_evidence_chunks(paper_id: str) -> dict[str, Any]:
+        chunk_path = root / "03_Evidence" / paper_id / "evidence_chunks.json"
+        if chunk_path.exists():
+            try:
+                return json.loads(chunk_path.read_text(encoding="utf-8"))
+            except Exception:
+                pass
+        return {"paper_id": paper_id, "chunks": [], "chunk_count": 0}
+
+    # ── POST /query/evidence ──
+
+    @api.post("/query/evidence")
+    def query_evidence(body: dict[str, Any]) -> dict[str, Any]:
+        query_text = str(body.get("query", ""))
+        limit_val = min(int(body.get("limit", 10)), 50)
+        chunk_type = str(body.get("chunk_type", "all"))
+
+        if not query_text:
+            return {"results": [], "source": "empty"}
+
+        try:
+            import lancedb
+            from scientra.embedding import BgeM3Embedder
+
+            db_dir = root / "04_VectorDB" / "lancedb"
+            db = lancedb.connect(str(db_dir))
+            if "evidence_chunks" not in db.table_names():
+                return {"results": [], "source": "empty"}
+
+            table = db.open_table("evidence_chunks")
+            embedder = BgeM3Embedder(model_name="BAAI/bge-m3", device="auto")
+            embedder.load()
+            qv = embedder.encode([query_text], batch_size=1)[0]
+            qv_list = qv.tolist() if hasattr(qv, "tolist") else list(qv)
+
+            raw = table.search(qv_list).limit(limit_val * 2).to_list()
+            results: list[dict[str, Any]] = []
+            for r in raw:
+                ct = str(r.get("chunk_type", ""))
+                if chunk_type != "all" and ct != chunk_type:
+                    continue
+                results.append({
+                    "paper_id": str(r.get("paper_id", "")),
+                    "title": str(r.get("title", "")),
+                    "year": r.get("year"),
+                    "journal": str(r.get("journal", "")),
+                    "chunk_type": ct,
+                    "text": str(r.get("text", ""))[:500],
+                    "quote": str(r.get("quote", ""))[:240],
+                    "source_section": str(r.get("source_section", "")),
+                    "confidence": str(r.get("confidence", "medium")),
+                    "score": round(1.0 - float(r.get("_distance", 0)), 3),
+                })
+                if len(results) >= limit_val:
+                    break
+
+            return {"results": results, "source": "evidence_chunks"}
+        except Exception:
+            return {"results": [], "source": "empty"}
+
+    # ── /research-map/topic/{topic_id} ──
+
+    @api.get("/research-map/topic/{topic_id}")
+    def topic_detail(topic_id: str) -> dict[str, Any]:
+        # Reuse clustering logic to find the topic
+        papers = _load_yaml_metadata(root)
+        paper_map: dict[str, dict[str, Any]] = {}
+        for p in papers:
+            pid = p.get("paper_id", "")
+            if pid:
+                paper_map[pid] = p
+
+        # Load vectors and regenerate clusters
+        vectors: dict[str, list[float]] = {}
+        try:
+            import lancedb
+            db_dir = root / "04_VectorDB" / "lancedb"
+            if db_dir.exists() and any(db_dir.iterdir()):
+                db = lancedb.connect(str(db_dir))
+                table = db.open_table(db.table_names()[0])
+                df = table.to_pandas()
+                for row in df.to_dict("records"):
+                    pid = str(row.get("paper_id", ""))
+                    vec = row.get("vector")
+                    if pid and vec is not None:
+                        vectors[pid] = list(vec)
+        except Exception:
+            pass
+
+        MIN_CLUSTER = 3
+        MAX_CLUSTERS = 8
+        used: set[str] = set()
+        clusters: list[dict[str, Any]] = []
+        paper_ids = list(vectors.keys())
+        import random
+        random.shuffle(paper_ids)
+
+        for _ in range(MAX_CLUSTERS):
+            seed = None
+            for pid in paper_ids:
+                if pid not in used:
+                    seed = pid
+                    break
+            if seed is None:
+                break
+            qv = vectors[seed]
+            scored = [(pid, _cosine_distance(qv, vectors[pid])) for pid in paper_ids if pid not in used and pid != seed and pid in vectors]
+            scored.sort(key=lambda x: x[1])
+            cluster_pids = {seed}
+            for pid, _ in scored[:MIN_CLUSTER * 3]:
+                cluster_pids.add(pid)
+                if len(cluster_pids) >= MIN_CLUSTER * 4:
+                    break
+            if len(cluster_pids) < MIN_CLUSTER:
+                continue
+
+            years_list = [int(paper_map[pid].get("year") or 0) for pid in cluster_pids if pid in paper_map]
+            avg_year_val = float(sum(years_list) / len(years_list)) if years_list else 0.0
+            yr_range = [int(min(years_list)), int(max(years_list))] if years_list else [0, 0]
+            kw = _extract_cluster_keywords(list(cluster_pids), paper_map, root, paper_ids)
+            cluster_id = f"topic_{len(clusters) + 1:03d}"
+
+            ctype = "mature"
+            trend = "stable"
+            this_year = datetime.now(timezone.utc).year
+            recent_count = sum(1 for y in years_list if y >= this_year - 5)
+            recent_ratio = recent_count / len(years_list) if years_list else 0
+            year_span = max(years_list) - min(years_list) if len(years_list) >= 2 else 0
+            if len(cluster_pids) >= 6 and year_span >= 5:
+                ctype = "mature"; trend = "active" if recent_ratio >= 0.4 else "stable"
+            elif recent_ratio >= 0.4 or (years_list and avg_year_val >= this_year - 5):
+                ctype = "growing"; trend = "active"
+            elif len(cluster_pids) <= 3:
+                ctype = "gap"; trend = "sparse"
+
+            all_papers = []
+            for pid in cluster_pids:
+                p = paper_map.get(pid)
+                if p:
+                    all_papers.append(_build_topic_paper_payload(root, p))
+
+            clusters.append({
+                "cluster_id": cluster_id, "name": _build_topic_name(kw) if kw else f"Topic {len(clusters)+1}",
+                "type": ctype, "trend": trend, "paper_count": int(len(cluster_pids)),
+                "avg_year": round(avg_year_val, 1), "year_range": yr_range,
+                "keywords": [str(k) for k in kw[:8]], "summary": (" / ".join(kw[:5]) if kw else ""),
+                "papers": all_papers,
+                "representative_papers": all_papers[:5],
+                "recent_count": int(recent_count), "recent_ratio": float(round(recent_ratio, 3)),
+                "trend_label": trend, "trend_reason": "Based on publication recency and volume",
+            })
+            used.update(cluster_pids)
+
+        # Find the requested topic
+        for c in clusters:
+            if c["cluster_id"] == topic_id:
+                # Compute relevance scores for papers within this topic
+                cleaned_kw = [k for k in kw if k.lower() not in _TOPIC_STOPWORDS and len(k) >= 3]
+                kw_set = set(k.lower() for k in cleaned_kw)
+                for p in c["papers"]:
+                    title_words = set((p.get("title") or "").lower().split())
+                    summary_text = (p.get("summary") or "").lower()
+                    summary_words = set(summary_text.split())
+                    all_words = title_words | summary_words
+                    overlap = len(kw_set & all_words)
+                    ratio = overlap / max(len(kw_set), 1)
+                    if ratio >= 0.10:
+                        p["topic_relevance"] = round(float(ratio), 3)
+                        p["relevance_label"] = "high"
+                        p["relevance_reason"] = "Shares key title and summary signals with this topic."
+                    elif ratio >= 0.03:
+                        p["topic_relevance"] = round(float(ratio), 3)
+                        p["relevance_label"] = "medium"
+                        p["relevance_reason"] = "Partial overlap with the main topic signals."
+                    else:
+                        p["topic_relevance"] = round(float(ratio), 3)
+                        p["relevance_label"] = "low"
+                        p["relevance_reason"] = "Only limited overlap with the main topic signals."
+                low_count = sum(1 for p in c["papers"] if p.get("relevance_label") == "low")
+                high_count = sum(1 for p in c["papers"] if p.get("relevance_label") == "high")
+                total_p = len(c["papers"])
+                if high_count / max(total_p, 1) >= 0.6:
+                    c["cohesion_label"] = "strong"
+                    c["cohesion_score"] = round(high_count / total_p, 2)
+                elif low_count / max(total_p, 1) <= 0.3:
+                    c["cohesion_label"] = "moderate"
+                    c["cohesion_score"] = round(1.0 - low_count / total_p, 2)
+                else:
+                    c["cohesion_label"] = "mixed"
+                    c["cohesion_score"] = round(1.0 - low_count / total_p, 2)
+
+            # Add related topics
+            related = []
+            for other in clusters:
+                if other["cluster_id"] == topic_id:
+                    continue
+                score = 0.0
+                pids_a = [p["paper_id"] for p in c["papers"] if p["paper_id"] in vectors]
+                pids_b = [p["paper_id"] for p in other["papers"] if p["paper_id"] in vectors]
+                if pids_a and pids_b:
+                    score = 1.0 - _cosine_distance(vectors[pids_a[0]], vectors[pids_b[0]])
+                kw_x = set(c.get("keywords", [])[:5])
+                kw_y = set(other.get("keywords", [])[:5])
+                if kw_x and kw_y:
+                    score += len(kw_x & kw_y) / max(len(kw_x | kw_y), 1) * 0.5
+                    score /= 1.5
+                if score > 0.3:
+                    related.append({"cluster_id": other["cluster_id"], "name": other["name"], "similarity": float(round(score, 3)), "reason": "Vector and keyword similarity"})
+                c["related_topics"] = sorted(related, key=lambda x: x["similarity"], reverse=True)[:5]
+                # Year distribution
+                yd: dict[int, int] = {}
+                for p in c["papers"]:
+                    y = p.get("year")
+                    if y and isinstance(y, (int, float)) and 1800 <= y <= this_year + 1:
+                        yd[int(y)] = yd.get(int(y), 0) + 1
+                c["year_distribution"] = [{"year": y, "count": c2} for y, c2 in sorted(yd.items())]
+                # Evolution phases
+                valid_years = [p.get("year") for p in c["papers"] if p.get("year") and isinstance(p.get("year"), (int, float))]
+                phases = []
+                if valid_years and max(valid_years) > min(valid_years):
+                    min_y, max_y = int(min(valid_years)), int(max(valid_years))
+                    span = max_y - min_y
+                    third = max(1, span // 3) if span >= 3 else 1
+                    phase_defs = [("early", "Early phase", min_y, min_y + third), ("middle", "Middle phase", max(min_y + third + 1, min_y + third), min_y + third * 2), ("recent", "Recent phase", max(min_y + third * 2 + 1, min_y + third * 2), max_y)]
+                for p_phase, p_label, p_start, p_end in phase_defs:
+                        pp = [p for p in c["papers"] if p.get("year") and p_start <= int(p["year"]) <= p_end]
+                        if pp:
+                            phases.append({"phase": p_phase, "label": p_label, "year_range": [p_start, p_end], "paper_count": len(pp), "keywords": kw[:4], "representative_papers": pp[:2]})
+                c["evolution_phases"] = phases
+                return {"topic": c}
+        raise HTTPException(status_code=404, detail=f"Topic not found: {topic_id}")
 
     # ── v1 endpoints (Agent SDK) ──
 

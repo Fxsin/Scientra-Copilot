@@ -1,0 +1,144 @@
+{
+  "paper_id": "Receptor_interactions_of_protoxin_and_activated_Vip3Aa_structural_conformations_in_Spodoptera_exigua_abe35372e365",
+  "chunk_version": "v2",
+  "evidence_hash": "06e5e0fc2b026fa7",
+  "chunk_count": 8,
+  "chunks": [
+    {
+      "chunk_id": "Receptor_interactions_of_protoxin_and_activated_Vip3Aa_structural_conformations_in_Spodoptera_exigua_abe35372e365:discussion_point:0000",
+      "paper_id": "Receptor_interactions_of_protoxin_and_activated_Vip3Aa_structural_conformations_in_Spodoptera_exigua_abe35372e365",
+      "chunk_type": "discussion_point",
+      "text": "The initial in vitro binding assays, employing radiolabelled trypsin-treated Vip3Aa_Wt, yielded results consistent with previous findings on Vip3A proteins in Spodoptera spp.",
+      "source_section": "Discussion",
+      "quote": "The initial in vitro binding assays, employing radiolabelled trypsin-treated Vip3Aa_Wt, yielded results consistent with previous findings on Vip3A proteins in Spodoptera spp.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Receptor interactions of protoxin and activated Vip3Aa structural conformations in Spodoptera exigua",
+        "year": 2024,
+        "journal": "Pest Management Science",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Receptor_interactions_of_protoxin_and_activated_Vip3Aa_structural_conformations_in_Spodoptera_exigua_abe35372e365:discussion_point:0001",
+      "paper_id": "Receptor_interactions_of_protoxin_and_activated_Vip3Aa_structural_conformations_in_Spodoptera_exigua_abe35372e365",
+      "chunk_type": "discussion_point",
+      "text": "30 Compared with the Wt protein, Vip3Aa_Δ⊍1 had a lower nonspecific binding, which could be related with the protein conformation, but also with the lack of helix ⊍1.",
+      "source_section": "Discussion",
+      "quote": "30 Compared with the Wt protein, Vip3Aa_Δ⊍1 had a lower nonspecific binding, which could be related with the protein conformation, but also with the lack of helix ⊍1.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Receptor interactions of protoxin and activated Vip3Aa structural conformations in Spodoptera exigua",
+        "year": 2024,
+        "journal": "Pest Management Science",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Receptor_interactions_of_protoxin_and_activated_Vip3Aa_structural_conformations_in_Spodoptera_exigua_abe35372e365:discussion_point:0002",
+      "paper_id": "Receptor_interactions_of_protoxin_and_activated_Vip3Aa_structural_conformations_in_Spodoptera_exigua_abe35372e365",
+      "chunk_type": "discussion_point",
+      "text": "In addition, comparing the nonprocessed Vip3Aa_Δ⊍1 with the trypsin-treated Vip3Aa_Δ⊍1, the nonprocessed protein had a higher nonspecific binding, indicating that not only the structural conformation, but also the proteolytic cleavage as well has an impact on binding specificity [Fig.",
+      "source_section": "Discussion",
+      "quote": "In addition, comparing the nonprocessed Vip3Aa_Δ⊍1 with the trypsin-treated Vip3Aa_Δ⊍1, the nonprocessed protein had a higher nonspecific binding, indicating that not only the structural conformation,",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Receptor interactions of protoxin and activated Vip3Aa structural conformations in Spodoptera exigua",
+        "year": 2024,
+        "journal": "Pest Management Science",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Receptor_interactions_of_protoxin_and_activated_Vip3Aa_structural_conformations_in_Spodoptera_exigua_abe35372e365:discussion_point:0003",
+      "paper_id": "Receptor_interactions_of_protoxin_and_activated_Vip3Aa_structural_conformations_in_Spodoptera_exigua_abe35372e365",
+      "chunk_type": "discussion_point",
+      "text": "exigua BBMV, indicating that both conformations of Vip3Aa are able to recognize the same binding sites [Fig.",
+      "source_section": "Discussion",
+      "quote": "exigua BBMV, indicating that both conformations of Vip3Aa are able to recognize the same binding sites [Fig.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Receptor interactions of protoxin and activated Vip3Aa structural conformations in Spodoptera exigua",
+        "year": 2024,
+        "journal": "Pest Management Science",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Receptor_interactions_of_protoxin_and_activated_Vip3Aa_structural_conformations_in_Spodoptera_exigua_abe35372e365:discussion_point:0004",
+      "paper_id": "Receptor_interactions_of_protoxin_and_activated_Vip3Aa_structural_conformations_in_Spodoptera_exigua_abe35372e365",
+      "chunk_type": "discussion_point",
+      "text": "However, this binding is mainly nonspecific [Fig.",
+      "source_section": "Discussion",
+      "quote": "However, this binding is mainly nonspecific [Fig.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Receptor interactions of protoxin and activated Vip3Aa structural conformations in Spodoptera exigua",
+        "year": 2024,
+        "journal": "Pest Management Science",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Receptor_interactions_of_protoxin_and_activated_Vip3Aa_structural_conformations_in_Spodoptera_exigua_abe35372e365:discussion_point:0005",
+      "paper_id": "Receptor_interactions_of_protoxin_and_activated_Vip3Aa_structural_conformations_in_Spodoptera_exigua_abe35372e365",
+      "chunk_type": "discussion_point",
+      "text": "Therefore, despite that almost all of the protoxin's binding is nonspecific, it includes the specific and functional binding sites of the activated protein, explaining the competition observed in vitro for the BBMV binding sites, and the ability of the Vip3Aa_S-S mutant to block the WT's toxicity in",
+      "source_section": "Discussion",
+      "quote": "Therefore, despite that almost all of the protoxin's binding is nonspecific, it includes the specific and functional binding sites of the activated protein, explaining the competition observed in vitr",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Receptor interactions of protoxin and activated Vip3Aa structural conformations in Spodoptera exigua",
+        "year": 2024,
+        "journal": "Pest Management Science",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Receptor_interactions_of_protoxin_and_activated_Vip3Aa_structural_conformations_in_Spodoptera_exigua_abe35372e365:discussion_point:0006",
+      "paper_id": "Receptor_interactions_of_protoxin_and_activated_Vip3Aa_structural_conformations_in_Spodoptera_exigua_abe35372e365",
+      "chunk_type": "discussion_point",
+      "text": "Nonetheless, our results of binding reversibility suggest potential differences in membrane interactions possibly attributable to the remodelling into the activated structure, because the trypsin-processed Vip3Aa_Δ⊍1 mutant (constitutive activated conformation), despite lacking of the putative trans",
+      "source_section": "Discussion",
+      "quote": "Nonetheless, our results of binding reversibility suggest potential differences in membrane interactions possibly attributable to the remodelling into the activated structure, because the trypsin-proc",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Receptor interactions of protoxin and activated Vip3Aa structural conformations in Spodoptera exigua",
+        "year": 2024,
+        "journal": "Pest Management Science",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Receptor_interactions_of_protoxin_and_activated_Vip3Aa_structural_conformations_in_Spodoptera_exigua_abe35372e365:discussion_point:0007",
+      "paper_id": "Receptor_interactions_of_protoxin_and_activated_Vip3Aa_structural_conformations_in_Spodoptera_exigua_abe35372e365",
+      "chunk_type": "discussion_point",
+      "text": "Thus, binding irreversibility may not reflect membrane insertion, and although the primary role in receptor binding may reside in Domains II-III, the involvement of the N-t part of the activated protein in membrane engagement cannot be disregarded, as these irreversible interactions could be highly",
+      "source_section": "Discussion",
+      "quote": "Thus, binding irreversibility may not reflect membrane insertion, and although the primary role in receptor binding may reside in Domains II-III, the involvement of the N-t part of the activated prote",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Receptor interactions of protoxin and activated Vip3Aa structural conformations in Spodoptera exigua",
+        "year": 2024,
+        "journal": "Pest Management Science",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    }
+  ]
+}

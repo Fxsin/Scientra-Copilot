@@ -1,0 +1,144 @@
+{
+  "paper_id": "Sf-FGFR_and_Sf-SR-C_Are_Not_the_Receptors_for_Vip3Aa_to_Exert_Insecticidal_Toxicity_in_Spodoptera_frugiperda_945ea3049fbc",
+  "chunk_version": "v2",
+  "evidence_hash": "7d84e6793eb907d2",
+  "chunk_count": 8,
+  "chunks": [
+    {
+      "chunk_id": "Sf-FGFR_and_Sf-SR-C_Are_Not_the_Receptors_for_Vip3Aa_to_Exert_Insecticidal_Toxicity_in_Spodoptera_frugiperda_945ea3049fbc:discussion_point:0000",
+      "paper_id": "Sf-FGFR_and_Sf-SR-C_Are_Not_the_Receptors_for_Vip3Aa_to_Exert_Insecticidal_Toxicity_in_Spodoptera_frugiperda_945ea3049fbc",
+      "chunk_type": "discussion_point",
+      "text": "However, so far, this complicated multi-step process has not been fully elucidated.",
+      "source_section": "Discussion",
+      "quote": "However, so far, this complicated multi-step process has not been fully elucidated.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Sf-FGFR and Sf-SR-C Are Not the Receptors for Vip3Aa to Exert Insecticidal Toxicity in Spodoptera frugiperda",
+        "year": 2022,
+        "journal": "Insects",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Sf-FGFR_and_Sf-SR-C_Are_Not_the_Receptors_for_Vip3Aa_to_Exert_Insecticidal_Toxicity_in_Spodoptera_frugiperda_945ea3049fbc:discussion_point:0001",
+      "paper_id": "Sf-FGFR_and_Sf-SR-C_Are_Not_the_Receptors_for_Vip3Aa_to_Exert_Insecticidal_Toxicity_in_Spodoptera_frugiperda_945ea3049fbc",
+      "chunk_type": "discussion_point",
+      "text": "In order to investigate the insecticidal mechanism of Vip3Aa in S.",
+      "source_section": "Discussion",
+      "quote": "In order to investigate the insecticidal mechanism of Vip3Aa in S.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Sf-FGFR and Sf-SR-C Are Not the Receptors for Vip3Aa to Exert Insecticidal Toxicity in Spodoptera frugiperda",
+        "year": 2022,
+        "journal": "Insects",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Sf-FGFR_and_Sf-SR-C_Are_Not_the_Receptors_for_Vip3Aa_to_Exert_Insecticidal_Toxicity_in_Spodoptera_frugiperda_945ea3049fbc:discussion_point:0002",
+      "paper_id": "Sf-FGFR_and_Sf-SR-C_Are_Not_the_Receptors_for_Vip3Aa_to_Exert_Insecticidal_Toxicity_in_Spodoptera_frugiperda_945ea3049fbc",
+      "chunk_type": "discussion_point",
+      "text": "frugiperda could be internalized into the Sf9 cells together with Vip3Aa.",
+      "source_section": "Discussion",
+      "quote": "frugiperda could be internalized into the Sf9 cells together with Vip3Aa.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Sf-FGFR and Sf-SR-C Are Not the Receptors for Vip3Aa to Exert Insecticidal Toxicity in Spodoptera frugiperda",
+        "year": 2022,
+        "journal": "Insects",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Sf-FGFR_and_Sf-SR-C_Are_Not_the_Receptors_for_Vip3Aa_to_Exert_Insecticidal_Toxicity_in_Spodoptera_frugiperda_945ea3049fbc:discussion_point:0003",
+      "paper_id": "Sf-FGFR_and_Sf-SR-C_Are_Not_the_Receptors_for_Vip3Aa_to_Exert_Insecticidal_Toxicity_in_Spodoptera_frugiperda_945ea3049fbc",
+      "chunk_type": "discussion_point",
+      "text": "Knockdown of the Sf-FGFR gene in Sf9 cells can reduce the cell's mortality to Vip3Aa, indicating that Sf-FGFR was the receptor of Vip3Aa [31].",
+      "source_section": "Discussion",
+      "quote": "Knockdown of the Sf-FGFR gene in Sf9 cells can reduce the cell's mortality to Vip3Aa, indicating that Sf-FGFR was the receptor of Vip3Aa [31].",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Sf-FGFR and Sf-SR-C Are Not the Receptors for Vip3Aa to Exert Insecticidal Toxicity in Spodoptera frugiperda",
+        "year": 2022,
+        "journal": "Insects",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Sf-FGFR_and_Sf-SR-C_Are_Not_the_Receptors_for_Vip3Aa_to_Exert_Insecticidal_Toxicity_in_Spodoptera_frugiperda_945ea3049fbc:discussion_point:0004",
+      "paper_id": "Sf-FGFR_and_Sf-SR-C_Are_Not_the_Receptors_for_Vip3Aa_to_Exert_Insecticidal_Toxicity_in_Spodoptera_frugiperda_945ea3049fbc",
+      "chunk_type": "discussion_point",
+      "text": "However, in our study, the sensitivity of the FGFR-KO strain to Vip3Aa was not significantly different compared with the susceptible strain DH19, which indicated that Sf-FGFR might not be the receptor of Vip3Aa in S.",
+      "source_section": "Discussion",
+      "quote": "However, in our study, the sensitivity of the FGFR-KO strain to Vip3Aa was not significantly different compared with the susceptible strain DH19, which indicated that Sf-FGFR might not be the receptor",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Sf-FGFR and Sf-SR-C Are Not the Receptors for Vip3Aa to Exert Insecticidal Toxicity in Spodoptera frugiperda",
+        "year": 2022,
+        "journal": "Insects",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Sf-FGFR_and_Sf-SR-C_Are_Not_the_Receptors_for_Vip3Aa_to_Exert_Insecticidal_Toxicity_in_Spodoptera_frugiperda_945ea3049fbc:discussion_point:0005",
+      "paper_id": "Sf-FGFR_and_Sf-SR-C_Are_Not_the_Receptors_for_Vip3Aa_to_Exert_Insecticidal_Toxicity_in_Spodoptera_frugiperda_945ea3049fbc",
+      "chunk_type": "discussion_point",
+      "text": "frugiperda ovary cells, whereas our in vivo results are testing the role of the two receptors in epithelial cells, which may have different functions.",
+      "source_section": "Discussion",
+      "quote": "frugiperda ovary cells, whereas our in vivo results are testing the role of the two receptors in epithelial cells, which may have different functions.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Sf-FGFR and Sf-SR-C Are Not the Receptors for Vip3Aa to Exert Insecticidal Toxicity in Spodoptera frugiperda",
+        "year": 2022,
+        "journal": "Insects",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Sf-FGFR_and_Sf-SR-C_Are_Not_the_Receptors_for_Vip3Aa_to_Exert_Insecticidal_Toxicity_in_Spodoptera_frugiperda_945ea3049fbc:discussion_point:0006",
+      "paper_id": "Sf-FGFR_and_Sf-SR-C_Are_Not_the_Receptors_for_Vip3Aa_to_Exert_Insecticidal_Toxicity_in_Spodoptera_frugiperda_945ea3049fbc",
+      "chunk_type": "discussion_point",
+      "text": "Another possibility is that FGFR is a gene family, and knockout of the Sf-FGFR gene in worms may cause other genes of the same family members to replace the function of the Sf-FGFR gene.",
+      "source_section": "Discussion",
+      "quote": "Another possibility is that FGFR is a gene family, and knockout of the Sf-FGFR gene in worms may cause other genes of the same family members to replace the function of the Sf-FGFR gene.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Sf-FGFR and Sf-SR-C Are Not the Receptors for Vip3Aa to Exert Insecticidal Toxicity in Spodoptera frugiperda",
+        "year": 2022,
+        "journal": "Insects",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Sf-FGFR_and_Sf-SR-C_Are_Not_the_Receptors_for_Vip3Aa_to_Exert_Insecticidal_Toxicity_in_Spodoptera_frugiperda_945ea3049fbc:discussion_point:0007",
+      "paper_id": "Sf-FGFR_and_Sf-SR-C_Are_Not_the_Receptors_for_Vip3Aa_to_Exert_Insecticidal_Toxicity_in_Spodoptera_frugiperda_945ea3049fbc",
+      "chunk_type": "discussion_point",
+      "text": "However, our bioassay results showed that there was no significant change in susceptibility to Vip3Aa when the Sf-SR-C gene was knocked out from S.",
+      "source_section": "Discussion",
+      "quote": "However, our bioassay results showed that there was no significant change in susceptibility to Vip3Aa when the Sf-SR-C gene was knocked out from S.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Sf-FGFR and Sf-SR-C Are Not the Receptors for Vip3Aa to Exert Insecticidal Toxicity in Spodoptera frugiperda",
+        "year": 2022,
+        "journal": "Insects",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    }
+  ]
+}

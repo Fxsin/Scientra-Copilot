@@ -69,6 +69,7 @@ STEP_ORDER = [
     "metadata",
     "tag",
     "summary",
+    "evidence",
     "embedding",
     "lancedb",
     "index_update",

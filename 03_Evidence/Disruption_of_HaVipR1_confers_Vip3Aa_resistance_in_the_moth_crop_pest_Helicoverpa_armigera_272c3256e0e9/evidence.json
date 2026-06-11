@@ -1,0 +1,87 @@
+{
+  "paper_id": "Disruption_of_HaVipR1_confers_Vip3Aa_resistance_in_the_moth_crop_pest_Helicoverpa_armigera_272c3256e0e9",
+  "title": "Disruption of HaVipR1 confers Vip3Aa resistance in the moth crop pest Helicoverpa armigera",
+  "year": 2025,
+  "journal": "PLOS Biology",
+  "evidence_version": "v1",
+  "status": "partial",
+  "research_question": "",
+  "study_objective": "",
+  "research_gap": "",
+  "methods": [],
+  "key_results": [],
+  "core_findings": [],
+  "discussion_points": [
+    {
+      "point": "Our analyses suggest this gene differs from previously reported Vip3A-associated genes.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Our analyses suggest this gene differs from previously reported Vip3A-associated genes.",
+      "confidence": "medium"
+    },
+    {
+      "point": "The expression of the HaVipR1 gene appears limited to the mid-gut and to be extracellularly located (assessed in both H.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "The expression of the HaVipR1 gene appears limited to the mid-gut and to be extracellularly located (assessed in both H.",
+      "confidence": "medium"
+    },
+    {
+      "point": "frugiperda does not appear to be expressed endogenously in Sf9 cell lines, which are ovarian derived (Fig F in S1 Text, S5 Data).",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "frugiperda does not appear to be expressed endogenously in Sf9 cell lines, which are ovarian derived (Fig F in S1 Text, S5 Data).",
+      "confidence": "medium"
+    },
+    {
+      "point": "While Sf9 cell lines do appear to be susceptible to Vip3Aa [18], the translation of findings from Vip3Aa studies from in vitro cell-line studies to whole animal models is sometimes not supported, as seen in the case of Sf-FGFR and Sf-SR-C which were found to be receptors in Sf9 cell lines but CRISPR",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "While Sf9 cell lines do appear to be susceptible to Vip3Aa [18], the translation of findings from Vip3Aa studies from in vitro cell-line studies to whole animal models is sometimes not supported, as s",
+      "confidence": "medium"
+    },
+    {
+      "point": "Studies of Vip3Aa toxicity in Sf9 cell lines point toward an increase in autophagy, which appears to increase resistance [17], as well as changes in apoptosis relating to lysosomes and mitochondria function [31].",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Studies of Vip3Aa toxicity in Sf9 cell lines point toward an increase in autophagy, which appears to increase resistance [17], as well as changes in apoptosis relating to lysosomes and mitochondria fu",
+      "confidence": "medium"
+    },
+    {
+      "point": "Indeed, some of these pathways appear to be activated by other compounds (such as the chemical pesticide azadirachtin [32] or harmine [33]) and so be indicative of a general cellular response to internalized toxins, rather than specific to the mechanism of action of Vip3Aa.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Indeed, some of these pathways appear to be activated by other compounds (such as the chemical pesticide azadirachtin [32] or harmine [33]) and so be indicative of a general cellular response to inter",
+      "confidence": "medium"
+    },
+    {
+      "point": "These findings suggest that HaVipR1 may represent an additional pathway involved in Vip3Aa resistance in the larval midgut, though further research is needed to characterize the mechanisms with relation to other known resistance mechanisms.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "These findings suggest that HaVipR1 may represent an additional pathway involved in Vip3Aa resistance in the larval midgut, though further research is needed to characterize the mechanisms with relati",
+      "confidence": "medium"
+    },
+    {
+      "point": "The function of HaVipR1, and the mechanism by which its absence leads to Vip3A resistance, is difficult to discern.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "The function of HaVipR1, and the mechanism by which its absence leads to Vip3A resistance, is difficult to discern.",
+      "confidence": "medium"
+    }
+  ],
+  "limitations": [],
+  "open_questions": [],
+  "future_directions": [],
+  "claims": [],
+  "result_discussion_links": [],
+  "coverage": {
+    "has_introduction": true,
+    "has_methods": true,
+    "has_results": true,
+    "has_discussion": true,
+    "has_key_results": false,
+    "has_discussion_points": true
+  },
+  "fallback_used": true,
+  "errors": []
+}

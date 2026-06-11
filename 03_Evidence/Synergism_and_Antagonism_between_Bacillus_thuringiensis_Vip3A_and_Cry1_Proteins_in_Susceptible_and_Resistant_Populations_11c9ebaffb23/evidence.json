@@ -1,0 +1,87 @@
+{
+  "paper_id": "Synergism_and_Antagonism_between_Bacillus_thuringiensis_Vip3A_and_Cry1_Proteins_in_Susceptible_and_Resistant_Populations_11c9ebaffb23",
+  "title": "Synergism and Antagonism between Bacillus thuringiensis Vip3A and Cry1 Proteins in Heliothis virescens, Diatraea saccharalis and Spodoptera frugiperda",
+  "year": 2014,
+  "journal": "PLoS ONE",
+  "evidence_version": "v1",
+  "status": "partial",
+  "research_question": "",
+  "study_objective": "",
+  "research_gap": "",
+  "methods": [],
+  "key_results": [],
+  "core_findings": [],
+  "discussion_points": [
+    {
+      "point": "Nevertheless, it is known that some combinations of insecticidal proteins may have synergistic or antagonistic effects [31-32-33].",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Nevertheless, it is known that some combinations of insecticidal proteins may have synergistic or antagonistic effects [31-32-33].",
+      "confidence": "medium"
+    },
+    {
+      "point": "Therefore, when choosing combinations of genes coding for insecticidal proteins to be expressed in plants, it is not only wise to consider differences in their mode of action but also to consider possible interactions among insecticidal proteins.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Therefore, when choosing combinations of genes coding for insecticidal proteins to be expressed in plants, it is not only wise to consider differences in their mode of action but also to consider poss",
+      "confidence": "medium"
+    },
+    {
+      "point": "Vip3A proteins were over 20-fold less active than Cry1Ac at the level of LC 50 ; however, at the level of LC 90 , the differences between Cry1Ac and the three Vip3A proteins were not significant (considering the overlap in the fiducial limits).",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Vip3A proteins were over 20-fold less active than Cry1Ac at the level of LC 50 ; however, at the level of LC 90 , the differences between Cry1Ac and the three Vip3A proteins were not significant (cons",
+      "confidence": "medium"
+    },
+    {
+      "point": "In contrast, Cry1 proteins show a more common dose-mortality response, represented by a shallower slope.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "In contrast, Cry1 proteins show a more common dose-mortality response, represented by a shallower slope.",
+      "confidence": "medium"
+    },
+    {
+      "point": "One interpretation of the high slope values of Vip3A proteins could be that this type of protein requires a threshold concentration in the insect midgut.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "One interpretation of the high slope values of Vip3A proteins could be that this type of protein requires a threshold concentration in the insect midgut.",
+      "confidence": "medium"
+    },
+    {
+      "point": "In the same study, the LC 50 value for Cry1C could not be estimated because of its low toxicity (the LC 50 value was greater than the highest concentration tested: 1875 ng/cm 2 ) [35], which is in agreement with our results.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "In the same study, the LC 50 value for Cry1C could not be estimated because of its low toxicity (the LC 50 value was greater than the highest concentration tested: 1875 ng/cm 2 ) [35], which is in agr",
+      "confidence": "medium"
+    },
+    {
+      "point": "frugiperda in this study are substantially higher than values published elsewhere [26-31-36-37], most likely because the mortality in the present study was scored earlier (5 d vs.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "frugiperda in this study are substantially higher than values published elsewhere [26-31-36-37], most likely because the mortality in the present study was scored earlier (5 d vs.",
+      "confidence": "medium"
+    },
+    {
+      "point": "Other differences in bioassay results may arise from differences in the source and purity of the insecticidal proteins, as well as in the insect colonies employed.",
+      "type": "interpretation",
+      "section": "Discussion",
+      "quote": "Other differences in bioassay results may arise from differences in the source and purity of the insecticidal proteins, as well as in the insect colonies employed.",
+      "confidence": "medium"
+    }
+  ],
+  "limitations": [],
+  "open_questions": [],
+  "future_directions": [],
+  "claims": [],
+  "result_discussion_links": [],
+  "coverage": {
+    "has_introduction": true,
+    "has_methods": true,
+    "has_results": true,
+    "has_discussion": true,
+    "has_key_results": false,
+    "has_discussion_points": true
+  },
+  "fallback_used": true,
+  "errors": []
+}

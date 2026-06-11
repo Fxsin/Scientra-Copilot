@@ -1,0 +1,144 @@
+{
+  "paper_id": "Scavenger_receptor_class_C_acts_as_a_receptor_for_Bacillus_thuringiensis_vegetative_insecticidal_protein_Vip3Aa_def754ae64c1",
+  "chunk_version": "v2",
+  "evidence_hash": "5b9c88b22637323a",
+  "chunk_count": 8,
+  "chunks": [
+    {
+      "chunk_id": "Scavenger_receptor_class_C_acts_as_a_receptor_for_Bacillus_thuringiensis_vegetative_insecticidal_protein_Vip3Aa_def754ae64c1:discussion_point:0000",
+      "paper_id": "Scavenger_receptor_class_C_acts_as_a_receptor_for_Bacillus_thuringiensis_vegetative_insecticidal_protein_Vip3Aa_def754ae64c1",
+      "chunk_type": "discussion_point",
+      "text": "However, there has been no report of a definite receptor for Vip toxins up to now.",
+      "source_section": "Discussion",
+      "quote": "However, there has been no report of a definite receptor for Vip toxins up to now.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Scavenger receptor-C acts as a receptor for Bacillus thuringiensis vegetative insecticidal protein Vip3Aa and mediates the internalization of Vip3Aa via endocytosis",
+        "year": 2018,
+        "journal": "PLOS Pathogens",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Scavenger_receptor_class_C_acts_as_a_receptor_for_Bacillus_thuringiensis_vegetative_insecticidal_protein_Vip3Aa_def754ae64c1:discussion_point:0001",
+      "paper_id": "Scavenger_receptor_class_C_acts_as_a_receptor_for_Bacillus_thuringiensis_vegetative_insecticidal_protein_Vip3Aa_def754ae64c1",
+      "chunk_type": "discussion_point",
+      "text": "However, as an intracellular protein, S2 protein is not likely to be a receptor of Vip3A.",
+      "source_section": "Discussion",
+      "quote": "However, as an intracellular protein, S2 protein is not likely to be a receptor of Vip3A.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Scavenger receptor-C acts as a receptor for Bacillus thuringiensis vegetative insecticidal protein Vip3Aa and mediates the internalization of Vip3Aa via endocytosis",
+        "year": 2018,
+        "journal": "PLOS Pathogens",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Scavenger_receptor_class_C_acts_as_a_receptor_for_Bacillus_thuringiensis_vegetative_insecticidal_protein_Vip3Aa_def754ae64c1:discussion_point:0002",
+      "paper_id": "Scavenger_receptor_class_C_acts_as_a_receptor_for_Bacillus_thuringiensis_vegetative_insecticidal_protein_Vip3Aa_def754ae64c1",
+      "chunk_type": "discussion_point",
+      "text": "That maybe why Singh et al named it interacting partner protein, not a receptor.",
+      "source_section": "Discussion",
+      "quote": "That maybe why Singh et al named it interacting partner protein, not a receptor.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Scavenger receptor-C acts as a receptor for Bacillus thuringiensis vegetative insecticidal protein Vip3Aa and mediates the internalization of Vip3Aa via endocytosis",
+        "year": 2018,
+        "journal": "PLOS Pathogens",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Scavenger_receptor_class_C_acts_as_a_receptor_for_Bacillus_thuringiensis_vegetative_insecticidal_protein_Vip3Aa_def754ae64c1:discussion_point:0003",
+      "paper_id": "Scavenger_receptor_class_C_acts_as_a_receptor_for_Bacillus_thuringiensis_vegetative_insecticidal_protein_Vip3Aa_def754ae64c1",
+      "chunk_type": "discussion_point",
+      "text": "Our results also showed Vip3Aa could not bind to the S2-Sf-S2 cells, which heterologously expressed Sf-S2 into the S2 cells, and had no obvious cytotoxicity to them (Fig 2D and 2E).",
+      "source_section": "Discussion",
+      "quote": "Our results also showed Vip3Aa could not bind to the S2-Sf-S2 cells, which heterologously expressed Sf-S2 into the S2 cells, and had no obvious cytotoxicity to them (Fig 2D and 2E).",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Scavenger receptor-C acts as a receptor for Bacillus thuringiensis vegetative insecticidal protein Vip3Aa and mediates the internalization of Vip3Aa via endocytosis",
+        "year": 2018,
+        "journal": "PLOS Pathogens",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Scavenger_receptor_class_C_acts_as_a_receptor_for_Bacillus_thuringiensis_vegetative_insecticidal_protein_Vip3Aa_def754ae64c1:discussion_point:0004",
+      "paper_id": "Scavenger_receptor_class_C_acts_as_a_receptor_for_Bacillus_thuringiensis_vegetative_insecticidal_protein_Vip3Aa_def754ae64c1",
+      "chunk_type": "discussion_point",
+      "text": "It suggests that S2 protein is not a receptor for Vip3Aa.",
+      "source_section": "Discussion",
+      "quote": "It suggests that S2 protein is not a receptor for Vip3Aa.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Scavenger receptor-C acts as a receptor for Bacillus thuringiensis vegetative insecticidal protein Vip3Aa and mediates the internalization of Vip3Aa via endocytosis",
+        "year": 2018,
+        "journal": "PLOS Pathogens",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Scavenger_receptor_class_C_acts_as_a_receptor_for_Bacillus_thuringiensis_vegetative_insecticidal_protein_Vip3Aa_def754ae64c1:discussion_point:0005",
+      "paper_id": "Scavenger_receptor_class_C_acts_as_a_receptor_for_Bacillus_thuringiensis_vegetative_insecticidal_protein_Vip3Aa_def754ae64c1",
+      "chunk_type": "discussion_point",
+      "text": "We speculate that the Vip3Aa may interfere with the function of the ribosome and actin after entering the cells.",
+      "source_section": "Discussion",
+      "quote": "We speculate that the Vip3Aa may interfere with the function of the ribosome and actin after entering the cells.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Scavenger receptor-C acts as a receptor for Bacillus thuringiensis vegetative insecticidal protein Vip3Aa and mediates the internalization of Vip3Aa via endocytosis",
+        "year": 2018,
+        "journal": "PLOS Pathogens",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Scavenger_receptor_class_C_acts_as_a_receptor_for_Bacillus_thuringiensis_vegetative_insecticidal_protein_Vip3Aa_def754ae64c1:discussion_point:0006",
+      "paper_id": "Scavenger_receptor_class_C_acts_as_a_receptor_for_Bacillus_thuringiensis_vegetative_insecticidal_protein_Vip3Aa_def754ae64c1",
+      "chunk_type": "discussion_point",
+      "text": "mentioned that a 48-kDa protein from Agrotis ipsilon with homology to tenascins may act as the receptor of Vip3A in their patent [33].",
+      "source_section": "Discussion",
+      "quote": "mentioned that a 48-kDa protein from Agrotis ipsilon with homology to tenascins may act as the receptor of Vip3A in their patent [33].",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Scavenger receptor-C acts as a receptor for Bacillus thuringiensis vegetative insecticidal protein Vip3Aa and mediates the internalization of Vip3Aa via endocytosis",
+        "year": 2018,
+        "journal": "PLOS Pathogens",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    },
+    {
+      "chunk_id": "Scavenger_receptor_class_C_acts_as_a_receptor_for_Bacillus_thuringiensis_vegetative_insecticidal_protein_Vip3Aa_def754ae64c1:discussion_point:0007",
+      "paper_id": "Scavenger_receptor_class_C_acts_as_a_receptor_for_Bacillus_thuringiensis_vegetative_insecticidal_protein_Vip3Aa_def754ae64c1",
+      "chunk_type": "discussion_point",
+      "text": "However, they did not provide any supporting data and no subsequent reports proved their speculation.",
+      "source_section": "Discussion",
+      "quote": "However, they did not provide any supporting data and no subsequent reports proved their speculation.",
+      "confidence": "medium",
+      "metadata": {
+        "title": "Scavenger receptor-C acts as a receptor for Bacillus thuringiensis vegetative insecticidal protein Vip3Aa and mediates the internalization of Vip3Aa via endocytosis",
+        "year": 2018,
+        "journal": "PLOS Pathogens",
+        "method": "",
+        "direction": "",
+        "evidence_type": ""
+      }
+    }
+  ]
+}
