@@ -2,13 +2,7 @@
 
 <p align="center">
   <h3 align="center">From Literature to Discovery</h3>
-  <p align="center">
-    AI-Powered Research Discovery Platform
-  </p>
-</p>
-
-<p align="center">
-Transform scientific literature into structured knowledge, research maps, semantic retrieval systems, and agent-ready workflows.
+  <p align="center">AI-Powered Research Discovery Platform</p>
 </p>
 
 <p align="center">
@@ -19,603 +13,327 @@ Transform scientific literature into structured knowledge, research maps, semant
 
 ---
 
-# What is Scientra Copilot?
+## What is Scientra Copilot?
 
-Scientra Copilot is an AI-powered research discovery platform designed for researchers, engineers, and AI agents.
+Scientra Copilot transforms scientific literature into structured, searchable, machine-readable knowledge. It automatically processes PDFs, extracts evidence (key results, methods, core findings, discussion points), builds semantic indexes, organizes papers into research facets with hierarchical subtopics, and exposes everything through APIs and an interactive web interface.
 
-Unlike traditional reference managers that focus on storing PDFs and citations, Scientra transforms scientific literature into a structured, searchable, and machine-readable knowledge system.
-
-The goal is simple:
-
-> Move researchers from collecting papers to understanding knowledge and discovering ideas.
-
-Scientra automatically processes research papers, extracts structured information, generates summaries, builds semantic indexes, and exposes the resulting knowledge through APIs and Agent SDKs.
-
-Whether you are a scientist building a literature database, an AI engineer creating research agents, or a student exploring a new field, Scientra provides a unified foundation for literature-driven research.
+> **Move from collecting papers to understanding knowledge and discovering ideas.**
 
 ---
 
-# Why Scientra?
+## Core Capabilities
 
-Most literature tools solve only one piece of the workflow:
+### 📄 Literature Processing
+- PDF ingestion → GROBID parsing → metadata extraction → AI summarization
+- Incremental processing with resume-from-failure
+- Automatic tagging and knowledge extraction
 
-| Tool             | Primary Focus                                                 |
-| ---------------- | ------------------------------------------------------------- |
-| Zotero           | Reference Management                                          |
-| EndNote          | Citation Management                                           |
-| Mendeley         | Library Organization                                          |
-| ResearchRabbit   | Literature Exploration                                        |
-| NotebookLM       | Document Q&A                                                  |
-| Scientra Copilot | Knowledge Extraction + Research Discovery + Agent Integration |
+### 🔬 Evidence Extraction V2.3
+- **Key results** — experimental findings with direction detection (increase/decrease/no change/association)
+- **Core findings** — author-level conclusions from abstract/conclusion
+- **Methods** — 73-term vocabulary matching + pattern extraction
+- **Discussion points** — 7-type classification (interpretation, mechanism, comparison, limitation, etc.)
+- **Result-discussion links** — automatic linking between results and their interpretations
+- Multi-section fallback (Results → Discussion → Abstract → Full text)
+- 1267 evidence chunks embedded in LanceDB with BGE-M3
 
-Scientra is designed as a complete research knowledge platform rather than a PDF storage system.
+### 🗺️ Research Map V3 — Facet-First Hierarchical
+- **14 generic research facets** classify papers by research type (not by keyword similarity)
+- **Hierarchical structure**: Facets → Subtopics (with controlled intent-based naming)
+- **Facet View** and **Topic View** toggle
+- **Topic Deduplication** — automatically merges similar clusters
+- **Topic Evolution** — vertical timeline with evidence-rich phase cards (Early/Middle/Recent)
+- **Evidence Coverage** tracking per topic and subtopic
+- **Research Facets** distribution with horizontal bar charts
+- **Phase Comparison** table across Early/Middle/Recent phases
+- **Stable & cached** — consistent results via `research_map_v3_facet_hierarchical` cache
+
+### 🔍 Evidence Search
+- Search 1267 structured evidence chunks via `/query/evidence`
+- Filter by chunk type: Key results, Core findings, Methods, Discussion, Limitations, Open questions
+- Integrated into Topic Detail pages and available as standalone `/evidence` page
+- Real-time semantic search powered by BGE-M3 + LanceDB
+
+### 🔥 Hotspots
+- **Trending Topics** — growth score based on recency + evidence richness
+- **Hot Papers** — scored by recency, topic relevance, and evidence content
+- **Emerging Facets** — research areas with high recent publication activity
+- **Method Shifts** — detected changes in experimental methods over time
+- **Evidence Signals** — chunk type distribution statistics
+- Cached with automatic invalidation on research map changes
+
+### 🕳️ Research Gaps
+- Auto-detected from facet distribution analysis
+- Identifies under-represented research areas (<10% paper share)
+- Flags topics with low structured evidence coverage
+- Method diversity assessment
+- Suggested actions based on data
+
+### 🕸️ Knowledge Network
+- 123 nodes × 330 edges connecting papers, facets, subtopics, methods, and findings
+- 7 edge types: paper→facet, paper→subtopic, paper→method, paper→finding, etc.
+- Filterable node explorer and relationship table
+- Insights based on network statistics
+
+### 📊 Library Intelligence Report
+- Auto-generated executive summary from all data modules
+- Coverage summary, Research Map overview, Hotspots, Gaps, Knowledge Network
+- Evidence statistics and recommended next actions
+- Aggregates data from all real modules — no mock content
+
+### 🧠 Semantic Retrieval
+- Three-level search: Metadata → Summary → Chunk-level Evidence
+- Keyword, Vector, and Hybrid modes
+- Powered by BGE-M3 embeddings + LanceDB
+
+### 🤖 Agent-Ready
+- Query API + Agent SDK
+- Context Packs with citation-grounded evidence
+- Safe retrieval: agents never access raw PDFs or internal databases
 
 ---
 
-# Architecture Overview
+## Web Interface — All 10 Pages with Real Data
+
+| Page | Description | Data Source |
+|------|-------------|-------------|
+| `/research-map` | Facet-first hierarchical topic explorer | Research Map cache |
+| `/research-map/topic/{id}` | Topic detail with evidence, evolution, search | Cache + paper metadata |
+| `/library` | Paginated paper library with search/filter | `/papers` API |
+| `/paper/{id}` | Paper metadata, summary, evidence, related papers | API endpoints |
+| `/evidence` | Standalone evidence chunk search | `/query/evidence` |
+| `/hotspots` | Trending topics, hot papers, emerging facets | `/hotspots` API |
+| `/research-gaps` | Auto-detected evidence gaps and limitations | `/research-gaps` API |
+| `/knowledge-network` | Paper-facet-method-finding relationship explorer | `/knowledge-network` API |
+| `/report` | Auto-generated library intelligence report | `/report` API |
+| `/topic-explorer` | Browse topics by research facet | `/research-map` API |
+
+**All pages use real data. No mock/demo content in any user-facing page.**
+
+---
+
+## Quick Start
+
+### Requirements
+- Python 3.11+
+- Docker (for GROBID)
+- 8GB+ RAM
+
+### Development Start (Recommended)
+
+```bash
+# One-command startup with port detection, cache sync, and schema validation
+python Scripts/dev_restart.py
+
+# With auto browser open
+python Scripts/dev_restart.py --open
+
+# API only
+python Scripts/dev_restart.py --no-web
+```
+
+Options: `--api-port`, `--web-port`, `--kill-old`, `--no-web`, `--no-cache-clean`, `--open`, `--strict`
+
+### Production Start
+
+```bash
+python Scripts/start_all.py              # Full: GROBID + API + Web
+python Scripts/start_all.py --no-browser # Skip auto browser
+python Scripts/start_all.py --api-only   # API only
+```
+
+### Import Literature
+
+```bash
+# Place PDFs in 00_Inbox/
+python workflow.py run
+```
+
+Pipeline: PDF → Metadata → Tags → Summary → Evidence → Embedding → Search Index
+
+### Rebuild Research Map
+
+```bash
+python -m scientra.research_map_builder --force
+python -m scientra.research_map_builder --status
+```
+
+### Regenerate Evidence Chunks
+
+```bash
+python -m scientra.evidence_chunks --force
+python -m scientra.evidence_embedding --force
+```
+
+---
+
+## Testing
+
+```bash
+cd web
+
+npm run test:summary-parser       # 149 tests — summary parsing integrity
+npm run test:topic-evolution      # 27 tests — topic evolution analysis
+npm run test:research-map         # 17 tests — research map data integrity
+npm run test:hotspots             # 20 tests — hotspots real data
+npm run test:knowledge-network    # 10 tests — knowledge network integrity
+npm run test:report               # 15 tests — report generation
+npm run test:no-mock-pages        # 4 tests — mock data guard
+npm run build                     # TypeScript + Next.js build
+```
+
+---
+
+## Architecture
 
 ```text
 PDF Papers
     ↓
 GROBID Parsing
     ↓
-Metadata Extraction
+Metadata Extraction → Tags → AI Summarization
     ↓
-Knowledge Tagging
+Evidence Extraction V2.3 (key_results, core_findings, methods, discussion_points, links)
     ↓
-AI Summarization
+Research Facet Classification (14 generic facets, 45 intents)
     ↓
-BGE-M3 Embeddings
+BGE-M3 Embeddings → LanceDB (evidence_chunks + literature_vectors)
     ↓
-LanceDB Knowledge Store
+Research Map Cache (facet-first hierarchical, stable, fingerprint-validated)
     ↓
-Query API
+Query API (/research-map, /hotspots, /research-gaps, /knowledge-network, /report, /query/evidence)
     ↓
-Agent SDK
-    ↓
-Scientra Copilot
+Web Frontend (10 pages, all real data)
 ```
 
 ---
 
-# Core Capabilities
+## Backend Modules
 
-## 📄 Literature Processing Pipeline
+| Module | Description |
+|--------|-------------|
+| `scientra/evidence_extraction.py` | V2.3 engine — key_results, methods, core_findings, discussion_points, result-discussion links |
+| `scientra/research_facets.py` | 14 generic research facets with 320+ signals |
+| `scientra/research_map_builder.py` | Facet-first hierarchical cache builder with dedup + subtopic clustering |
+| `scientra/evidence_chunks.py` | Converts evidence.json → searchable chunks |
+| `scientra/evidence_embedding.py` | BGE-M3 embedding → LanceDB |
+| `scientra/server.py` | FastAPI server with 10+ endpoints |
+| `scientra/embedding.py` | BGE-M3 embedder wrapper |
 
-Automatically converts raw scientific PDFs into structured research assets.
+## API Endpoints
 
-Features:
-
-* PDF ingestion
-* GROBID parsing
-* Metadata extraction
-* DOI recognition
-* Structured summaries
-* Incremental processing
-* Resume-from-failure workflow
-
----
-
-## 🏷️ Knowledge Extraction
-
-Scientra transforms papers into searchable knowledge.
-
-Current extraction layers:
-
-* Metadata
-* Tags
-* Summaries
-* Evidence Chunks
-* Embeddings
-
-Future layers:
-
-* Topic Extraction
-* Citation Networks
-* Research Evolution Tracking
+| Endpoint | Description |
+|----------|-------------|
+| `GET /health` | API + LanceDB status |
+| `GET /version` | Schema version (research_map_schema: v2) |
+| `GET /stats` | Paper count, tag/year distributions |
+| `GET /papers` | Paginated paper list with search/filter |
+| `GET /paper/{id}/metadata` | Paper metadata |
+| `GET /paper/{id}/summary` | AI-generated summary |
+| `GET /paper/{id}/evidence` | Structured evidence (key_results, methods, etc.) |
+| `GET /paper/{id}/related` | Related papers by vector similarity |
+| `GET /research-map` | Facet-first hierarchical topics + relationships |
+| `GET /research-map/topic/{id}` | Topic detail, evolution phases, evidence |
+| `POST /query/evidence` | Semantic evidence chunk search |
+| `GET /hotspots` | Trending topics, hot papers, emerging facets |
+| `GET /research-gaps` | Auto-detected research gaps |
+| `GET /knowledge-network` | Paper-facet-method-finding network |
+| `GET /report` | Auto-generated library intelligence report |
 
 ---
 
-## 🧠 Semantic Retrieval
+## Research Facets (14 total)
 
-Three-level retrieval architecture:
+| Facet | Typical Research |
+|-------|-----------------|
+| Bioactivity / Phenotype | Dose-response, toxicity, efficacy |
+| Structure / Modeling | Protein structure, cryo-EM, docking |
+| Domain / Mutagenesis / Engineering | Domain function, mutations, chimeras |
+| Target / Binding / Interaction | Receptor ID, binding assays, affinity |
+| Resistance / Genetics / Adaptation | Resistance mechanisms, alleles, fitness |
+| Expression / Production / Application | Recombinant expression, field trials |
+| Omics / Response Profiling | Transcriptomics, proteomics, pathways |
+| Method / Resource / Review | Reviews, protocols, databases |
+| Gene Function / Functional Genomics | CRISPR, knockouts, overexpression |
+| Genetics / QTL Mapping / GWAS | QTL, GWAS, association mapping |
+| Signaling / Regulation / Pathway | Signal transduction, transcription factors |
+| Development / Morphology / Physiology | Organ development, yield, architecture |
+| Subcellular Localization / Trafficking | Protein localization, organelles |
+| Stress Physiology / Environmental Response | Drought, salt, oxidative stress |
 
-* Metadata Search
-* Summary Search
-* Chunk-Level Evidence Search
-
-Supported modes:
-
-* Keyword Search
-* Vector Search
-* Hybrid Search
-
-Powered by:
-
-* BGE-M3
-* LanceDB
-
----
-
-## 🗺️ Research Discovery
-
-Scientra goes beyond document retrieval.
-
-Researchers can explore:
-
-* Related Papers
-* Knowledge Networks
-* Research Maps
-* Topic Clusters
-* Emerging Research Areas
-* Potential Research Gaps
-
-The objective is not only to find papers but to understand the structure of a research field.
+All facets use generic research terminology — no domain-specific hardcoding. New facets can be added via configuration.
 
 ---
 
-## 🤖 Agent-Ready Design
-
-Scientra is designed from the beginning for AI agents.
-
-Agents never access:
-
-* Raw PDFs
-* Internal databases
-* Vector stores
-
-Instead they interact through:
-
-* Query API
-* Agent SDK
-* Context Packs
-* Citation-Grounded Evidence
-
-This architecture provides:
-
-* Traceability
-* Reproducibility
-* Safer retrieval
-* Model independence
-
----
-
-# Current Modules
-
-## Backend
-
-* PDF Engine
-* Metadata Engine
-* Tag Engine
-* Summary Agent
-* Embedding Engine
-* Query API
-* Agent SDK
-* Workflow Engine
-
-## Frontend
-
-* Dashboard
-* Library
-* Import Center
-* Knowledge Explorer
-* Research Map
-* AI Chat (Context Mode)
-
-## Infrastructure
-
-* GROBID
-* LanceDB
-* BGE-M3
-* FastAPI
-* SQLite
-
----
-
-# Quick Start
-
-## Requirements
-
-* Python 3.11+
-* Docker
-* 8GB+ RAM
-* GROBID
-* BGE-M3
-
----
-
-## Installation
-
-```bash
-git clone https://github.com/YOUR_USERNAME/scientra-copilot.git
-
-cd scientra-copilot
-
-pip install -r requirements.txt
-```
-
----
-
-## Start Scientra
-
-### Quick Start
-
-```bash
-python Scripts/start_all.py
-```
-
-This automatically starts:
-* GROBID (Docker)
-* Query API
-* Web Frontend
-* Opens browser to the Web UI
-
-> **Note:** The script now runs a preflight check before starting services.
-> If any issues are found, it displays clear error messages with solutions.
-
-### Custom Ports
-
-If the default ports (3000 for Web, 8710 for API, 18070 for GROBID) are occupied,
-configure custom ports via environment variables:
-
-**Windows PowerShell:**
-```powershell
-$env:SCIENTRA_WEB_PORT="3001"
-$env:SCIENTRA_API_PORT="8720"
-$env:SCIENTRA_GROBID_PORT="18071"
-python Scripts/start_all.py
-```
-
-**Linux/macOS:**
-```bash
-SCIENTRA_WEB_PORT=3001 SCIENTRA_API_PORT=8720 python Scripts/start_all.py
-```
-
-### Command Options
-
-```bash
-python Scripts/start_all.py              # Full startup (GROBID + API + Web)
-python Scripts/start_all.py --no-browser # Don't open browser automatically
-python Scripts/start_all.py --api-only   # Only GROBID + API, skip Web
-python Scripts/start_all.py --web-only   # Only Web frontend
-```
-
-### Startup Diagnostics
-
-Each run generates a diagnostics report at `reports/startup_diagnostics_report.md`
-containing port detection results, service status, and failure recommendations.
-
-### Common Issues
-
-<details>
-<summary><b>Web port 3000 is occupied</b></summary>
-
-Scientra Copilot auto-detects port conflicts and finds the next available port
-(3001, 3002, ...). You will see a message like:
-
-```
-Port 3000 is occupied. Using port 3001 instead.
-```
-
-To permanently change the default Web port:
-```powershell
-$env:SCIENTRA_WEB_PORT="3005"
-python Scripts/start_all.py
-```
-</details>
-
-<details>
-<summary><b>API port 8710 is occupied</b></summary>
-
-If port 8710 is occupied by a non-Scientra process, you will see an error
-with the process name and PID. Solutions:
-
-1. Close the conflicting program.
-2. Use a different port:
-```powershell
-$env:SCIENTRA_API_PORT="8720"
-python Scripts/start_all.py
-```
-</details>
-
-<details>
-<summary><b>GROBID port 18070 is occupied</b></summary>
-
-If port 18070 is occupied but the service is not GROBID, you will see an error.
-Solutions:
-
-1. Close the conflicting program.
-2. Use a different port:
-```powershell
-$env:SCIENTRA_GROBID_PORT="18071"
-python Scripts/start_all.py
-# Then create the GROBID container with the new port:
-docker run -d --name scientra_grobid -p 18071:8070 -p 18072:8071 lfoppiano/grobid:0.8.1
-```
-</details>
-
-<details>
-<summary><b>Docker Desktop is not running</b></summary>
-
-Error message:
-```
-Docker Desktop is installed but the Docker daemon is not running.
-Please open Docker Desktop and wait for it to fully start.
-```
-
-Open Docker Desktop from the Start Menu and wait for the whale icon to
-stop animating, then re-run `python Scripts/start_all.py`.
-</details>
-
-<details>
-<summary><b>Web frontend is slow on first run</b></summary>
-
-Next.js/Turbopack compiles the application on first run, which can take
-1-2 minutes. You will see:
-
-```
-Web frontend is compiling (Next.js/Turbopack). This may take 1-2 minutes on first run...
-```
-
-The startup script now waits up to 120 seconds. Subsequent starts are much faster.
-</details>
-
-<details>
-<summary><b>Browser doesn't open automatically</b></summary>
-
-If the browser doesn't open, you can manually visit the Web URL shown in the
-startup output. For example: `http://localhost:3000`
-
-Use `--no-browser` to skip auto-opening:
-```bash
-python Scripts/start_all.py --no-browser
-```
-</details>
-
----
-
-## Import Literature
-
-Place PDFs into:
-
-```text
-00_Inbox/
-```
-
-Run:
-
-```bash
-python workflow.py run
-```
-
-The workflow will automatically:
-
-```text
-PDF
-→ Metadata
-→ Tags
-→ Summary
-→ Embedding
-→ Search Index
-```
-
----
-
-## Web 显示 Demo Data 排查指南
-
-如果浏览器打开了 Scientra Copilot 但页面显示 demo/mock 数据而不是你的真实文献，
-请按以下步骤排查：
-
-### 1. 运行验证脚本
-
-```bash
-python Scripts/verify_real_data.py
-```
-
-该脚本自动检查 API、CORS、Web 是否正常工作。全部 PASS 即为正常。
-
-### 2. 确认服务都在运行
-
-| 服务 | 默认地址 | 检查方式 |
-|------|---------|---------|
-| GROBID | `http://localhost:18070` | `curl http://localhost:18070/api/isalive` |
-| API | `http://127.0.0.1:8710` | `curl http://127.0.0.1:8710/health` |
-| Web | `http://localhost:3000` | 浏览器直接打开 |
-
-### 3. 确认 API 返回真实数据
-
-```bash
-curl http://127.0.0.1:8710/stats
-# 应返回: {"paper_count": 55, ...}
-```
-
-如果 `paper_count` 为 0，需要先运行工作流：`python workflow.py run`
-
-### 4. 确认 CORS 配置生效
-
-在浏览器中按 F12 → Console，如果看到 CORS 相关错误，
-说明 API 的跨域配置未生效。重启 API 服务即可：
-
-```bash
-python Scripts/run_api_server.py --port 8711 --host 0.0.0.0
-```
-
-然后重启 Web 时指定新的 API 地址：
-
-```powershell
-$env:NEXT_PUBLIC_SCIENTRA_API_URL="http://127.0.0.1:8711"
-cd web && npm run dev -- -p 3000
-```
-
-### 5. 清除 Web 编译缓存
-
-如果 API 地址变更后 Web 仍访问旧地址：
-
-```bash
-rm -rf web/.next
-cd web && npm run dev -- -p 3000
-```
-
-### 已知问题 (V1.1 已修复)
-
-| 问题 | 根因 | 状态 |
-|------|------|:--:|
-| Parse 步骤零处理 | Config 中 `--check-grobid` 导致早期退出 | ✅ |
-| 模块找不到 (`No module named 'scientra'`) | `cwd` 指向父目录 + PYTHONPATH 缺失 | ✅ |
-| Windows 状态文件 PermissionError | `os.replace` 无重试 | ✅ |
-| 已有 PDF 未被识别 | `import_pdf` 仅扫描 `00_Inbox/` | ✅ |
-| API 搜索返回 0 结果 | `PROJECT_ROOT` 指向 `scientra/` 子目录 | ✅ |
-| Web 显示 Demo Data | CORS 配置使用不支持的端口通配符 `localhost:*` | ✅ |
-| Library 页面报错 `paper_count` | Hook 返回值格式变更未同步页面 | ✅ |
-| Research Map 显示全零 | API 返回空数组时未回退 mock 数据 | ✅ |
-| Settings 显示过时信息 | 硬编码旧数据（34 papers, Mock Intelligence Layer） | ✅ |
-| Web 启动超时误报 | Next.js 首次编译 >30s 但脚本判定失败 | ✅ |
-| 端口冲突无提示 | 固定端口无检测机制 | ✅ |
-
----
-
-# Project Structure
+## Project Structure
 
 ```text
 Scientra_Copilot/
-
-00_Inbox/
-01_PDF/
-02_Metadata/
-03_Summary/
-04_VectorDB/
-05_Index/
-
-06_API/
-07_Workflows/
-08_Agent_Interface/
-
-Config/
-Scripts/
-docs/
-Tests/
-
-workflow.py
-agent_sdk.py
+├── 00_Inbox/           # PDF import directory
+├── 01_PDF/             # Processed PDFs
+├── 02_Metadata/        # Extracted metadata (YAML)
+├── 03_Evidence/        # Evidence extraction output (evidence.json, chunks, sections)
+├── 03_Summary/         # AI-generated summaries
+├── 04_VectorDB/        # LanceDB vector store
+├── 05_Index/           # Research map cache + hotspots cache
+├── Config/             # Workflow and extraction configuration
+├── Scripts/            # Startup, dev restart, build, verification scripts
+├── docs/               # Documentation
+├── scientra/           # Backend Python modules
+├── web/                # Next.js frontend
+│   ├── app/            # Page routes (10 pages)
+│   ├── components/     # Reusable UI components
+│   ├── lib/            # Types, API client, topic evolution, summary parser
+│   └── scripts/        # Test suites (7 test files)
+├── workflow.py         # Main processing workflow
+└── agent_sdk.py        # Agent SDK
 ```
 
 ---
 
-# Use Cases
+## Use Cases
 
-Scientra can be used in:
+Scientra is domain-agnostic and works with any research field:
 
-* Life Sciences
-* Medicine
-* Bioinformatics
-* AI & Computer Science
-* Materials Science
-* Chemistry
-* Environmental Science
-* Social Sciences
-
-and any research field that relies on literature analysis.
+- Life Sciences & Medicine
+- Bioinformatics & Genomics
+- Plant Molecular Biology & Agriculture
+- AI & Computer Science
+- Materials Science & Chemistry
+- Environmental Science
+- Social Sciences
 
 ---
 
-# Roadmap
+## Roadmap
 
-## Current
+### Completed ✅
+- PDF Processing Pipeline
+- Evidence Extraction V2.3
+- Research Map V3 (facet-first hierarchical)
+- Topic Evolution with evidence-rich phases
+- Evidence Search (standalone + integrated)
+- Hotspots (trending topics, hot papers, method shifts)
+- Research Gaps (auto-detection from facet distribution)
+- Knowledge Network (paper-facet-method-finding graph)
+- Library Intelligence Report (auto-generated)
+- Mock Data Decommission (all 10 pages use real data)
+- Stable caching with fingerprint-based invalidation
 
-* PDF Processing Pipeline
-* Knowledge Extraction
-* Semantic Retrieval
-* Research Maps
-* Knowledge Explorer
-* Agent SDK
-
-## Upcoming
-
-* Topic Engine
-* AI Research Copilot
-* Citation Extraction
-* Citation Network
-* Research Evolution Analysis
-
-## Long-Term
-
-* Word Integration
-* Zotero Integration
-* Cloud Workspace
-* Multi-Agent Research Workflows
+### Upcoming
+- User-configurable facets and intents
+- Citation network extraction and visualization
+- Multi-project/library support
+- Collaborative workspaces
+- Zotero integration
 
 ---
 
-# 中文简介
+## Contributing
 
-## Scientra Copilot 是什么？
+Contributions welcome. See `CONTRIBUTING.md` for development setup and guidelines.
 
-Scientra Copilot 是一个面向科研工作者的 AI 研究发现平台（AI-Powered Research Discovery Platform）。
-
-与传统文献管理工具不同，Scientra 不仅关注 PDF 存储和文献引用管理，更关注将文献转化为结构化知识，并进一步支持 AI Agent 调用和科研发现。
-
-核心理念：
-
-> 从文献到知识，从知识到发现。
-
----
-
-## 核心能力
-
-### 📄 文献自动处理
-
-* PDF 导入
-* GROBID 解析
-* Metadata 提取
-* 标签生成
-* AI 摘要
-
-### 🧠 知识发现
-
-* Knowledge Explorer
-* Research Map
-* Related Papers
-* Semantic Search
-* Topic Discovery
-
-### 🤖 Agent 调用
-
-* Query API
-* Agent SDK
-* Context Pack
-* AI Copilot
-
----
-
-## 适用于
-
-* 生物学
-* 医学
-* 材料科学
-* AI与计算机科学
-* 化学
-* 环境科学
-* 社会科学
-
-以及所有依赖文献调研的科研领域。
-
----
-
-# Contributing
-
-Contributions are welcome.
-
-Please see:
-
-```text
-CONTRIBUTING.md
-```
-
-for development setup and contribution guidelines.
-
----
-
-# License
+## License
 
 MIT License
 
