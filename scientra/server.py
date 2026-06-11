@@ -162,62 +162,166 @@ def _extract_cluster_keywords(
 
 
 def _build_topic_name(keywords: list[str], paper_titles: list[str] | None = None) -> str:
-    """Build a human-readable topic name from keywords and representative paper titles."""
+    """Build a human-readable topic name from keywords and paper titles.
+
+    Avoids generic patterns like 'X and Y Research'. Uses representative paper
+    titles to find meaningful noun phrases when keywords alone are too narrow.
+    """
     if not keywords:
         return "Mixed research topic"
-    # Filter: remove very short, purely numeric, or artifact tokens
+
+    # Filter: remove short/numeric/artifact tokens
     clean = [k for k in keywords if len(k) >= 3 and not k.isdigit() and k.lower() not in _TOPIC_STOPWORDS]
     if not clean:
         return "Mixed research topic"
 
-    # Try to generate a meaningful name from the best keyword + context
-    best = clean[0] if clean else ""
-    best_titled = best[0].upper() + best[1:] if len(best) > 1 else best.upper()
+    # Capitalize helper
+    def title_case(w: str) -> str:
+        return w[0].upper() + w[1:] if len(w) > 1 else w.upper()
 
-    # If we have paper titles, try to extract a descriptive phrase
-    if paper_titles and len(clean) >= 2:
-        # Use best keyword as primary subject, add a qualifier from second keyword
-        second = clean[1]
-        second_titled = second[0].upper() + second[1:] if len(second) > 1 else second.upper()
-        # Avoid listing too many keywords; prefer "X and Y" or "X Research"
-        if len(clean) == 2:
-            return f"{best_titled} and {second_titled}"
-        # For 3+ keywords, use "X and Related Studies" pattern
-        if len(clean) >= 3:
-            return f"{best_titled} and {second_titled} Research"
+    # If keywords are very diverse (low frequency overlap with each other), the topic
+    # might be mixed — use the best keyword with a qualifier
+    best = clean[0]
+    second = clean[1] if len(clean) > 1 else None
 
-    # Fallback with single keyword
+    # Try to extract a descriptive phrase from paper titles
+    if paper_titles:
+        # Look for common multi-word phrases across paper titles
+        title_words = []
+        for t in paper_titles[:3]:
+            # Clean title: remove special chars, take first 80 chars
+            ct = t.lower().replace(",", " ").replace(":", " ").replace(";", " ")
+            title_words.append(ct.split())
+
+        # Find the most distinctive shared bigram/trigram
+        from collections import Counter
+        bigrams: Counter = Counter()
+        for tw in title_words:
+            for i in range(len(tw) - 1):
+                bg = f"{tw[i]} {tw[i+1]}"
+                if len(bg) > 8 and bg not in _TOPIC_STOPWORDS and not any(w in _TOPIC_STOPWORDS for w in bg.split()):
+                    bigrams[bg] += 1
+
+        if bigrams and bigrams.most_common(1)[0][1] >= 2:
+            common_phrase = bigrams.most_common(1)[0][0]
+            # Use the common phrase if it's meaningful
+            phrase_titled = " ".join(title_case(w) for w in common_phrase.split())
+            return phrase_titled
+
+    # Two keywords: simple "X and Y"
+    if len(clean) == 2 and second:
+        return f"{title_case(best)} and {title_case(second)}"
+
+    # Three or more: use primary keyword with context
+    if len(clean) >= 3 and second:
+        # Check if keywords are too similar (all same stem) or too diverse
+        # If first two keywords share a prefix/suffix, they're probably variants
+        if best.lower()[:4] == second.lower()[:4]:
+            # Similar keywords — use the longer one + "Studies"
+            longer = best if len(best) >= len(second) else second
+            return f"{title_case(longer)} Studies"
+        return f"{title_case(best)} and {title_case(second)} Research Topics"
+
+    # Single keyword
     if len(clean) == 1:
-        return f"{best_titled} Research"
+        return f"{title_case(best)} Studies"
 
-    # Generic fallback
-    return f"Research on {best_titled}"
+    return "Mixed research topic"
 
 
 def _load_evidence_summary(root: Path, paper_id: str) -> dict[str, Any] | None:
-    """Load a lightweight evidence summary for a paper (searches by paper_id suffix)."""
+    """Load a lightweight evidence summary for a paper.
+
+    Evidence directories use title-based names with a 12-char hash suffix,
+    while paper IDs use 'paper_' prefix with a 16-char hash suffix.
+    We match by checking if the shorter hash is a prefix of the longer one.
+    """
     evidence_root = root / "03_Evidence"
     if not evidence_root.exists():
         return None
+
     # Try exact match first
     ev_path = evidence_root / paper_id / "evidence.json"
-    if not ev_path.exists():
-        # Search by paper_id suffix (evidence dirs use paper_key naming with hash suffix)
-        search_id = paper_id.replace("paper_", "") if paper_id.startswith("paper_") else paper_id
-        for d in evidence_root.iterdir():
-            if d.is_dir() and (d.name.endswith(search_id) or d.name.endswith(paper_id)):
+    if ev_path.exists():
+        return _parse_evidence_file(ev_path)
+
+    # Extract hash from paper_id for matching
+    search_hash = paper_id.replace("paper_", "") if paper_id.startswith("paper_") else paper_id
+
+    # Build index of evidence dirs by their trailing hash (cached per call)
+    for d in evidence_root.iterdir():
+        if not d.is_dir():
+            continue
+        # Evidence dir names end with underscore + hash (e.g. "..._d624774ea348")
+        parts = d.name.rsplit("_", 1)
+        if len(parts) != 2:
+            continue
+        ev_hash = parts[1]
+        # Match: shorter hash is a prefix of the longer one
+        if len(ev_hash) < len(search_hash):
+            if search_hash.startswith(ev_hash):
                 ev_path = d / "evidence.json"
                 break
+        else:
+            if ev_hash.startswith(search_hash):
+                ev_path = d / "evidence.json"
+                break
+        # Full directory name contains paper hash
+        if search_hash in d.name or d.name in paper_id:
+            ev_path = d / "evidence.json"
+            break
+
     if not ev_path.exists():
         return None
+    return _parse_evidence_file(ev_path)
+
+
+def _parse_evidence_file(ev_path: Path) -> dict[str, Any] | None:
+    """Parse an evidence.json file into the API evidence payload."""
     try:
         ev = json.loads(ev_path.read_text(encoding="utf-8"))
         return {
             "status": ev.get("status", "unknown"),
-            "core_findings": [c.get("finding", c.get("text", ""))[:200] for c in ev.get("core_findings", [])[:3]],
-            "key_results": [r.get("result", "")[:200] for r in ev.get("key_results", [])[:3]],
-            "methods": [m.get("name", "")[:150] for m in ev.get("methods", [])[:3]],
-            "limitations": [l.get("limitation", "")[:200] for l in ev.get("limitations", [])[:2]],
+            "extraction_mode": ev.get("extraction_mode"),
+            "fallback_used": ev.get("fallback_used", False),
+            "core_findings": [
+                {"finding": c.get("finding", c.get("text", ""))[:300], "quote": c.get("quote", "")[:200], "confidence": c.get("confidence", "medium")}
+                for c in ev.get("core_findings", [])[:5]
+            ],
+            "key_results": [
+                {"result": r.get("result", r.get("text", ""))[:300], "measured_variable": r.get("measured_variable", ""), "direction": r.get("direction", ""), "quote": r.get("quote", "")[:200], "confidence": r.get("confidence", "medium")}
+                for r in ev.get("key_results", [])[:5]
+            ],
+            "discussion_points": [
+                {"point": d.get("point", d.get("text", ""))[:300], "type": d.get("type", ""), "quote": d.get("quote", "")[:200], "confidence": d.get("confidence", "medium")}
+                for d in ev.get("discussion_points", [])[:5]
+            ],
+            "methods": [
+                {"name": m.get("name", m.get("text", ""))[:200], "purpose": m.get("purpose", ""), "evidence_type": m.get("evidence_type", ""), "quote": m.get("quote", "")[:150], "confidence": m.get("confidence", "medium")}
+                for m in ev.get("methods", [])[:5]
+            ],
+            "limitations": [
+                {"limitation": l.get("limitation", l.get("text", ""))[:300], "quote": l.get("quote", "")[:150], "confidence": l.get("confidence", "medium")}
+                for l in ev.get("limitations", [])[:3]
+            ],
+            "open_questions": [
+                {"question": o.get("question", o.get("text", ""))[:300], "quote": o.get("quote", "")[:150], "confidence": o.get("confidence", "medium")}
+                for o in ev.get("open_questions", [])[:3]
+            ],
+            "claims": [
+                {"claim": c.get("claim", c.get("text", ""))[:300], "quote": c.get("quote", "")[:150], "confidence": c.get("confidence", "medium")}
+                for c in ev.get("claims", [])[:3]
+            ],
+            "result_discussion_links": [
+                {
+                    "result_index": rl.get("result_index"),
+                    "discussion_index": rl.get("discussion_index"),
+                    "link_type": rl.get("link_type", ""),
+                    "basis": rl.get("basis", "")[:200],
+                    "confidence": rl.get("confidence", "medium"),
+                }
+                for rl in ev.get("result_discussion_links", [])[:5]
+            ],
             "coverage": ev.get("coverage", {}),
         }
     except Exception:
@@ -416,26 +520,15 @@ def _build_evolution_phases(
         ph_pids = [p["paper_id"] for p in ph_papers if p.get("paper_id")]
         ph_kw = _extract_cluster_keywords(ph_pids, paper_map, root) if ph_pids else []
         evidence_count = sum(1 for p in ph_papers if p.get("evidence") and isinstance(p["evidence"], dict) and p["evidence"].get("status") != "failed")
-        # Select 1-2 representative papers from this phase
-        ph_rep = ph_papers[:2] if ph_papers else []
+        # Include full paper payloads with evidence/summary for topic evolution display
         phases.append({
             "phase": ph_key,
             "label": ph_label,
             "year_range": [ph_start, ph_end],
             "paper_count": len(ph_papers),
             "keywords": [str(k) for k in ph_kw[:5]],
-            "representative_papers": [
-                {
-                    "paper_id": str(rp.get("paper_id", "")),
-                    "title": str(rp.get("title", "")),
-                    "authors": rp.get("authors", []) or [],
-                    "year": rp.get("year"),
-                    "journal": str(rp.get("journal", "")),
-                    "doi": str(rp.get("doi", "")),
-                }
-                for rp in ph_rep
-            ],
-            "papers": ph_rep,
+            "representative_papers": ph_papers[:3],
+            "papers": ph_papers,
             "summary": " / ".join(ph_kw[:3]) if ph_kw else "",
             "evidence_coverage": {
                 "papers_with_evidence": evidence_count,

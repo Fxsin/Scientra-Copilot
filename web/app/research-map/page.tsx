@@ -341,6 +341,23 @@ function TopicCard({ topic, selected, onClick, onPaperClick }: { topic: Research
           <span className="text-slate-300">·</span>
           {topic.year_range && topic.year_range.length === 2 && <span>{topic.year_range[0]}–{topic.year_range[1]}</span>}
           {!topic.year_range && topic.avg_year && <span>~{Math.round(topic.avg_year)}</span>}
+          {/* Evidence mini indicator */}
+          {papers.length > 0 && (
+            <>
+              <span className="text-slate-300">·</span>
+              <span className="text-emerald-500 font-medium">
+                {(() => {
+                  const evCount = papers.filter((p: any) => p.evidence && (
+                    (p.evidence.core_findings?.length || 0) +
+                    (p.evidence.key_results?.length || 0) +
+                    (p.evidence.discussion_points?.length || 0) +
+                    (p.evidence.methods?.length || 0) > 0
+                  )).length;
+                  return evCount > 0 ? `Ev ${evCount}/${papers.length}` : null;
+                })()}
+              </span>
+            </>
+          )}
         </div>
 
         {/* Keywords */}
@@ -394,6 +411,27 @@ function TopicDetailPanel({ topic, relatedTopics, allTopics, onTopicClick, onPap
           {topic.year_range && topic.year_range.length === 2 && <span>{topic.year_range[0]}–{topic.year_range[1]}</span>}
           {!topic.year_range && topic.avg_year && <span>~{Math.round(topic.avg_year)}</span>}
         </div>
+        {/* Evidence coverage mini */}
+        {papers.length > 0 && (
+          <div className="mt-1.5 text-[10px]">
+            {(() => {
+              const evCount = papers.filter((p: any) => p.evidence && (
+                (p.evidence.core_findings?.length || 0) +
+                (p.evidence.key_results?.length || 0) +
+                (p.evidence.discussion_points?.length || 0) +
+                (p.evidence.methods?.length || 0) > 0
+              )).length;
+              if (evCount > 0) {
+                return <span className="text-emerald-600 font-medium">Structured evidence: {evCount}/{papers.length}</span>;
+              }
+              const sumCount = papers.filter((p: any) => (p as any).summary && !p.evidence).length;
+              if (sumCount > 0) {
+                return <span className="text-amber-600">Summary fallback: {sumCount}/{papers.length}</span>;
+              }
+              return null;
+            })()}
+          </div>
+        )}
       </div>
 
       {/* Keywords */}

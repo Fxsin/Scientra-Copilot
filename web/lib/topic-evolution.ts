@@ -13,7 +13,7 @@ export interface EvidenceQuote {
   year?: number | null;
   journal?: string | null;
   excerpt: string;
-  source_type: "core_finding" | "evidence" | "method" | "limitation" | "gap" | "summary" | "title";
+  source_type: "core_finding" | "evidence" | "method" | "limitation" | "gap" | "summary" | "title" | "discussion_point" | "key_result" | "open_question" | "claim";
 }
 
 export interface MilestonePaper {
@@ -83,6 +83,88 @@ export function cleanEvidenceText(s: string): string {
 
 /* ─── Extract paper evidence ─── */
 
+/** Normalize evidence object: snake_case API fields → internal camelCase + extract text */
+export function normalizePaperEvidence(rawEvidence: Record<string, unknown> | null | undefined): {
+  coreFindings: string[];
+  keyResults: string[];
+  discussionPoints: string[];
+  methods: string[];
+  limitations: string[];
+  openQuestions: string[];
+  claims: string[];
+  evidenceQuotes: { excerpt: string; source_type: string; quote: string }[];
+  hasContent: boolean;
+  sourceLabel: string;
+} {
+  const empty = {
+    coreFindings: [] as string[], keyResults: [] as string[],
+    discussionPoints: [] as string[], methods: [] as string[],
+    limitations: [] as string[], openQuestions: [] as string[],
+    claims: [] as string[], evidenceQuotes: [] as { excerpt: string; source_type: string; quote: string }[],
+    hasContent: false, sourceLabel: "title_fallback",
+  };
+
+  if (!rawEvidence || typeof rawEvidence !== "object") return empty;
+
+  const ev = rawEvidence as Record<string, unknown>;
+  if (ev.status === "failed") return empty;
+
+  // Extract text from each field, handling both string and object formats
+  const extractArray = (arr: unknown, primaryKey: string, fallbackKey = "text"): string[] => {
+    if (!Array.isArray(arr)) return [];
+    return arr.map((item: unknown) => {
+      if (typeof item === "string") return item.slice(0, 300);
+      if (item && typeof item === "object") {
+        const obj = item as Record<string, unknown>;
+        return String(obj[primaryKey] || obj[fallbackKey] || "").slice(0, 300);
+      }
+      return "";
+    }).filter(Boolean);
+  };
+
+  const extractQuotes = (arr: unknown, sourceType: string): { excerpt: string; source_type: string; quote: string }[] => {
+    if (!Array.isArray(arr)) return [];
+    return arr.map((item: unknown) => {
+      if (typeof item === "string") return { excerpt: item.slice(0, 300), source_type: sourceType, quote: item.slice(0, 200) };
+      if (item && typeof item === "object") {
+        const obj = item as Record<string, unknown>;
+        const text = String(obj.point || obj.result || obj.finding || obj.limitation || obj.question || obj.claim || obj.name || obj.text || "").slice(0, 300);
+        const quote = String(obj.quote || "").slice(0, 200);
+        return { excerpt: text, source_type: sourceType, quote: quote || text.slice(0, 200) };
+      }
+      return { excerpt: "", source_type: sourceType, quote: "" };
+    }).filter(q => q.excerpt.length > 0);
+  };
+
+  const coreFindings = extractArray(ev.core_findings, "finding");
+  const keyResults = extractArray(ev.key_results, "result");
+  const discussionPoints = extractArray(ev.discussion_points, "point");
+  const methods = extractArray(ev.methods, "name");
+  const limitations = extractArray(ev.limitations, "limitation");
+  const openQuestions = extractArray(ev.open_questions, "question");
+  const claims = extractArray(ev.claims, "claim");
+
+  // Build evidence quotes from all sources
+  const evidenceQuotes = [
+    ...extractQuotes(ev.discussion_points, "discussion_point"),
+    ...extractQuotes(ev.key_results, "key_result"),
+    ...extractQuotes(ev.core_findings, "core_finding"),
+    ...extractQuotes(ev.methods, "method"),
+    ...extractQuotes(ev.limitations, "limitation"),
+    ...extractQuotes(ev.open_questions, "open_question"),
+    ...extractQuotes(ev.claims, "claim"),
+  ];
+
+  const hasContent = coreFindings.length + keyResults.length + discussionPoints.length + methods.length + limitations.length + openQuestions.length + claims.length > 0;
+
+  return {
+    coreFindings, keyResults, discussionPoints, methods, limitations, openQuestions, claims,
+    evidenceQuotes, hasContent,
+    sourceLabel: hasContent ? "structured_evidence" : "title_fallback",
+  };
+}
+
+
 export function extractPaperEvidence(paper: {
   paper_id: string; title?: string | null; authors?: string[] | null;
   year?: number | null; journal?: string | null; summary?: string | null;
@@ -90,48 +172,28 @@ export function extractPaperEvidence(paper: {
 }): PaperEvidence {
   const title = paper.title || "";
 
-  // Priority: evidence.json > summary > title fallback
+  // Priority: structured evidence > summary > title fallback
   const ev = paper.evidence;
   if (ev && ev.status !== "failed") {
-    // Build parsed-like structure from evidence fields
-    const cf: string[] = [];
-    const evItems: string[] = [];
-    const mt: string[] = [];
-    const lm: string[] = [];
-    const gp: string[] = [];
-    for (const c of (ev.core_findings || [])) {
-      const t = typeof c === "string" ? c : (c.finding || c.text || "");
-      if (t) cf.push(t.slice(0, 300));
+    const norm = normalizePaperEvidence(ev);
+    if (norm.hasContent) {
+      // Combine all evidence into a parsed-like structure
+      const allEvidence = [...norm.keyResults, ...norm.discussionPoints, ...norm.coreFindings];
+      return {
+        paper_id: paper.paper_id, title, year: paper.year, journal: paper.journal || null,
+        authors: paper.authors || [],
+        parsed: {
+          takeaway: norm.coreFindings[0] || norm.keyResults[0] || norm.discussionPoints[0] || null,
+          coreFindings: norm.coreFindings,
+          evidence: allEvidence,
+          methods: norm.methods,
+          limitations: norm.limitations,
+          gaps: norm.openQuestions,
+          others: norm.claims,
+        },
+        raw_text: "[structured_evidence]" as any,
+      };
     }
-    for (const r of (ev.key_results || [])) {
-      const t = typeof r === "string" ? r : (r.result || r.text || "");
-      if (t) evItems.push(t.slice(0, 300));
-    }
-    for (const m of (ev.methods || [])) {
-      const t = typeof m === "string" ? m : (m.name || m.text || "");
-      if (t) mt.push(t.slice(0, 200));
-    }
-    for (const l of (ev.limitations || [])) {
-      const t = typeof l === "string" ? l : (l.limitation || l.text || "");
-      if (t) lm.push(t.slice(0, 300));
-    }
-    for (const g of (ev.open_questions || [])) {
-      const t = typeof g === "string" ? g : (g.question || g.text || "");
-      if (t) gp.push(t.slice(0, 300));
-    }
-    // Also include discussion_points as evidence
-    for (const d of (ev.discussion_points || [])) {
-      const t = typeof d === "string" ? d : (d.point || d.text || "");
-      if (t) evItems.push(t.slice(0, 300));
-    }
-
-    const hasEvidence = cf.length + evItems.length + mt.length > 0;
-    return {
-      paper_id: paper.paper_id, title, year: paper.year, journal: paper.journal || null,
-      authors: paper.authors || [],
-      parsed: hasEvidence ? { takeaway: cf[0] || null, coreFindings: cf, evidence: evItems, methods: mt, limitations: lm, gaps: gp, others: [] } : null,
-      raw_text: "[evidence.json]" as any,
-    };
   }
 
   // Fallback to summary
@@ -148,17 +210,33 @@ export function extractPaperEvidence(paper: {
 /* ─── Select top papers for analysis (max 5 per phase) ─── */
 
 export function selectMilestonePapers(evidences: PaperEvidence[], count = 2): MilestonePaper[] {
-  const withEvidence = evidences.filter((e) => e.parsed && (e.parsed.coreFindings.length + e.parsed.evidence.length + e.parsed.methods.length) > 0);
-  const candidates = withEvidence.length >= count ? withEvidence : [...withEvidence, ...evidences.filter((e) => !withEvidence.includes(e))];
-  return candidates.slice(0, count).map((e) => {
-    const hasCF = (e.parsed?.coreFindings.length || 0) > 0;
-    const hasEV = (e.parsed?.evidence.length || 0) > 0;
-    const hasMT = (e.parsed?.methods.length || 0) > 0;
-    let reason = "Selected as a representative paper based on title and keyword coverage.";
+  // Score each paper by evidence richness
+  const scored = evidences.map((e) => {
+    const cf = (e.parsed?.coreFindings.length || 0);
+    const ev = (e.parsed?.evidence.length || 0);
+    const mt = (e.parsed?.methods.length || 0);
+    const lm = (e.parsed?.limitations.length || 0);
+    const gp = (e.parsed?.gaps.length || 0);
+    const total = cf + ev + mt + lm + gp;
+    return { e, total, cf, ev, mt };
+  });
+  scored.sort((a, b) => b.total - a.total);
+
+  return scored.slice(0, count).map(({ e, cf, ev, mt }) => {
+    let reason = "Contains structured evidence from paper analysis.";
     let excerpt: string | undefined;
-    if (hasCF) { reason = "Selected because it contributes a core finding in this phase."; excerpt = cleanEvidenceText(e.parsed!.coreFindings[0]).slice(0, 180); }
-    else if (hasMT) { reason = "Selected because it contributes method-related evidence in this phase."; excerpt = cleanEvidenceText(e.parsed!.methods[0]).slice(0, 180); }
-    else if (hasEV) { reason = "Selected because it provides evidence used in this phase analysis."; excerpt = cleanEvidenceText(e.parsed!.evidence[0]).slice(0, 180); }
+    if (cf > 0) {
+      reason = "Contains core findings extracted from this paper.";
+      excerpt = cleanEvidenceText(e.parsed!.coreFindings[0]).slice(0, 180);
+    } else if (ev > 0) {
+      reason = "Contains discussion points and evidence from this paper.";
+      excerpt = cleanEvidenceText(e.parsed!.evidence[0]).slice(0, 180);
+    } else if (mt > 0) {
+      reason = "Contains method-related evidence in this phase.";
+      excerpt = cleanEvidenceText(e.parsed!.methods[0]).slice(0, 180);
+    } else {
+      reason = "Selected as a representative paper based on title and keyword coverage.";
+    }
     return { paper_id: e.paper_id, title: e.title, authors: e.authors, year: e.year, journal: e.journal, reason, key_excerpt: excerpt };
   });
 }
@@ -166,14 +244,30 @@ export function selectMilestonePapers(evidences: PaperEvidence[], count = 2): Mi
 /* ─── Build phase focus ─── */
 
 function buildPhaseFocus(evidences: PaperEvidence[], keywords: string[]): string | null {
-  const allCF = evidences.flatMap((e) => (e.parsed?.coreFindings || []).map(cleanEvidenceText)).filter(Boolean);
-  if (allCF.length >= 2) {
-    const key = keywords.slice(0, 3).join(", ");
-    return key ? `Available papers in this phase are mainly associated with ${key}.` : `Papers in this phase share recurring themes in their core findings.`;
+  // Count evidence types for richer focus description
+  const totalEvidence = evidences.reduce((sum, e) => {
+    return sum + (e.parsed?.coreFindings.length || 0) + (e.parsed?.evidence.length || 0) + (e.parsed?.methods.length || 0);
+  }, 0);
+  const paperCount = evidences.length;
+
+  if (totalEvidence >= 3 && paperCount >= 2) {
+    // Build a focus from actual evidence content
+    const samples = evidences
+      .flatMap((e) => (e.parsed?.evidence || []).map(cleanEvidenceText))
+      .filter(Boolean)
+      .slice(0, 2);
+    if (samples.length > 0) {
+      return `Papers in this phase contain structured evidence including discussion points and extracted findings.`;
+    }
   }
-  if (allCF.length === 1) return allCF[0].slice(0, 200);
-  if (keywords.length > 0) return `Available papers in this phase are mainly associated with ${keywords.slice(0, 3).join(", ")}.`;
-  return null;
+  if (totalEvidence >= 1) {
+    return `This phase contains limited structured evidence from ${paperCount} paper${paperCount > 1 ? "s" : ""}.`;
+  }
+  // Fallback: keyword-based (only when no structured evidence at all)
+  if (keywords.length > 0) {
+    return `Available papers in this phase are associated with ${keywords.slice(0, 3).join(", ")}.`;
+  }
+  return "Not enough structured evidence to infer a clear phase focus.";
 }
 
 /* ─── Build key conclusions ─── */

@@ -33,7 +33,7 @@ const result = buildEvidenceDrivenPhaseAnalysis(phases);
 assert(result.length === 2, "2 phases");
 const early = result[0];
 assert(early.confidence === "low", "low confidence when no summaries");
-assert(early.focus === null, "no focus without evidence");
+assert(typeof early.focus === "string" && early.focus.length > 0, "focus message exists even without structured evidence");
 assert(early.key_conclusions.length === 0, "no key conclusions without evidence");
 assert(early.open_questions.length === 0, "no open questions without evidence");
 assert(early.change_from_previous === "Baseline phase for this topic.", "early phase baseline text");
