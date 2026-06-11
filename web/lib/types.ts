@@ -172,30 +172,50 @@ export interface KnowledgeNetworkResponse {
 }
 
 export interface ResearchMapTopic {
-  cluster_id: string;
+  cluster_id?: string;
+  id?: string;
   name: string;
+  type?: string;
+  trend?: string;
   paper_count: number;
-  year_range: string;
-  method_diversity: number;
-  key_methods: string[];
-  top_tags: string[];
-  confidence: string;
-  summary: string;
-  recent_count: number;
-  growth_rate: string;
-  gap_tags: string[];
-  connected_to: string[];
-  opportunity: string;
+  count?: number;
+  avg_year?: number;
+  year_range?: [number, number] | number[];
+  keywords?: string[];
+  summary?: string;
+  papers?: RelatedPaper[];
+  representative_papers?: RelatedPaper[];
+  method_diversity?: number;
+  key_methods?: string[];
+  top_tags?: string[];
+  confidence?: string;
+  recent_count?: number;
+  growth_rate?: string;
+  gap_tags?: string[];
+  connected_to?: string[];
+  opportunity?: string;
   year_span?: string;
+}
+
+export interface TopicRelationship {
+  source_topic_id: string;
+  target_topic_id: string;
+  similarity: number;
+  reason?: string;
+  source?: string;
+  target?: string;
+  weight?: number;
+  strength?: number;
+  shared_tags?: string[];
 }
 
 export interface ResearchMapResponse {
   mature_topics: ResearchMapTopic[];
   growing_topics: ResearchMapTopic[];
   gap_topics: ResearchMapTopic[];
-  topic_relationships: { source: string; target: string; weight?: number; strength?: number; shared_tags?: string[] }[];
+  topic_relationships: TopicRelationship[];
   cluster_stats: ResearchMapTopic[];
-  clusters: { id: string; name: string; size: number }[];
+  clusters: ResearchMapTopic[];
   network_stats: { total_nodes: number; total_edges: number };
 }
 

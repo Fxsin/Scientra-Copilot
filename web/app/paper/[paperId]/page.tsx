@@ -5,9 +5,10 @@ import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft, FileText, Tag, Users, Calendar, BookOpen, Link2, ExternalLink,
   Lightbulb, ListChecks, Microscope, AlertTriangle, Search, ChevronDown, ChevronRight, Info,
-  Hash, Circle,
+  Hash, Circle, Copy, Check,
 } from "lucide-react";
 import { getPaperMetadata, getPaperSummary, getPaperTags, getRelatedPapers, API_BASE_URL } from "@/lib/api";
+import { generateBibTeX, generateRIS, copyToClipboard, type CitationData } from "@/lib/citation";
 import { parseAISummary, type ParsedSummary } from "@/lib/summary-parser";
 import type { PaperMetadata, PaperSummary, PaperTags, RelatedPaper } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -105,10 +106,16 @@ export default function PaperDetailPage() {
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto pb-16">
-      {/* ── Back ── */}
-      <Button variant="ghost" size="sm" onClick={() => router.push("/library")}>
-        <ArrowLeft className="size-4 mr-1" /> Back to Library
-      </Button>
+      {/* ── Back + Actions ── */}
+      <div className="flex items-center justify-between">
+        <Button variant="ghost" size="sm" onClick={() => router.push("/library")}>
+          <ArrowLeft className="size-4 mr-1" /> Back to Library
+        </Button>
+        <div className="flex items-center gap-2">
+          <CopyLinkButton />
+          <ExportCitationButton metadata={metadata} />
+        </div>
+      </div>
 
       {/* ── Header ── */}
       <PaperHeader metadata={metadata} tags={allTags} />
@@ -153,7 +160,22 @@ export default function PaperDetailPage() {
    ═══════════════════════════════════════════════ */
 
 function LoadingSkeleton() {
-  return <div className="space-y-4 animate-pulse max-w-7xl mx-auto"><div className="h-4 w-24 bg-muted rounded" /><div className="h-8 w-3/4 bg-muted rounded" /><div className="h-64 bg-muted rounded-xl" /></div>;
+  return (
+    <div className="space-y-8 animate-pulse max-w-7xl mx-auto pb-16">
+      <div className="h-4 w-24 bg-slate-100 rounded" />
+      <div className="space-y-2"><div className="h-7 bg-slate-100 rounded w-3/4" /><div className="h-4 bg-slate-50 rounded w-1/2" /></div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="lg:col-span-8 space-y-4">
+          <div className="h-24 bg-slate-50 rounded-xl" />
+          <div className="h-32 bg-slate-50 rounded-xl" />
+        </div>
+        <div className="lg:col-span-4 space-y-3">
+          <div className="h-32 bg-slate-50 rounded-xl" />
+          <div className="h-20 bg-slate-50 rounded-xl" />
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function ErrorState({ msg, onBack }: { msg: string; onBack: () => void }) {
@@ -509,6 +531,65 @@ function MetadataPanel({ metadata, tags }: { metadata: PaperMetadata; tags: Pape
               </div>
             </div>
           ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Copy Link ─── */
+
+function CopyLinkButton() {
+  const [copied, setCopied] = useState(false);
+  const handle = async () => {
+    const ok = await copyToClipboard(window.location.href);
+    if (ok) { setCopied(true); setTimeout(() => setCopied(false), 2000); }
+  };
+  return (
+    <button onClick={handle} className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2.5 py-1.5 text-[11px] text-slate-500 hover:bg-slate-50 transition-colors">
+      {copied ? <Check className="size-3 text-emerald-500" /> : <Copy className="size-3" />}
+      {copied ? "Copied" : "Copy Link"}
+    </button>
+  );
+}
+
+/* ─── Export Citation ─── */
+
+function ExportCitationButton({ metadata }: { metadata: CitationData }) {
+  const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState("");
+  const cite: CitationData = {
+    paper_id: metadata.paper_id,
+    title: metadata.title,
+    authors: metadata.authors,
+    year: metadata.year,
+    journal: metadata.journal,
+    doi: metadata.doi,
+  };
+
+  const copy = async (label: string, text: string) => {
+    const ok = await copyToClipboard(text);
+    if (ok) { setCopied(label); setTimeout(() => setCopied(""), 2000); }
+  };
+
+  return (
+    <div className="relative">
+      <button onClick={() => setOpen(!open)}
+        className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2.5 py-1.5 text-[11px] text-slate-500 hover:bg-slate-50 transition-colors">
+        <FileText className="size-3" /> Cite
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 z-40 w-48 rounded-lg border border-slate-200 bg-white shadow-lg p-1.5 space-y-0.5">
+          <button onClick={() => copy("BibTeX", generateBibTeX(cite))}
+            className="w-full text-left px-2.5 py-1.5 rounded text-[11px] text-slate-600 hover:bg-slate-50 flex items-center justify-between">
+            {copied === "BibTeX" ? "Copied BibTeX" : "Copy BibTeX"}
+            {copied === "BibTeX" && <Check className="size-3 text-emerald-500" />}
+          </button>
+          <button onClick={() => copy("RIS", generateRIS(cite))}
+            className="w-full text-left px-2.5 py-1.5 rounded text-[11px] text-slate-600 hover:bg-slate-50 flex items-center justify-between">
+            {copied === "RIS" ? "Copied RIS" : "Copy RIS"}
+            {copied === "RIS" && <Check className="size-3 text-emerald-500" />}
+          </button>
         </div>
       )}
     </div>

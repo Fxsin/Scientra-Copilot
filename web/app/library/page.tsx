@@ -39,6 +39,7 @@ export default function LibraryPage() {
   const [loading, setLoading] = useState(true);
   const [papersError, setPapersError] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [sort, setSort] = useState("");
   const isRealData = dataSource === "REAL_API";
 
   useEffect(() => { updateGlobalDataSource(dataSource); }, [dataSource]);
@@ -55,6 +56,7 @@ export default function LibraryPage() {
         species: f.species || undefined,
         method: f.method || undefined,
         tag: f.tag || undefined,
+        sort: sort || undefined,
       });
       setPapers(resp.papers);
       setTotal(resp.total);
@@ -115,6 +117,16 @@ export default function LibraryPage() {
             className="w-full rounded-lg border border-slate-200 bg-white pl-10 pr-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 transition-shadow"
           />
         </div>
+        <select
+          value={sort}
+          onChange={(e) => { setSort(e.target.value); setPage(1); }}
+          className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs text-slate-600 outline-none focus:ring-2 focus:ring-blue-100 cursor-pointer"
+        >
+          <option value="">Relevance</option>
+          <option value="year_desc">Newest first</option>
+          <option value="year_asc">Oldest first</option>
+          <option value="title">Title A–Z</option>
+        </select>
         <button onClick={handleSearch} disabled={loading}
           className="inline-flex items-center gap-1.5 rounded-lg bg-slate-700 px-3.5 py-2.5 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-40 transition-colors">
           <Search className="size-3.5" /> {loading ? "…" : "Search"}
@@ -175,8 +187,18 @@ export default function LibraryPage() {
         </p>
       )}
 
-      {/* ── Loading ── */}
-      {loading && <div className="py-12 text-center text-sm text-slate-300 animate-pulse">Loading papers…</div>}
+      {/* ── Loading skeleton ── */}
+      {loading && (
+        <div className="space-y-2 animate-pulse">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="rounded-lg border border-slate-200/60 bg-white/90 px-4 py-3">
+              <div className="h-4 bg-slate-100 rounded w-3/4" />
+              <div className="h-3 bg-slate-50 rounded w-1/2 mt-2" />
+              <div className="h-3 bg-slate-50 rounded w-2/3 mt-1.5" />
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* ── Empty ── */}
       {!loading && !papersError && papers.length === 0 && (

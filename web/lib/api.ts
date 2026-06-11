@@ -142,6 +142,7 @@ export function getPapers(params?: {
   species?: string;
   method?: string;
   tag?: string;
+  sort?: string;
 }): Promise<PapersResponse> {
   const sp = new URLSearchParams();
   if (params?.page) sp.set("page", String(params.page));
@@ -152,6 +153,7 @@ export function getPapers(params?: {
   if (params?.species) sp.set("species", params.species);
   if (params?.method) sp.set("method", params.method);
   if (params?.tag) sp.set("tag", params.tag);
+  if (params?.sort) sp.set("sort", params.sort);
   const qs = sp.toString();
   return fetchJson<PapersResponse>(`/papers${qs ? "?" + qs : ""}`).then((r) => r.data);
 }

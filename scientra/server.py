@@ -80,6 +80,88 @@ def _load_yaml_metadata(root: Path) -> list[dict[str, Any]]:
     return papers
 
 
+def _cosine_distance(a: list[float], b: list[float]) -> float:
+    """Compute cosine distance between two vectors (0 = identical, 2 = opposite)."""
+    dot = sum(x * y for x, y in zip(a, b))
+    norm_a = sum(x * x for x in a) ** 0.5
+    norm_b = sum(x * x for x in b) ** 0.5
+    if norm_a == 0 or norm_b == 0:
+        return 1.0
+    return 1.0 - (dot / (norm_a * norm_b))
+
+
+# ── Stopwords for keyword extraction ──
+_TOPIC_STOPWORDS = {
+    "the", "a", "an", "of", "in", "on", "at", "to", "for", "with", "and", "or",
+    "is", "are", "was", "were", "be", "been", "being", "have", "has", "had",
+    "do", "does", "did", "will", "would", "could", "should", "may", "might",
+    "can", "shall", "this", "that", "these", "those", "it", "its", "from",
+    "by", "as", "into", "through", "during", "before", "after", "between",
+    "study", "analysis", "results", "paper", "research", "method", "methods",
+    "data", "effect", "effects", "using", "based", "novel", "current",
+    "role", "new", "two", "one", "also", "found", "show", "shown",
+    "report", "reported", "used", "use", "et", "al", "doi", "approach",
+    "protein", "proteins", "bacillus", "thuringiensis",
+    "citations", "citation", "source", "sources", "text", "title",
+    "s001", "s002", "s003", "s004", "s005", "s006", "s007", "s008",
+    "found", "important", "various", "different", "many",
+}
+
+
+def _extract_keywords_from_text(text: str) -> list[str]:
+    """Extract meaningful keywords from text, filtering stopwords and short tokens."""
+    words = text.lower().replace(",", " ").replace(".", " ").replace(":", " ").replace(";", " ").replace("(", " ").replace(")", " ").split()
+    freq: dict[str, int] = {}
+    for w in words:
+        w = w.strip("'\"-")
+        if len(w) < 3 or w in _TOPIC_STOPWORDS or w.isdigit():
+            continue
+        freq[w] = freq.get(w, 0) + 1
+    return [w for w, _ in sorted(freq.items(), key=lambda x: x[1], reverse=True)]
+
+
+def _extract_cluster_keywords(
+    pids: list[str],
+    paper_map: dict[str, dict[str, Any]],
+    root: Path,
+) -> list[str]:
+    """Extract top keywords from a cluster's papers (titles + tags + abstracts + summaries)."""
+    all_text: list[str] = []
+    for pid in pids:
+        p = paper_map.get(pid)
+        if not p:
+            continue
+        all_text.append(p.get("title") or "")
+        all_text.append(p.get("abstract") or "")
+        for tag in p.get("tags") or []:
+            all_text.append(str(tag))
+        summary = _load_summary_text(root, pid)
+        if summary:
+            all_text.append(summary)
+    combined = " ".join(all_text)
+    return _extract_keywords_from_text(combined)
+
+
+def _build_topic_name(keywords: list[str]) -> str:
+    """Build a human-readable topic name from top keywords."""
+    if not keywords:
+        return "Topic"
+    top = keywords[:4]
+    if len(top) == 1:
+        return top[0].title()
+    if len(top) == 2:
+        return f"{top[0].title()} / {top[1].title()}"
+    return ", ".join(w.title() for w in top[:3])
+
+
+def _empty_cluster_result() -> dict[str, Any]:
+    return {
+        "mature_topics": [], "growing_topics": [], "gap_topics": [],
+        "topic_relationships": [], "clusters": [],
+        "network_stats": {"total_nodes": 0, "total_edges": 0},
+    }
+
+
 def _build_related_results(root: Path, neighbors: list[dict[str, Any]], source: str) -> list[dict[str, Any]]:
     """Map LanceDB search results to related-paper objects with metadata."""
     papers = {p.get("paper_id"): p for p in _load_yaml_metadata(root)}
@@ -611,11 +693,210 @@ def create_app(root: Path | None = None) -> FastAPI:
         return {"cluster_id": cluster_id, "papers": [], "summary": ""}
 
     @api.get("/research-map")
-    def research_map() -> dict[str, Any]:
+    def research_map(
+        limit: int = 5,
+        include_gaps: bool = False,
+        include_relationships: bool = False,
+    ) -> dict[str, Any]:
+        papers = _load_yaml_metadata(root)
+        if not papers:
+            return _empty_cluster_result()
+
+        # ── Load vectors ──
+        vectors: dict[str, list[float]] = {}
+        try:
+            import lancedb
+            db_dir = root / "04_VectorDB" / "lancedb"
+            if db_dir.exists() and any(db_dir.iterdir()):
+                db = lancedb.connect(str(db_dir))
+                table = db.open_table(db.table_names()[0])
+                df = table.to_pandas()
+                for row in df.to_dict("records"):
+                    pid = str(row.get("paper_id", ""))
+                    vec = row.get("vector")
+                    if pid and vec is not None:
+                        vectors[pid] = list(vec)
+        except Exception:
+            pass
+
+        # ── Build paper lookup ──
+        paper_map: dict[str, dict[str, Any]] = {}
+        for p in papers:
+            pid = p.get("paper_id", "")
+            if pid:
+                paper_map[pid] = p
+
+        # ── Simple greedy clustering ──
+        MIN_CLUSTER = 3
+        MAX_CLUSTERS = 8
+        used: set[str] = set()
+        clusters: list[dict[str, Any]] = []
+
+        paper_ids = list(vectors.keys())
+        import random
+        random.shuffle(paper_ids)
+
+        for _ in range(MAX_CLUSTERS):
+            # Find next unused seed
+            seed = None
+            for pid in paper_ids:
+                if pid not in used:
+                    seed = pid
+                    break
+            if seed is None:
+                break
+
+            # Find nearest neighbors
+            qv = vectors[seed]
+            scored: list[tuple[str, float]] = []
+            for pid in paper_ids:
+                if pid in used or pid == seed:
+                    continue
+                if pid not in vectors:
+                    continue
+                dist = _cosine_distance(qv, vectors[pid])
+                scored.append((pid, dist))
+
+            scored.sort(key=lambda x: x[1])
+            neighbors = [pid for pid, _ in scored[:MIN_CLUSTER * 3]]
+
+            # Form cluster
+            cluster_pids = {seed}
+            for pid in neighbors:
+                cluster_pids.add(pid)
+                if len(cluster_pids) >= MIN_CLUSTER * 4:
+                    break
+
+            if len(cluster_pids) < MIN_CLUSTER:
+                continue
+
+            # Compute cluster stats
+            years = [int(paper_map[pid].get("year") or 0) for pid in cluster_pids if pid in paper_map]
+            avg_year = float(sum(years) / len(years)) if years else 0.0
+            ctype = "growing" if avg_year >= 2020 else "mature"
+
+            # Representative papers
+            rep_pids = list(cluster_pids)[:limit]
+            rep_papers = []
+            for pid in rep_pids:
+                p = paper_map.get(pid)
+                if p:
+                    rep_papers.append({
+                        "paper_id": pid,
+                        "title": p.get("title", ""),
+                        "authors": p.get("authors", []) or [],
+                        "year": p.get("year"),
+                        "journal": p.get("journal", ""),
+                        "doi": p.get("doi", ""),
+                    })
+
+            cluster_id = f"topic_{len(clusters) + 1:03d}"
+
+            # ── Extract keywords ──
+            cluster_paper_ids = list(cluster_pids)
+            keywords = _extract_cluster_keywords(cluster_paper_ids, paper_map, root)
+            topic_name = _build_topic_name(keywords) if keywords else f"Topic {len(clusters) + 1}"
+
+            # ── Build summary ──
+            summary_text = " / ".join(keywords[:5]) if keywords else ""
+            if summary_text:
+                summary_text = f"Research cluster covering {summary_text.lower()}."
+
+            # ── Year range ──
+            if years:
+                year_range = [int(min(years)), int(max(years))]
+            else:
+                year_range = [0, 0]
+
+            # ── Better type detection ──
+            this_year = datetime.now(timezone.utc).year
+            recent_count = sum(1 for y in years if y >= this_year - 5)
+            recent_ratio = recent_count / len(years) if years else 0
+            year_span = max(years) - min(years) if len(years) >= 2 else 0
+
+            if len(cluster_pids) >= 6 and year_span >= 5:
+                ctype = "mature"
+                trend = "active" if recent_ratio >= 0.4 else "stable"
+            elif recent_ratio >= 0.4 or avg_year >= this_year - 5:
+                ctype = "growing"
+                trend = "active"
+            elif len(cluster_pids) <= 3:
+                ctype = "gap"
+                trend = "sparse"
+            else:
+                ctype = "mature"
+                trend = "stable"
+
+            clusters.append({
+                "cluster_id": cluster_id,
+                "name": topic_name,
+                "type": ctype,
+                "trend": trend,
+                "paper_count": int(len(cluster_pids)),
+                "avg_year": float(round(avg_year, 1)),
+                "year_range": year_range,
+                "keywords": [str(k) for k in keywords[:8]],
+                "summary": str(summary_text),
+                "representative_papers": rep_papers,
+                "papers": rep_papers,
+            })
+            used.update(cluster_pids)
+
+        # ── Separate by type ──
+        mature_topics = [c for c in clusters if c["type"] == "mature"]
+        growing_topics = [c for c in clusters if c["type"] == "growing"]
+        gap_topics = [c for c in clusters if c["type"] == "gap"]
+
+        # ── Relationships (always included, using centroid + keyword overlap) ──
+        topic_relationships: list[dict[str, Any]] = []
+        if len(clusters) >= 2:
+            pairs: list[tuple[int, int, float]] = []
+            for i in range(len(clusters)):
+                for j in range(i + 1, len(clusters)):
+                    score = 0.0
+                    # Centroid similarity
+                    pids_i = [p["paper_id"] for p in clusters[i]["papers"] if p["paper_id"] in vectors]
+                    pids_j = [p["paper_id"] for p in clusters[j]["papers"] if p["paper_id"] in vectors]
+                    if pids_i and pids_j:
+                        score += 1.0 - _cosine_distance(vectors[pids_i[0]], vectors[pids_j[0]])
+                    # Keyword overlap
+                    kw_i = set(clusters[i].get("keywords", [])[:5])
+                    kw_j = set(clusters[j].get("keywords", [])[:5])
+                    if kw_i and kw_j:
+                        overlap = len(kw_i & kw_j) / max(len(kw_i | kw_j), 1)
+                        score += overlap * 0.5
+                    score = score / 1.5  # normalise
+                    if score > 0.35:
+                        pairs.append((i, j, score))
+            pairs.sort(key=lambda x: x[2], reverse=True)
+            # Keep top 2 per topic
+            used_pairs: set[tuple[int, int]] = set()
+            seen_counts: dict[int, int] = {}
+            for i, j, score in pairs:
+                if (i, j) in used_pairs:
+                    continue
+                if seen_counts.get(i, 0) >= 3 or seen_counts.get(j, 0) >= 3:
+                    continue
+                used_pairs.add((i, j))
+                seen_counts[i] = seen_counts.get(i, 0) + 1
+                seen_counts[j] = seen_counts.get(j, 0) + 1
+                topic_relationships.append({
+                    "source_topic_id": clusters[i]["cluster_id"],
+                    "target_topic_id": clusters[j]["cluster_id"],
+                    "similarity": float(round(score, 3)),
+                    "reason": "Centroid similarity and keyword overlap",
+                })
+
         return {
-            "mature_topics": [], "growing_topics": [], "gap_topics": [],
-            "topic_relationships": [], "clusters": [],
-            "network_stats": {"total_nodes": 0, "total_edges": 0},
+            "mature_topics": mature_topics,
+            "growing_topics": growing_topics,
+            "gap_topics": gap_topics,
+            "topic_relationships": topic_relationships,
+            "clusters": clusters,
+            "network_stats": {
+                "total_nodes": int(len(clusters)),
+                "total_edges": int(len(topic_relationships)),
+            },
         }
 
     # ── v1 endpoints (Agent SDK) ──

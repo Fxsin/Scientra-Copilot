@@ -1,127 +1,423 @@
 "use client";
 
-import { ResearchMapView } from "@/components/research-map-view";
-import { DemoBanner } from "@/components/demo-banner";
+import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { Search, ChevronRight, ExternalLink, Hash, Calendar, BookOpen, Users } from "lucide-react";
 import { useApiWithFallback } from "@/lib/use-api";
 import { getResearchMap } from "@/lib/api";
-import {
-  mockTopics,
-  mockHotTopics,
-  mockGapCards,
-} from "@/lib/data/researchIntelligenceMock";
-import type { ResearchMapResponse } from "@/lib/types";
+import { DemoBanner } from "@/components/demo-banner";
+import type { ResearchMapResponse, ResearchMapTopic, TopicRelationship, RelatedPaper } from "@/lib/types";
 
-function buildMockData(): ResearchMapResponse {
-  const mature_topics = mockTopics.map((t) => ({
-    cluster_id: t.id,
-    name: t.name,
-    paper_count: t.count,
-    year_range: "2015–2025",
-    method_diversity: t.representatives.length,
-    key_methods: [],
-    top_tags: t.representatives,
-    confidence: "High",
-    summary: t.representatives.join("; "),
-    recent_count: Math.floor(t.count * 0.6),
-    growth_rate: "Stable",
-    gap_tags: [],
-    connected_to: [],
-    opportunity: "",
-  }));
+/* ═══════════════════════════════════════════════════════
+   Helpers
+   ═══════════════════════════════════════════════════════ */
 
-  const growing_topics = mockHotTopics.map((t) => ({
-    cluster_id: t.id,
-    name: t.name,
-    paper_count: t.count,
-    year_range: "2020–2025",
-    method_diversity: 2,
-    key_methods: [],
-    top_tags: t.representatives,
-    confidence: "High",
-    summary: t.representatives.join("; "),
-    recent_count: t.count,
-    growth_rate: "Growing",
-    gap_tags: [],
-    connected_to: [],
-    opportunity: "",
-  }));
-
-  const gap_topics = mockGapCards.map((t) => ({
-    cluster_id: t.id,
-    name: t.name,
-    paper_count: t.count,
-    year_range: "2022–2025",
-    method_diversity: 1,
-    key_methods: [],
-    top_tags: t.representatives,
-    confidence: "Medium",
-    summary: t.representatives.join("; "),
-    recent_count: t.count,
-    growth_rate: "Emerging",
-    gap_tags: t.representatives,
-    connected_to: [],
-    opportunity: "High potential research opportunity",
-  }));
-
-  const topic_relationships = [
-    {
-      source: "Cry toxin mechanism",
-      target: "Vip3A mode of action",
-      shared_tags: ["Pore formation", "Receptor binding", "Midgut"],
-      strength: 5,
-    },
-    {
-      source: "Cry toxin mechanism",
-      target: "Insect resistance mechanisms",
-      shared_tags: ["Cadherin", "ABCC2", "Resistance"],
-      strength: 4,
-    },
-    {
-      source: "Vip3A mode of action",
-      target: "Insect resistance mechanisms",
-      shared_tags: ["Receptor mutation", "Cross-resistance"],
-      strength: 3,
-    },
-    {
-      source: "Bt structural biology",
-      target: "Cry toxin mechanism",
-      shared_tags: ["Cryo-EM", "Pore structure", "Domain I"],
-      strength: 4,
-    },
-  ];
-
-  return {
-    mature_topics,
-    growing_topics,
-    gap_topics,
-    cluster_stats: [...mature_topics, ...growing_topics],
-    topic_relationships,
-    clusters: [],
-    network_stats: { total_nodes: 0, total_edges: 0 },
-  };
+function tid(topic: ResearchMapTopic): string {
+  return topic.cluster_id || topic.id || "";
 }
 
+function tpapers(topic: ResearchMapTopic): RelatedPaper[] {
+  return topic.papers || topic.representative_papers || [];
+}
+
+/* ═══════════════════════════════════════════════════════
+   Keyword / data cleaners (generic, no domain logic)
+   ═══════════════════════════════════════════════════════ */
+
+const JUNK_TOKENS = new Set([
+  "text", "citation", "citations", "abstract", "summary", "title",
+  "paper", "papers", "study", "studies", "result", "results", "method", "methods", "data",
+  "using", "based", "against", "not", "with", "from", "into",
+  "this", "that", "these", "those", "found", "also", "used",
+  "doi", "journal", "author", "authors", "et", "al",
+  "approach", "role", "new", "two", "one", "key",
+  "cite", "cited", "reference", "references", "content", "section",
+  "source", "sources", "finding", "findings", "evidence", "conclusion", "conclusions",
+  "note", "notes", "available", "unknown", "none", "null", "true", "false",
+]);
+
+function cleanKeywords(kw: string[] | undefined): string[] {
+  if (!kw) return [];
+  return kw
+    .filter((k) => k && k.length >= 3 && !/^S\d{3,}$/i.test(k) && !JUNK_TOKENS.has(k.toLowerCase()) && !/^\d+$/.test(k))
+    .slice(0, 6);
+}
+
+/* ═══════════════════════════════════════════════════════
+   Main page
+   ═══════════════════════════════════════════════════════ */
+
 export default function ResearchMapPage() {
+  const router = useRouter();
   const { data, dataSource, error, lastUrl, lastStatus, refetch } = useApiWithFallback(
     getResearchMap,
-    buildMockData(),
+    { mature_topics: [], growing_topics: [], gap_topics: [], topic_relationships: [], clusters: [], network_stats: { total_nodes: 0, total_edges: 0 }, cluster_stats: [] } as ResearchMapResponse,
   );
 
-  // When API returns empty arrays, fall back to richer mock data for display
-  const displayData = (dataSource === "REAL_API" && data?.mature_topics?.length === 0 && data?.growing_topics?.length === 0)
-    ? buildMockData()
-    : data;
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [filterType, setFilterType] = useState<string>("all");
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<string>("paper_count");
+  const [density, setDensity] = useState<string>("compact");
+
+  // Merge all topics
+  const allTopics: ResearchMapTopic[] = useMemo(() => {
+    const seen = new Set<string>();
+    const result: ResearchMapTopic[] = [];
+    for (const t of [...(data.mature_topics || []), ...(data.growing_topics || []), ...(data.gap_topics || []), ...(data.clusters || [])]) {
+      const id = tid(t);
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      result.push(t);
+    }
+    return result;
+  }, [data]);
+
+  const relationships = data.topic_relationships || [];
+
+  // Filter + search
+  const filtered = useMemo(() => {
+    let topics = allTopics;
+    if (filterType === "mature") topics = topics.filter((t) => t.type === "mature");
+    if (filterType === "growing") topics = topics.filter((t) => t.type === "growing");
+    if (filterType === "gap") topics = topics.filter((t) => t.type === "gap");
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      topics = topics.filter((t) => {
+        const kw = cleanKeywords(t.keywords).join(" ").toLowerCase();
+        const name = (t.name || "").toLowerCase();
+        const papers = (t.papers || t.representative_papers || []).map((p) => (p.title || "").toLowerCase()).join(" ");
+        return name.includes(q) || kw.includes(q) || papers.includes(q);
+      });
+    }
+    // Sort
+    if (sort === "paper_count") topics.sort((a, b) => (b.paper_count || 0) - (a.paper_count || 0));
+    if (sort === "recent") topics.sort((a, b) => (b.avg_year || 0) - (a.avg_year || 0));
+    if (sort === "name") topics.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+    if (sort === "relationships") topics.sort((a, b) => {
+      const ra = relationships.filter((r: TopicRelationship) => r.source_topic_id === tid(a) || r.target_topic_id === tid(a)).length;
+      const rb = relationships.filter((r: TopicRelationship) => r.source_topic_id === tid(b) || r.target_topic_id === tid(b)).length;
+      return rb - ra;
+    });
+    return topics;
+  }, [allTopics, filterType, search, sort, relationships]);
+
+  const selected = useMemo(() => filtered.find((t) => tid(t) === selectedId) || null, [filtered, selectedId]);
+  const relatedToSelected = useMemo(() => {
+    if (!selectedId) return [];
+    return relationships.filter((r) => r.source_topic_id === selectedId || r.target_topic_id === selectedId);
+  }, [relationships, selectedId]);
+
+  const matureCount = allTopics.filter((t) => t.type === "mature").length;
+  const growingCount = allTopics.filter((t) => t.type === "growing").length;
+  const gapCount = allTopics.filter((t) => t.type === "gap").length;
+
+  if (loading(dataSource)) return <ResearchMapSkeleton />;
+  if (error) return <ErrorState msg={error} onRetry={refetch} />;
+  if (allTopics.length === 0) return <EmptyState />;
 
   return (
-    <>
-      <DemoBanner
-        dataSource={dataSource}
-        error={error || undefined}
-        lastUrl={lastUrl || undefined}
-        lastStatus={lastStatus || undefined}
-        onRetry={refetch}
-      />
-      <ResearchMapView data={displayData} />
-    </>
+    <div className="space-y-6 max-w-7xl mx-auto pb-16">
+      <DemoBanner dataSource={dataSource} error={error || undefined} lastUrl={lastUrl || undefined} lastStatus={lastStatus || undefined} onRetry={refetch} />
+
+      {/* ── Header ── */}
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-800">Research Map</h1>
+        <p className="text-sm text-slate-400 mt-1">Explore topic clusters, representative papers, and relationships in your literature library.</p>
+      </div>
+
+      {/* ── Stats ── */}
+      <div className="grid grid-cols-5 gap-3">
+        <StatCard label="All Topics" value={allTopics.length} active={filterType === "all"} onClick={() => setFilterType("all")} />
+        <StatCard label="Mature" value={matureCount} color="emerald" active={filterType === "mature"} onClick={() => setFilterType("mature")} />
+        <StatCard label="Growing" value={growingCount} color="blue" active={filterType === "growing"} onClick={() => setFilterType("growing")} />
+        <StatCard label="Gaps" value={gapCount} color="amber" active={filterType === "gap"} onClick={() => setFilterType("gap")} />
+        <StatCard label="Relationships" value={relationships.length} color="slate" />
+      </div>
+
+      {/* ── Body: two-column ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* ── LEFT: topic list ── */}
+        <div className="lg:col-span-8 space-y-4">
+          {/* Toolbar */}
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-slate-300" />
+              <input
+                type="text" value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search topics, keywords, papers…"
+                className="w-full rounded-lg border border-slate-200 bg-white pl-9 pr-4 py-2 text-xs text-slate-600 placeholder:text-slate-350 outline-none focus:ring-2 focus:ring-blue-100"
+              />
+            </div>
+            <FilterTabs current={filterType} onChange={setFilterType} />
+            <select value={sort} onChange={(e) => setSort(e.target.value)}
+              className="rounded-lg border border-slate-200 bg-white px-2 py-2 text-[11px] text-slate-500 outline-none cursor-pointer">
+              <option value="paper_count">Paper count</option>
+              <option value="recent">Recent activity</option>
+              <option value="name">Name</option>
+              <option value="relationships">Relationships</option>
+            </select>
+            <button onClick={() => setDensity(density === "compact" ? "comfortable" : "compact")}
+              className="text-[11px] text-slate-400 hover:text-slate-600 border border-slate-200 rounded-lg px-2 py-2 bg-white">
+              {density === "compact" ? "Comfortable" : "Compact"}
+            </button>
+          </div>
+
+          {/* Topic cards */}
+          {filtered.length === 0 ? (
+            <p className="text-sm text-slate-400 py-8 text-center">No topics match the current search.</p>
+          ) : (
+            <div className={`grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 ${density === "compact" ? "gap-2" : "gap-3.5"}`}>
+              {filtered.map((topic) => (
+                <TopicCard
+                  key={tid(topic)}
+                  topic={topic}
+                  selected={selectedId === (tid(topic))}
+                  onClick={() => setSelectedId(tid(topic) || null)}
+                  onPaperClick={(pid) => router.push(`/paper/${pid}`)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ── RIGHT: detail panel ── */}
+        <div className="lg:col-span-4">
+          <div className="lg:sticky lg:top-20 space-y-4">
+            {selected ? (
+              <TopicDetailPanel
+                topic={selected}
+                relatedTopics={relatedToSelected}
+                allTopics={allTopics}
+                onTopicClick={(id) => setSelectedId(id)}
+                onPaperClick={(pid) => router.push(`/paper/${pid}`)}
+              />
+            ) : (
+              <div className="rounded-xl border border-slate-200/50 bg-white/80 p-6 text-center">
+                <p className="text-sm text-slate-400">Select a topic to inspect its papers, keywords, and relationships.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   Sub-components
+   ═══════════════════════════════════════════════════════ */
+
+function loading(ds: string) { return ds === "LOADING"; }
+
+function StatCard({ label, value, color, active, onClick }: { label: string; value: number; color?: string; active?: boolean; onClick?: () => void }) {
+  const colors: Record<string, string> = { emerald: "bg-emerald-50 text-emerald-700 border-emerald-200", blue: "bg-blue-50 text-blue-700 border-blue-200", amber: "bg-amber-50 text-amber-700 border-amber-200", slate: "bg-slate-50 text-slate-600 border-slate-200" };
+  const cls = color ? colors[color] || colors.slate : colors.slate;
+  const activeCls = active ? "ring-2 ring-slate-300" : "";
+  return (
+    <button onClick={onClick} className={`rounded-xl border px-3 py-2.5 text-left transition-all hover:shadow-sm ${cls} ${activeCls} ${onClick ? "cursor-pointer" : ""}`}>
+      <p className="text-[10px] uppercase tracking-wide opacity-70">{label}</p>
+      <p className="text-lg font-bold mt-0.5">{value}</p>
+    </button>
+  );
+}
+
+function FilterTabs({ current, onChange }: { current: string; onChange: (v: string) => void }) {
+  const tabs = [
+    { id: "all", label: "All" },
+    { id: "mature", label: "Mature" },
+    { id: "growing", label: "Growing" },
+    { id: "gap", label: "Gaps" },
+  ];
+  return (
+    <div className="flex rounded-lg border border-slate-200 bg-white p-0.5">
+      {tabs.map((t) => (
+        <button key={t.id} onClick={() => onChange(t.id)}
+          className={`px-2.5 py-1 text-[11px] rounded-md transition-colors ${current === t.id ? "bg-slate-100 text-slate-700 font-medium" : "text-slate-400 hover:text-slate-600"}`}>
+          {t.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ─── Topic Card ─── */
+
+function TopicCard({ topic, selected, onClick, onPaperClick }: { topic: ResearchMapTopic; selected: boolean; onClick: () => void; onPaperClick: (pid: string) => void }) {
+  const id = tid(topic) || "";
+  const kw = cleanKeywords(topic.keywords);
+  const typeColors: Record<string, string> = { mature: "bg-emerald-50 text-emerald-600", growing: "bg-blue-50 text-blue-600", gap: "bg-amber-50 text-amber-600" };
+  const papers = tpapers(topic);
+
+  return (
+    <div onClick={onClick}
+      className={`rounded-lg border bg-white transition-all cursor-pointer hover:shadow-md hover:-translate-y-0.5 ${selected ? "border-blue-300 shadow-md ring-1 ring-blue-100" : "border-slate-200/60 shadow-sm"}`}>
+      <div className="p-3">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-1.5">
+          <h3 className="text-[13px] font-semibold text-slate-800 leading-snug line-clamp-2 flex-1">{topic.name || `Topic ${id.slice(-3)}`}</h3>
+          <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium shrink-0 ${typeColors[topic.type || "mature"] || typeColors.mature}`}>
+            {topic.type || "mature"}
+          </span>
+        </div>
+
+        {/* Meta */}
+        <div className="flex items-center gap-2 mt-1.5 text-[10px] text-slate-400">
+          <span>{topic.paper_count || 0} papers</span>
+          <span className="text-slate-300">·</span>
+          {topic.year_range && topic.year_range.length === 2 && <span>{topic.year_range[0]}–{topic.year_range[1]}</span>}
+          {!topic.year_range && topic.avg_year && <span>~{Math.round(topic.avg_year)}</span>}
+        </div>
+
+        {/* Keywords */}
+        {kw.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-1.5">
+            {kw.slice(0, 4).map((k) => (
+              <span key={k} className="inline-flex rounded border border-slate-200/60 bg-slate-50/70 px-1.5 py-0.5 text-[9px] text-slate-500">{k}</span>
+            ))}
+          </div>
+        )}
+
+        {/* Representative paper preview */}
+        {papers.length > 0 && (
+          <p className="mt-2 pt-2 border-t border-slate-100 text-[10px] text-slate-500 leading-snug line-clamp-2">
+            <span className="text-slate-300 mr-1">Top:</span>{papers[0].title}
+          </p>
+        )}
+        {papers.length === 0 && <p className="mt-2 text-[10px] text-slate-300 italic">No papers in cluster</p>}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Topic Detail Panel ─── */
+
+function TopicDetailPanel({ topic, relatedTopics, allTopics, onTopicClick, onPaperClick }: {
+  topic: ResearchMapTopic;
+  relatedTopics: any[];
+  allTopics: ResearchMapTopic[];
+  onTopicClick: (id: string) => void;
+  onPaperClick: (pid: string) => void;
+}) {
+  const id = tid(topic) || "";
+  const kw = cleanKeywords(topic.keywords);
+  const papers = tpapers(topic);
+  const typeColors: Record<string, string> = { mature: "bg-emerald-50 text-emerald-600", growing: "bg-blue-50 text-blue-600", gap: "bg-amber-50 text-amber-600" };
+
+  return (
+    <div className="rounded-xl border border-slate-200/50 bg-white/80 shadow-sm divide-y divide-slate-100">
+      {/* Header */}
+      <div className="p-4">
+        <h3 className="text-sm font-bold text-slate-800">{topic.name || `Topic ${id.slice(-3)}`}</h3>
+        <div className="flex items-center gap-2 mt-1.5">
+          <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${typeColors[topic.type || "mature"]}`}>{topic.type}</span>
+          {(topic as any).trend && <span className="text-[10px] text-slate-400">{(topic as any).trend}</span>}
+        </div>
+        <div className="flex items-center gap-3 mt-2 text-[11px] text-slate-500">
+          <span><span className="font-medium">{topic.paper_count || 0}</span> papers</span>
+          {topic.year_range && topic.year_range.length === 2 && <span>{topic.year_range[0]}–{topic.year_range[1]}</span>}
+          {!topic.year_range && topic.avg_year && <span>~{Math.round(topic.avg_year)}</span>}
+        </div>
+      </div>
+
+      {/* Keywords */}
+      {kw.length > 0 && (
+        <div className="p-4">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Keywords</p>
+          <div className="flex flex-wrap gap-1">
+            {kw.map((k) => (
+              <span key={k} className="inline-flex rounded-md border border-slate-200/70 bg-slate-50 px-1.5 py-0.5 text-[10px] text-slate-500">{k}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Summary */}
+      {topic.summary && (
+        <div className="p-4">
+          <p className="text-xs text-slate-500 leading-relaxed">{topic.summary}</p>
+        </div>
+      )}
+
+      {/* Representative papers */}
+      <div className="p-4">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Representative Papers</p>
+        {papers.length > 0 ? (
+          <div className="space-y-2">
+            {papers.slice(0, 5).map((p) => (
+              <button key={p.paper_id || (p as any).id} onClick={() => onPaperClick(p.paper_id || (p as any).id)}
+                className="w-full text-left rounded-lg hover:bg-slate-50 px-2 py-1.5 -mx-2 transition-colors group">
+                <p className="text-xs font-medium text-slate-700 leading-snug line-clamp-2 group-hover:text-blue-600">{p.title}</p>
+                <p className="text-[10px] text-slate-400 mt-0.5">{p.authors?.[0] || "—"} {p.year ? `· ${p.year}` : ""}{p.journal ? ` · ${p.journal.slice(0, 30)}` : ""}</p>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-slate-300 italic">No representative papers available.</p>
+        )}
+      </div>
+
+      {/* Related topics */}
+      <div className="p-4">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Related Topics</p>
+        {relatedTopics.length > 0 ? (
+          <div className="space-y-1.5">
+            {relatedTopics.map((r) => {
+              const otherId = r.source_topic_id === id ? r.target_topic_id : r.source_topic_id;
+              const other = allTopics.find((t) => (t.cluster_id || (t as any).id) === otherId);
+              return (
+                <button key={otherId} onClick={() => onTopicClick(otherId)}
+                  className="w-full text-left flex items-center justify-between rounded-lg hover:bg-slate-50 px-2 py-1.5 -mx-2 transition-colors text-xs">
+                  <span className="text-slate-600 truncate flex-1">{other?.name || otherId}</span>
+                  <span className="text-[10px] text-slate-400 ml-2 shrink-0">{Math.round((r.similarity || 0) * 100)}%</span>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-xs text-slate-300 italic">No strong topic relationships detected yet.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── States ─── */
+
+function ResearchMapSkeleton() {
+  return (
+    <div className="space-y-6 animate-pulse max-w-7xl mx-auto pb-16">
+      <div className="h-7 bg-slate-100 rounded w-48" />
+      <div className="h-4 bg-slate-50 rounded w-96" />
+      <div className="grid grid-cols-5 gap-3">
+        {Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-16 bg-slate-50 rounded-xl" />)}
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="lg:col-span-8 space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-40 bg-slate-50 rounded-xl" />)}
+        </div>
+        <div className="lg:col-span-4"><div className="h-96 bg-slate-50 rounded-xl" /></div>
+      </div>
+    </div>
+  );
+}
+
+function ErrorState({ msg, onRetry }: { msg: string; onRetry: () => void }) {
+  return (
+    <div className="max-w-7xl mx-auto py-16 text-center">
+      <p className="text-sm text-red-500">Unable to load research map.</p>
+      <p className="text-xs text-slate-400 mt-1">{msg}</p>
+      <button onClick={onRetry} className="mt-3 text-xs text-blue-600 hover:underline">Retry</button>
+    </div>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div className="max-w-7xl mx-auto py-16 text-center">
+      <p className="text-sm text-slate-400">No research topics generated yet.</p>
+      <p className="text-xs text-slate-300 mt-1">Import papers or rebuild the research map.</p>
+    </div>
   );
 }
