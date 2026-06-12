@@ -1,0 +1,144 @@
+# ── PDF Data Assets Configuration ──
+# Phase 0: Data alignment and assetization without OCR or complex parsing.
+# This layer enhances (does NOT replace) 03_Evidence and 03_Summary.
+
+pdf_data_assets_version: "0.1.0"
+description: >
+  PDF internal data assetization layer.
+  Converts existing evidence, summaries, and metadata into structured,
+  traceable, agent-ready assets. All fields default to safe values;
+  nothing is fabricated.
+
+# ── Feature flags ──
+features:
+  enabled: true
+  description: "Master switch for PDF data assetization."
+
+  reuse_03_evidence: true
+  description: >
+    Read from 03_Evidence/ evidence.json as the primary source.
+    When false, assetization skips evidence-based builders.
+
+  reuse_03_summary: true
+  description: >
+    Read from 03_Summary/ summary.md as context for section alignment
+    and claim discovery. When false, builders skip summary context.
+
+  generate_agent_chunks: true
+  description: >
+    Produce agent_chunks.jsonl from all assembled assets.
+    Chunks are text-only, citation-ready, and linked to source assets.
+
+  # ── Reserved for Phase 1 ──
+  figure_extraction:
+    enabled: false
+    description: "Extract figure captions and figure references from PDF text. (Phase 1)"
+
+  # ── Reserved for Phase 2 ──
+  table_extraction:
+    enabled: false
+    description: "Extract and parse tables from PDF text. (Phase 2)"
+
+  # ── Reserved for Phase 3 ──
+  supplementary_linking:
+    enabled: false
+    description: "Link supplementary file references from PDF text. (Phase 3)"
+
+  # ── Safety / scope limits ──
+  skip_ocr: true
+  description: >
+    Phase 0 does NOT perform OCR. Scanned PDFs without text layers
+    will be recorded in the registry with status 'skipped_ocr'.
+
+  skip_complex_table_parsing: true
+  description: >
+    Phase 0 does NOT attempt to parse complex multi-row tables.
+    Table asset directories (02_figures, 03_tables) are created
+    but left empty with placeholder README files.
+
+# ── Paths (relative to project root) ──
+paths:
+  root: "."
+  input:
+    evidence_dir: "03_Evidence"
+    summary_dir: "03_Summary"
+    metadata_dir: "02_Metadata"
+    pdf_dir: "01_PDF"
+  output:
+    data_assets_dir: "06_PDF_DataAssets"
+    registry_dir: "06_PDF_DataAssets/00_registry"
+    sections_dir: "06_PDF_DataAssets/01_sections"
+    figures_dir: "06_PDF_DataAssets/02_figures"
+    tables_dir: "06_PDF_DataAssets/03_tables"
+    methods_dir: "06_PDF_DataAssets/04_methods"
+    results_dir: "06_PDF_DataAssets/05_results"
+    entities_dir: "06_PDF_DataAssets/06_entities"
+    claims_evidence_dir: "06_PDF_DataAssets/07_claims_evidence"
+    supplementary_dir: "06_PDF_DataAssets/08_supplementary_links"
+    agent_chunks_dir: "06_PDF_DataAssets/09_agent_chunks"
+
+# ── Asset quality thresholds ──
+quality:
+  min_confidence: "low"
+  min_text_length: 15
+  max_chunk_chars: 1200
+  require_source_text: true
+  allow_empty_arrays: true
+  missing_fields_policy: "fill_unknown"
+
+# ── Entity extraction (Phase 0: text-based only) ──
+entity_extraction:
+  enabled: true
+  entity_types:
+    - protein
+    - gene
+    - species
+    - strain
+    - vector
+    - host
+    - treatment
+    - dose
+    - time
+    - method
+    - receptor
+    - mutation
+    - domain
+    - pathway
+    - software
+    - database
+    - unknown
+  source_fields:
+    - metadata.title
+    - metadata.abstract
+    - evidence.methods
+    - evidence.key_results
+    - evidence.core_findings
+    - evidence.discussion_points
+    - summary.text
+
+# ── Asset Embedding (Phase 0.6) ──
+asset_embedding:
+  enabled: true
+  description: >
+    Embed vector_ready agent_chunks into LanceDB as a dedicated
+    pdf_asset_chunks table. Reuses the project's existing BgeM3Embedder.
+    Does NOT modify existing LanceDB tables or evidence_embedding.py.
+  source_dir: "06_PDF_DataAssets/09_agent_chunks"
+  source_file: "agent_chunks.quality.jsonl"
+  vector_ready_only: true
+  lancedb_dir: "04_VectorDB"
+  table_name: "pdf_asset_chunks"
+  embedding_model: "reuse_existing"
+  batch_size: 32
+  overwrite_existing: false
+  include_low_quality: false
+  min_quality_score: 70
+
+# ── Future API paths (reserved, NOT implemented in Phase 0) ──
+reserved_api_routes:
+  get_paper_assets: "/paper/{id}/assets"
+  get_paper_figures: "/paper/{id}/figures"
+  get_paper_tables: "/paper/{id}/tables"
+  get_paper_claims: "/paper/{id}/claims"
+  query_assets: "/query/assets"
+  post_query_assets: "POST /query/assets  (reserved — semantically search pdf_asset_chunks)"

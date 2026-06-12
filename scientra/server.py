@@ -16,9 +16,11 @@ except ModuleNotFoundError:  # pragma: no cover - depends on deployment env
     CORSMiddleware = None  # type: ignore
 
 try:
+    from pydantic import BaseModel, Field
     from scientra.models import LiteratureQueryRequest, LiteratureQueryResponse, QueryFilters, QueryType
     from scientra.query import literature_query, LiteratureQueryService
 except ModuleNotFoundError:
+    from pydantic import BaseModel, Field
     from scientra.models import LiteratureQueryRequest, LiteratureQueryResponse, QueryFilters, QueryType
     from scientra.query import literature_query, LiteratureQueryService
 
@@ -2618,6 +2620,74 @@ def create_app(root: Path | None = None) -> FastAPI:
     @api.post("/v1/scientra/hybrid_search", response_model=LiteratureQueryResponse)
     def v1_hybrid(request: LiteratureQueryRequest) -> LiteratureQueryResponse:
         return _route(request, QueryType.hybrid_search)
+
+    # ── Phase 0.7: Literature Agent V1 ──
+
+    class AgentAskRequest(BaseModel):
+        question: str
+        top_k: int = Field(default=10, ge=1, le=50)
+        chunk_types: list[str] | None = None
+        include_evidence: bool = True
+
+    class AgentCitation(BaseModel):
+        ref_id: str
+        chunk_id: str
+        paper_id: str
+        paper_title: str = ""
+        paper_year: int | None = None
+        text_snippet: str = ""
+        linked_evidence_id: str = ""
+        source: str = ""
+        confidence: str = "medium"
+
+    class AgentAskResponse(BaseModel):
+        question: str
+        answer: str
+        citations: list[AgentCitation] = Field(default_factory=list)
+        context_used: int = 0
+        papers_cited: int = 0
+        model: str = ""
+        elapsed_ms: float = 0.0
+        intent: str = ""
+
+    @api.post("/v1/agent/ask", response_model=AgentAskResponse)
+    def v1_agent_ask(request: AgentAskRequest) -> AgentAskResponse:
+        try:
+            from scientra.agent.literature_agent import LiteratureAgent
+        except ImportError as e:
+            raise HTTPException(status_code=500, detail=f"Agent module not available: {e}")
+
+        agent = LiteratureAgent()
+        response = agent.ask(
+            question=request.question,
+            top_k=request.top_k,
+            chunk_types=request.chunk_types,
+            include_evidence=request.include_evidence,
+        )
+
+        return AgentAskResponse(
+            question=response.question,
+            answer=response.answer,
+            citations=[
+                AgentCitation(
+                    ref_id=c.ref_id,
+                    chunk_id=c.chunk_id,
+                    paper_id=c.paper_id,
+                    paper_title=c.paper_title,
+                    paper_year=c.paper_year,
+                    text_snippet=c.text_snippet,
+                    linked_evidence_id=c.linked_evidence_id,
+                    source=c.source,
+                    confidence=c.confidence,
+                )
+                for c in response.citations
+            ],
+            context_used=response.context_used,
+            papers_cited=response.papers_cited,
+            model=response.model,
+            elapsed_ms=response.elapsed_ms,
+            intent=response.intent,
+        )
 
     return api
 

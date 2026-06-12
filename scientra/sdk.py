@@ -122,3 +122,59 @@ def get_evidence(
 def get_agent_sdk() -> LiteratureAgentSDK:
     return _default_sdk
 
+
+# ── Phase 0.7: Literature Agent V1 ──
+
+def ask_literature(
+    question: str,
+    top_k: int = 10,
+    chunk_types: list[str] | None = None,
+    include_evidence: bool = True,
+) -> dict[str, Any]:
+    """Ask a research question using the Literature Agent.
+
+    Returns a dict with 'answer', 'citations', 'context_used', 'papers_cited', etc.
+    This is the primary entry point for Agent SDK consumers in Phase 0.7+.
+    """
+    try:
+        from scientra.agent.literature_agent import LiteratureAgent
+    except ImportError:
+        return {
+            "question": question,
+            "answer": "[Error: Literature Agent not available. Ensure scientra/agent/ is installed.]",
+            "citations": [],
+            "context_used": 0,
+            "papers_cited": 0,
+        }
+
+    agent = LiteratureAgent()
+    response = agent.ask(
+        question=question,
+        top_k=top_k,
+        chunk_types=chunk_types,
+        include_evidence=include_evidence,
+    )
+
+    return {
+        "question": response.question,
+        "answer": response.answer,
+        "citations": [
+            {
+                "ref_id": c.ref_id,
+                "paper_id": c.paper_id,
+                "paper_title": c.paper_title,
+                "paper_year": c.paper_year,
+                "text_snippet": c.text_snippet,
+                "linked_evidence_id": c.linked_evidence_id,
+                "source": c.source,
+                "confidence": c.confidence,
+            }
+            for c in response.citations
+        ],
+        "context_used": response.context_used,
+        "papers_cited": response.papers_cited,
+        "model": response.model,
+        "elapsed_ms": response.elapsed_ms,
+        "intent": response.intent,
+    }
+
