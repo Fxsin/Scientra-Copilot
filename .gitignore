@@ -52,5 +52,8 @@ logs/
 07_Workflows/
 reports/
 
+# LLM config (contains API key — NEVER commit)
+Config/llm_config.yaml
+
 # Build artifacts
 *.tsbuildinfo

@@ -21,10 +21,41 @@ from typing import Any
 
 from scientra.agent.context_builder import ContextBuilder, ContextPack
 
-DEFAULT_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-6")
-DEFAULT_BASE_URL = os.environ.get("ANTHROPIC_BASE_URL", "https://api.anthropic.com")
+DEFAULT_MODEL = os.environ.get("SCIENTRA_LLM_MODEL", "")
+DEFAULT_BASE_URL = os.environ.get("SCIENTRA_LLM_BASE_URL", "")
 DEFAULT_MAX_TOKENS = 2048
 DEFAULT_TEMPERATURE = 0.3
+
+# Provider auto-detection: env var → config file → none
+def _detect_provider():
+    # 1. Environment variables
+    if os.environ.get("DEEPSEEK_API_KEY"):
+        return "deepseek", os.environ["DEEPSEEK_API_KEY"], "deepseek-chat", "https://api.deepseek.com"
+    if os.environ.get("ANTHROPIC_API_KEY"):
+        return "anthropic", os.environ["ANTHROPIC_API_KEY"], "claude-sonnet-4-6", "https://api.anthropic.com"
+
+    # 2. Config file
+    config_path = Path(__file__).resolve().parent.parent.parent / "Config" / "llm_config.yaml"
+    if config_path.exists():
+        try:
+            import yaml
+            cfg = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+            provider = cfg.get("provider", "")
+            api_key = cfg.get("api_key", "")
+            model = cfg.get("model", "")
+            base_url = cfg.get("base_url", "")
+            if provider and api_key:
+                return provider, api_key, model or _default_model(provider), base_url or _default_url(provider)
+        except Exception:
+            pass
+
+    return None, "", "", ""
+
+def _default_model(provider: str) -> str:
+    return "deepseek-chat" if provider == "deepseek" else "claude-sonnet-4-6"
+
+def _default_url(provider: str) -> str:
+    return "https://api.deepseek.com" if provider == "deepseek" else "https://api.anthropic.com"
 
 
 def _get_project_root() -> Path:
@@ -81,9 +112,13 @@ class LiteratureAgent:
         temperature: float = DEFAULT_TEMPERATURE,
     ) -> None:
         self.root = Path(root).resolve() if root else _get_project_root()
-        self.model = model or DEFAULT_MODEL
-        self.api_key = api_key or os.environ.get("ANTHROPIC_API_KEY", "")
-        self.base_url = (base_url or DEFAULT_BASE_URL).rstrip("/")
+
+        # Auto-detect provider
+        provider, detected_key, detected_model, detected_url = _detect_provider()
+        self.provider = provider or "none"
+        self.api_key = api_key or detected_key
+        self.model = model or DEFAULT_MODEL or detected_model
+        self.base_url = (base_url or DEFAULT_BASE_URL or detected_url).rstrip("/")
         self.max_tokens = max_tokens
         self.temperature = temperature
         self.context_builder = ContextBuilder(self.root)
@@ -183,12 +218,9 @@ class LiteratureAgent:
                 raw_context=context if return_context else None,
             )
 
-        # 3. If use_llm=False, return extractive answer
+        # 3. If use_llm=False, return structured extractive answer
         if not use_llm:
-            extractive_lines = []
-            for i, c in enumerate(context.chunks[:top_k], 1):
-                extractive_lines.append(f"[Ref:{i}] [{c.chunk_type}] {c.text[:200]}")
-            extractive_answer = "Extractive context (no LLM):\n" + "\n".join(extractive_lines)
+            extractive_answer = self._build_extractive_answer(question, intent, context, top_k)
             citations = self._parse_citations(extractive_answer, context)
             elapsed = (time.time() - t0) * 1000
             return AgentResponse(
@@ -197,7 +229,7 @@ class LiteratureAgent:
                 citations=citations,
                 context_used=len(context.chunks),
                 papers_cited=len(context.papers),
-                model="extractive (no LLM)",
+                model="evidence-only-fallback",
                 elapsed_ms=round(elapsed, 1),
                 intent=intent,
                 raw_context=context if return_context else None,
@@ -207,6 +239,25 @@ class LiteratureAgent:
         system_prompt = self._build_system_prompt()
         user_prompt = self._build_user_prompt(question, context)
         raw_answer = self._call_claude(system_prompt, user_prompt)
+
+        # Detect if LLM actually responded
+        if raw_answer.startswith("[Agent Error:"):
+            # Fallback to extractive
+            extractive_answer = self._build_extractive_answer(question, intent, context, top_k)
+            citations = self._parse_citations(extractive_answer, context)
+            elapsed = (time.time() - t0) * 1000
+            return AgentResponse(
+                question=question,
+                answer=extractive_answer,
+                citations=citations,
+                context_used=len(context.chunks),
+                papers_cited=len(context.papers),
+                model="evidence-only-fallback",
+                elapsed_ms=round(elapsed, 1),
+                intent=intent,
+                raw_context=context if return_context else None,
+            )
+
         raw_answer = self._sanitize_answer(raw_answer, context)
 
         # 5. Parse citations
@@ -294,6 +345,101 @@ class LiteratureAgent:
             return "search_by_year"
         return "hybrid_search"
 
+    def _build_extractive_answer(self, question: str, intent: str, context, top_k: int) -> str:
+        """Build a structured extractive answer based on intent type."""
+        chunks = context.chunks[:top_k]
+
+        # Filter low-quality method chunks
+        if intent in ("search_by_method", "search_by_toxin"):
+            return self._build_method_summary(chunks)
+
+        # Default: simple listing
+        lines = ["Evidence-only summary (no LLM):\n"]
+        for i, c in enumerate(chunks, 1):
+            lines.append(f"[Ref:{i}] [{c.chunk_type}] {c.text[:200]}")
+        lines.append("\n*Enable LLM synthesis for a more polished answer.*")
+        return "\n".join(lines)
+
+    def _build_method_summary(self, chunks) -> str:
+        """Build a categorized method summary from chunks."""
+        # Group chunks by method category
+        categories: dict[str, list] = {
+            "Molecular / genetic methods": [],
+            "Protein / biochemical methods": [],
+            "Bioassay / phenotype methods": [],
+            "Structural / biophysical methods": [],
+            "Statistical / computational methods": [],
+            "Other methods": [],
+        }
+
+        mol_keywords = ["pcr", "qpcr", "rna-seq", "rnaseq", "transcriptom", "cloning", "gene", "sequencing",
+                        "genotyping", "crispr", "rnai", "knockout", "knockdown", "mutagenesis", "expression"]
+        prot_keywords = ["western blot", "sds-page", "sds page", "elisa", "binding assay", "ligand blot",
+                         "protein", "purification", "recombinant", "heterologous", "blot", "electrophoresis"]
+        bio_keywords = ["bioassay", "toxicity", "lc50", "ld50", "mortality", "feeding assay", "diet",
+                        "leaf disc", "field trial", "greenhouse", "lab colony", "larvae"]
+        struct_keywords = ["cryo-em", "cryo em", "microscopy", "confocal", "structure", "modeling",
+                           "homology", "domain", "crystallography", "nmr"]
+        stat_keywords = ["statistical", "regression", "anova", "t-test", "phylogenetic", "alignment",
+                         "docking", "bioinformatic", "software", "database"]
+
+        # Generic phrases to skip in extractive answer
+        skip_phrases = [
+            "using the approach", "using this method", "leaves were used",
+            "japonica were used", "samples were used", "was used", "were used",
+            "the approach", "method described", "as described previously",
+            "according to the manufacturer",
+        ]
+
+        ref_idx = 0
+        seen_texts: set[str] = set()
+        for c in chunks:
+            ref_idx += 1
+            text = getattr(c, 'text', '')
+            text_lower = text.lower()
+            # Skip generic method phrases
+            if any(p in text_lower for p in skip_phrases) and len(text) < 80:
+                continue
+            # Deduplicate near-identical texts
+            text_key = text_lower[:60].strip()
+            if text_key in seen_texts:
+                continue
+            seen_texts.add(text_key)
+            matched = False
+            for cat, keywords in [
+                ("Molecular / genetic methods", mol_keywords),
+                ("Protein / biochemical methods", prot_keywords),
+                ("Bioassay / phenotype methods", bio_keywords),
+                ("Structural / biophysical methods", struct_keywords),
+                ("Statistical / computational methods", stat_keywords),
+            ]:
+                if any(kw in text_lower for kw in keywords):
+                    categories[cat].append((ref_idx, text[:150]))
+                    matched = True
+                    break
+            if not matched:
+                categories["Other methods"].append((ref_idx, text[:150]))
+
+        # Build output
+        lines = ["Evidence-only summary:\n", "Common method categories found in the retrieved context:\n"]
+
+        has_any = False
+        for cat, items in categories.items():
+            if not items:
+                continue
+            has_any = True
+            lines.append(f"### {cat}")
+            for ref_id, snippet in items[:4]:
+                lines.append(f"- {snippet} [Ref:{ref_id}]")
+            lines.append("")
+
+        if not has_any:
+            lines.append("Retrieved method evidence is too generic. " +
+                         "Try a more specific query, such as: protein expression, binding assay, or toxicity assay.")
+
+        lines.append("*This is an extractive summary based on retrieved chunks. Enable LLM synthesis for a more polished interpretation.*")
+        return "\n".join(lines)
+
     def _build_system_prompt(self) -> str:
         return (
             "You are Scientra Literature Agent, a research assistant specialized in "
@@ -302,20 +448,20 @@ class LiteratureAgent:
             "CRITICAL RULES — follow strictly:\n"
             "1. Answer based ONLY on the provided context chunks. NEVER use outside knowledge.\n"
             "2. Cite sources inline using [Ref:N] where N is the chunk reference number.\n"
+            "   Every key claim MUST have at least one [Ref:N] citation.\n"
             "3. If the context is empty or contains insufficient information, state:\n"
             "   'Insufficient evidence in current database.' Do NOT fabricate.\n"
-            "4. NEVER invent DOI numbers, paper titles, author names, or data values.\n"
+            "4. NEVER invent DOI numbers, paper titles, author names, data values, or statistics.\n"
             "5. NEVER use absolute language: do not say 'proves', 'definitively', 'certainly',\n"
             "   'without doubt', or 'all studies show'. Use 'suggests', 'indicates', 'reports'.\n"
             "6. Distinguish between directly observed RESULTS and author INTERPRETATIONS.\n"
-            "   Prefer: 'The data show...' over 'The authors conclude...'\n"
-            "7. If a question is outside the scope of this literature database (e.g., weather,\n"
-            "   sports, poetry), state: 'This question is outside the scope of this literature\n"
-            "   database. I can help with questions about Bt insecticidal proteins.'\n"
-            "8. If asked for information about a specific entity NOT in the context, state:\n"
-            "   'No evidence found for [entity] in the current database.'\n"
-            "9. Mark INFERENCES clearly with 'Inference:' prefix.\n"
-            "10. Every answer with context MUST include at least one [Ref:N] citation.\n"
+            "7. For METHOD questions: group by category (molecular, biochemical, bioassay, etc.).\n"
+            "8. For CLAIM questions: distinguish evidence-based claims from inferences.\n"
+            "9. For RESEARCH GAP questions: separate evidence-based gaps from possible gaps.\n"
+            "10. Mark INFERENCES clearly with 'Inference:' prefix.\n"
+            "11. Keep answers concise (300–700 words). Use scientific terminology.\n"
+            "12. If the question is outside the database scope, state so and redirect.\n"
+            "13. If asked about a fake/nonexistent entity, state: 'No evidence found.'\n"
         )
 
     def _build_user_prompt(self, question: str, context: ContextPack) -> str:
@@ -341,14 +487,19 @@ class LiteratureAgent:
         return "\n".join(parts)
 
     def _call_claude(self, system_prompt: str, user_prompt: str) -> str:
-        """Call Claude API and return text response."""
+        """Call LLM API (Anthropic or DeepSeek) and return text response."""
         if not self.api_key:
             return (
-                "[Agent Error: ANTHROPIC_API_KEY not set. "
-                "Set the environment variable or pass api_key to LiteratureAgent(). "
+                "[Agent Error: No LLM API key configured. "
+                "Run: python Scripts/setup_llm.py or set DEEPSEEK_API_KEY / ANTHROPIC_API_KEY. "
                 "Context was retrieved successfully but LLM synthesis is unavailable.]"
             )
 
+        if self.provider == "deepseek":
+            return self._call_deepseek(system_prompt, user_prompt)
+        return self._call_anthropic(system_prompt, user_prompt)
+
+    def _call_anthropic(self, system_prompt: str, user_prompt: str) -> str:
         payload = {
             "model": self.model,
             "max_tokens": self.max_tokens,
@@ -356,47 +507,63 @@ class LiteratureAgent:
             "system": system_prompt,
             "messages": [{"role": "user", "content": user_prompt}],
         }
-
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         url = f"{self.base_url}/v1/messages"
-        if not self.base_url.endswith("/messages"):
-            if "/anthropic" in self.base_url:
-                url = f"{self.base_url}/v1/messages" if not self.base_url.endswith("/v1/messages") else self.base_url
-            else:
-                url = f"{self.base_url}/v1/messages"
-
         headers = {
             "x-api-key": self.api_key,
             "anthropic-version": "2023-06-01",
             "Content-Type": "application/json",
-            "Accept": "application/json",
-            "User-Agent": "Scientra-Literature-Agent/0.1",
         }
-
-        last_error: Exception | None = None
+        last_error = None
         for attempt in range(3):
-            request = urllib.request.Request(url, data=body, method="POST", headers=headers)
+            req = urllib.request.Request(url, data=body, method="POST", headers=headers)
             try:
-                with urllib.request.urlopen(request, timeout=120) as response:
-                    raw = json.loads(response.read().decode("utf-8", errors="replace"))
-                    # Extract text from Claude response
-                    content_list = raw.get("content", [])
-                    text = ""
-                    for block in content_list:
-                        if isinstance(block, dict) and block.get("type") == "text":
-                            text += block.get("text", "")
-                    return text
+                with urllib.request.urlopen(req, timeout=120) as resp:
+                    raw = json.loads(resp.read().decode("utf-8", errors="replace"))
+                text = ""
+                for block in raw.get("content", []):
+                    if isinstance(block, dict) and block.get("type") == "text":
+                        text += block.get("text", "")
+                return text
             except urllib.error.HTTPError as exc:
-                error_body = exc.read().decode("utf-8", errors="replace")
-                last_error = RuntimeError(f"HTTP {exc.code}: {error_body[:500]}")
-                if exc.code in (401, 403, 404):
-                    break
-            except (urllib.error.URLError, TimeoutError, OSError, json.JSONDecodeError) as exc:
+                last_error = RuntimeError(f"HTTP {exc.code}: {exc.read().decode('utf-8', errors='replace')[:300]}")
+                if exc.code in (401, 403): break
+            except Exception as exc:
                 last_error = exc
-            if attempt < 2:
-                time.sleep(2.0 * (2**attempt))
+            if attempt < 2: time.sleep(2.0 * (2**attempt))
+        return f"[Agent Error: API call failed — {last_error}]"
 
-        return f"[Agent Error: Claude API call failed — {last_error}]"
+    def _call_deepseek(self, system_prompt: str, user_prompt: str) -> str:
+        payload = {
+            "model": self.model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            "temperature": self.temperature,
+            "max_tokens": self.max_tokens,
+            "stream": False,
+        }
+        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        url = f"{self.base_url}/v1/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+        last_error = None
+        for attempt in range(3):
+            req = urllib.request.Request(url, data=body, method="POST", headers=headers)
+            try:
+                with urllib.request.urlopen(req, timeout=120) as resp:
+                    raw = json.loads(resp.read().decode("utf-8", errors="replace"))
+                return raw["choices"][0]["message"]["content"]
+            except urllib.error.HTTPError as exc:
+                last_error = RuntimeError(f"HTTP {exc.code}: {exc.read().decode('utf-8', errors='replace')[:300]}")
+                if exc.code in (401, 403): break
+            except Exception as exc:
+                last_error = exc
+            if attempt < 2: time.sleep(2.0 * (2**attempt))
+        return f"[Agent Error: API call failed — {last_error}]"
 
     def _parse_citations(
         self, answer: str, context: ContextPack

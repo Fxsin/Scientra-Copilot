@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { Send, Loader2, Search, X } from "lucide-react";
 import { askLiteratureAgent } from "@/lib/api";
-import type { AgentAskResponse } from "@/lib/types";
+import type { AgentAskResponse, AgentAnswerMode } from "@/lib/types";
 import { AgentAnswerPanel } from "@/components/agent/AgentAnswerPanel";
 import { AgentCitationCards } from "@/components/agent/AgentCitationCards";
 import { AgentContextCards } from "@/components/agent/AgentContextCards";
@@ -42,7 +42,7 @@ export default function ChatPage() {
   const [chatMode, setChatMode] = useState<"library" | string>("library");
 
   // Advanced options
-  const [useLlm, setUseLlm] = useState(false);
+  const [answerMode, setAnswerMode] = useState<AgentAnswerMode>("auto");
   const [includeAssets, setIncludeAssets] = useState(true);
   const [includeEvidence, setIncludeEvidence] = useState(true);
   const [returnContext, setReturnContext] = useState(true);
@@ -57,6 +57,7 @@ export default function ChatPage() {
     setResponse(null);
     setHighlightedRef(null);
     setChatMode("library");
+    const useLlm = answerMode !== "evidence_only";
     try {
       const result = await askLiteratureAgent({
         question: query,
@@ -73,7 +74,7 @@ export default function ChatPage() {
     } finally {
       setLoading(false);
     }
-  }, [question, topK, chunkTypes, includeAssets, includeEvidence, useLlm, returnContext]);
+  }, [question, topK, chunkTypes, includeAssets, includeEvidence, answerMode, returnContext]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -173,7 +174,7 @@ export default function ChatPage() {
         </div>
 
         <AgentAdvancedOptions
-          useLlm={useLlm} setUseLlm={setUseLlm}
+          answerMode={answerMode} setAnswerMode={setAnswerMode}
           includeAssets={includeAssets} setIncludeAssets={setIncludeAssets}
           includeEvidence={includeEvidence} setIncludeEvidence={setIncludeEvidence}
           returnContext={returnContext} setReturnContext={setReturnContext}
@@ -183,7 +184,7 @@ export default function ChatPage() {
       </div>
 
       {/* ── Warnings & Errors ── */}
-      <AgentWarnings response={response} error={error} useLlm={useLlm} />
+      <AgentWarnings response={response} error={error} answerMode={answerMode} />
 
       {/* ── Response ── */}
       {response && (
@@ -197,11 +198,13 @@ export default function ChatPage() {
             papersCited={response.papers_cited}
             highlightedRef={highlightedRef}
             onRefClick={scrollToRef}
+            answerMode={answerMode}
           />
           <AgentCitationCards
             citations={response.citations}
             highlightedRef={highlightedRef}
             onRefClick={scrollToRef}
+            contextExists={(response.context_used ?? 0) > 0}
           />
           {response.context?.chunks && (
             <AgentContextCards

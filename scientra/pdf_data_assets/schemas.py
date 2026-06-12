@@ -126,18 +126,57 @@ class ResultAsset(PDFAssetBase):
     linked_table_ids: list[str] = Field(default_factory=list)
 
 
-# ── Figure Asset (Phase 1 — reserved) ──
+# ── Figure Asset (Phase 1) ──
 
 class FigureAsset(PDFAssetBase):
-    """A figure and its caption. Phase 1: populated; Phase 0: placeholder."""
+    """A figure extracted from the paper with caption and reference links."""
     asset_type: AssetType = AssetType.figure
-    figure_label: str = Field(default="unknown", description="e.g. 'Figure 1'")
-    caption_text: str = Field(default="")
-    figure_path: str | None = Field(default=None, description="Path to extracted figure image")
-    figure_type: str = Field(default="unknown", description="graph / microscopy / diagram / photo / unknown")
-    linked_results: list[str] = Field(default_factory=list)
+    figure_id: str = Field(default="unknown", description="Unique figure identifier")
+    figure_label: str = Field(default="unknown", description="e.g. 'Figure 1', 'Fig. 2A'")
+    figure_number: str = Field(default="unknown", description="e.g. '1', '2A', 'S1'")
+    caption: str = Field(default="", description="Full figure caption text")
+    caption_quality: str = Field(default="none", description="high / medium / low / none")
+    caption_source: str = Field(default="unknown", description="plain_text_caption / tei_figure_block / reference_only")
+    image_path: str | None = Field(default=None, description="Path to extracted figure image (null if not extracted)")
+    panels: list[str] = Field(default_factory=list, description="e.g. ['A', 'B', 'C']")
+    figure_type: str = Field(default="unknown")
+    mentioned_in_sections: list[str] = Field(default_factory=list, description="Sections referencing this figure")
+    reference_sentences: list[str] = Field(default_factory=list, description="Sentences that reference this figure")
+    linked_result_assets: list[str] = Field(default_factory=list)
+    linked_claim_assets: list[str] = Field(default_factory=list)
+    linked_evidence_ids: list[str] = Field(default_factory=list)
+    extraction_method: str = Field(default="regex_heuristic", description="How the figure was extracted")
     page_number: int | None = Field(default=None)
 
+
+# ── Figure Interpretation Asset (Phase 1B) ──
+
+class FigureInterpretationAsset(BaseModel):
+    """AI-generated interpretation of a figure from caption + references. No image analysis."""
+    asset_id: str = Field(..., description="Unique ID: {paper_id}:fig_interp:{index}")
+    paper_id: str
+    asset_type: str = Field(default="figure_interpretation")
+    figure_id: str = Field(default="unknown")
+    figure_label: str = Field(default="unknown")
+    figure_type: str = Field(default="unknown")
+    caption: str = Field(default="")
+    caption_quality: str = Field(default="unknown")
+    reference_sentences: list[str] = Field(default_factory=list)
+    linked_result_assets: list[str] = Field(default_factory=list)
+    linked_claim_assets: list[str] = Field(default_factory=list)
+    linked_evidence_ids: list[str] = Field(default_factory=list)
+    figure_main_message: str = Field(default="", description="One sentence describing what this figure shows")
+    experimental_evidence_type: str = Field(default="unknown")
+    supported_claims: list[str] = Field(default_factory=list)
+    evidence_strength: str = Field(default="unclear")
+    limitations: list[str] = Field(default_factory=list)
+    interpretation_confidence: str = Field(default="low")
+    interpretation_source: str = Field(default="unknown")
+    status: str = Field(default="pending", description="pending / interpreted / skipped")
+    model_name: str = Field(default="")
+    prompt_version: str = Field(default="0.1.0")
+    source_text: str = Field(default="")
+    created_at: str = Field(default_factory=lambda: __import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat())
 
 # ── Table Asset (Phase 2 — reserved) ──
 

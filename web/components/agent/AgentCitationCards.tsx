@@ -1,27 +1,49 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, Check, FlaskConical } from "lucide-react";
+import { Copy, Check, FlaskConical, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { AgentCitation } from "@/lib/types";
 
-const CHUNK_TYPE_COLORS: Record<string, string> = {
-  section: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
-  method: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
-  result: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
-  claim: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
+const SOURCE_COLORS: Record<string, string> = {
   pdf_asset_chunks: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300",
   evidence_chunks: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300",
+};
+
+const SOURCE_LABELS: Record<string, string> = {
+  pdf_asset_chunks: "Asset",
+  evidence_chunks: "Evidence",
 };
 
 interface AgentCitationCardsProps {
   citations: AgentCitation[];
   highlightedRef: string | null;
   onRefClick: (refId: string) => void;
+  contextExists?: boolean;
 }
 
-export function AgentCitationCards({ citations, highlightedRef, onRefClick }: AgentCitationCardsProps) {
+export function AgentCitationCards({
+  citations, highlightedRef, onRefClick, contextExists,
+}: AgentCitationCardsProps) {
   const [copiedAll, setCopiedAll] = useState(false);
+
+  // Empty state: context exists but no citations
+  if ((!citations || citations.length === 0) && contextExists) {
+    return (
+      <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
+        <div className="flex items-start gap-2 text-sm text-muted-foreground">
+          <Info className="h-4 w-4 mt-0.5 shrink-0" />
+          <div>
+            <p className="font-medium text-foreground/80">No synthesized citations</p>
+            <p className="text-xs mt-0.5">
+              Retrieved evidence is available in the context panel below.
+              Enable "Use LLM" for AI-generated citations.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!citations || citations.length === 0) return null;
 
@@ -35,7 +57,7 @@ export function AgentCitationCards({ citations, highlightedRef, onRefClick }: Ag
   };
 
   return (
-    <div className="rounded-xl border bg-card p-4 shadow-sm">
+    <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
       <div className="flex items-center gap-2 mb-3">
         <FlaskConical className="h-4 w-4 text-primary" />
         <h3 className="text-sm font-semibold">Citations ({citations.length})</h3>
@@ -54,7 +76,7 @@ export function AgentCitationCards({ citations, highlightedRef, onRefClick }: Ag
             key={i}
             onClick={() => onRefClick(c.ref_id)}
             className={cn(
-              "text-left rounded-lg border p-3 hover:bg-muted/50 transition-colors cursor-pointer",
+              "text-left rounded-lg border p-2.5 hover:bg-muted/50 transition-colors cursor-pointer",
               highlightedRef === c.ref_id && "ring-2 ring-primary border-primary/30"
             )}
           >
@@ -63,16 +85,18 @@ export function AgentCitationCards({ citations, highlightedRef, onRefClick }: Ag
                 {c.ref_id}
               </span>
               <span className={cn("rounded px-1.5 py-0.5 text-xs font-medium",
-                CHUNK_TYPE_COLORS[c.source] || "bg-gray-100 text-gray-700")}>
-                {c.source}
+                SOURCE_COLORS[c.source] || "bg-gray-100 text-gray-700")}>
+                {SOURCE_LABELS[c.source] || c.source}
               </span>
-              <span className="text-xs text-muted-foreground">{c.confidence}</span>
+              <span className="text-[10px] text-muted-foreground">{c.confidence}</span>
               {c.paper_year && (
-                <span className="text-xs text-muted-foreground ml-auto">{c.paper_year}</span>
+                <span className="text-[10px] text-muted-foreground ml-auto">{c.paper_year}</span>
               )}
             </div>
-            <p className="text-xs font-medium truncate">{c.paper_title}</p>
-            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{c.text_snippet}</p>
+            <p className="text-xs font-medium leading-snug line-clamp-1">{c.paper_title}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed line-clamp-3">
+              {c.text_snippet}
+            </p>
           </button>
         ))}
       </div>

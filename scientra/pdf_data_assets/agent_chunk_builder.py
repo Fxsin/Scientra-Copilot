@@ -24,6 +24,7 @@ from scientra.pdf_data_assets.method_asset_builder import MethodAssetBuilder
 from scientra.pdf_data_assets.result_asset_builder import ResultAssetBuilder
 from scientra.pdf_data_assets.entity_asset_builder import EntityAssetBuilder
 from scientra.pdf_data_assets.claim_evidence_builder import ClaimEvidenceBuilder
+from scientra.pdf_data_assets.figure_asset_builder import FigureAssetBuilder
 
 
 class AgentChunkBuilder:
@@ -40,6 +41,7 @@ class AgentChunkBuilder:
         self.result_builder = ResultAssetBuilder(root)
         self.entity_builder = EntityAssetBuilder(root)
         self.claim_builder = ClaimEvidenceBuilder(root)
+        self.figure_builder = FigureAssetBuilder(root)
 
     def _collect_evidence_ids(self, source_asset_ids: list[str]) -> list[str]:
         """Collect all linked_evidence_ids from source assets by inspecting builders."""
@@ -194,6 +196,70 @@ class AgentChunkBuilder:
                 linked_evidence_ids=ev_ids,
                 citation_ready=True,
                 confidence=Confidence(str(c.get("confidence", "medium"))),
+                created_at=timestamp,
+            )
+            chunks.append(chunk)
+            chunk_idx += 1
+
+        # ── Chunks from figures (Phase 1 + 1B) ──
+        figure_assets = self.figure_builder.build(paper_id, force=False)
+        # Load interpretations if available
+        interp_map: dict[str, dict] = {}
+        interp_path = self.root / "06_PDF_DataAssets" / "02_figures" / paper_id / "figure_interpretations.json"
+        if interp_path.exists():
+            try:
+                interps = json.loads(interp_path.read_text(encoding="utf-8"))
+                for it in interps.get("interpretations", []):
+                    interp_map[it.get("figure_label", "")] = it
+            except Exception:
+                pass
+
+        for fa in figure_assets:
+            interp = interp_map.get(fa.figure_label, {})
+            parts = [f"Figure {fa.figure_label}: {fa.caption}"]
+            # Add interpretation if available
+            if interp.get("figure_main_message"):
+                parts.append(f"Main message: {interp['figure_main_message']}")
+            if interp.get("experimental_evidence_type", "unknown") != "unknown":
+                parts.append(f"Evidence type: {interp['experimental_evidence_type']}")
+            if interp.get("evidence_strength", "unclear") != "unclear":
+                parts.append(f"Evidence strength: {interp['evidence_strength']}")
+            claims = interp.get("supported_claims", [])
+            if claims:
+                parts.append("Supported claims:")
+                for c in claims[:5]:
+                    parts.append(f"  - {c}")
+            lims = interp.get("limitations", [])
+            if lims:
+                parts.append("Limitations:")
+                for lim in lims[:3]:
+                    parts.append(f"  - {lim}")
+            if fa.reference_sentences:
+                parts.append("Referenced in:")
+                for rs in fa.reference_sentences[:3]:
+                    parts.append(f"  - {rs}")
+            if fa.figure_type and fa.figure_type != "unknown":
+                parts.append(f"Type: {fa.figure_type}")
+            text = "\n".join(parts).strip()
+            if len(text) < 15:
+                continue
+
+            src_ids = [fa.asset_id]
+            ev_ids = list(fa.linked_evidence_ids) if fa.linked_evidence_ids else []
+            chunk = AgentChunkAsset(
+                chunk_id=f"{paper_id}:chunk:{chunk_idx:04d}",
+                paper_id=paper_id,
+                chunk_type="figure",
+                text=text[:self.MAX_CHUNK_CHARS],
+                source_asset_ids=src_ids,
+                source_section=fa.source_section if fa.source_section else "unknown",
+                entities=[],
+                linked_claims=fa.linked_claim_assets,
+                linked_methods=[],
+                linked_evidence_id=ev_ids[0] if ev_ids else fa.linked_evidence_id,
+                linked_evidence_ids=ev_ids,
+                citation_ready=True,
+                confidence=fa.confidence,
                 created_at=timestamp,
             )
             chunks.append(chunk)

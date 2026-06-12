@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { Send, Loader2, MessageCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { askLiteratureAgent } from "@/lib/api";
-import type { AgentAskResponse } from "@/lib/types";
+import type { AgentAskResponse, AgentAnswerMode } from "@/lib/types";
 import { AgentAnswerPanel } from "./AgentAnswerPanel";
 import { AgentCitationCards } from "./AgentCitationCards";
 import { AgentContextCards } from "./AgentContextCards";
@@ -29,6 +29,7 @@ export function PaperAskCard({ paperId, defaultOpen = false }: PaperAskCardProps
   const [response, setResponse] = useState<AgentAskResponse | null>(null);
   const [highlightedRef, setHighlightedRef] = useState<string | null>(null);
   const [open, setOpen] = useState(defaultOpen);
+  const [answerMode, setAnswerMode] = useState<AgentAnswerMode>("auto");
 
   const ask = useCallback(async (q: string) => {
     if (!q.trim()) return;
@@ -36,13 +37,14 @@ export function PaperAskCard({ paperId, defaultOpen = false }: PaperAskCardProps
     setError(null);
     setResponse(null);
     setHighlightedRef(null);
+    const useLlm = answerMode !== "evidence_only";
     try {
       const result = await askLiteratureAgent({
         question: q,
         top_k: 8,
         include_assets: true,
         include_evidence: true,
-        use_llm: false,
+        use_llm: useLlm,
         return_context: true,
         paper_id: paperId,
       });
@@ -114,7 +116,7 @@ export function PaperAskCard({ paperId, defaultOpen = false }: PaperAskCardProps
             ))}
           </div>
 
-          <AgentWarnings response={response} error={error} />
+          <AgentWarnings response={response} error={error} answerMode={answerMode} />
 
           {response && (
             <>
@@ -127,11 +129,13 @@ export function PaperAskCard({ paperId, defaultOpen = false }: PaperAskCardProps
                 papersCited={response.papers_cited}
                 highlightedRef={highlightedRef}
                 onRefClick={scrollToRef}
+                answerMode={answerMode}
               />
               <AgentCitationCards
                 citations={response.citations}
                 highlightedRef={highlightedRef}
                 onRefClick={scrollToRef}
+                contextExists={(response.context_used ?? 0) > 0}
               />
               {response.context?.chunks && (
                 <AgentContextCards

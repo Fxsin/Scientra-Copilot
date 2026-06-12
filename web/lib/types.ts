@@ -645,6 +645,8 @@ export interface AgentAskResponse {
   context: AgentContextPack | null;
 }
 
+export type AgentAnswerMode = "auto" | "llm" | "evidence_only";
+
 export interface AgentAskRequest {
   question: string;
   top_k?: number;

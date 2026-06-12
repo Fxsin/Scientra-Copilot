@@ -1467,7 +1467,7 @@ def _load_summary_text(root: Path, paper_id: str) -> str | None:
 
 # ── Phase 0.8: Request/Response models (module-level for FastAPI compatibility) ──
 
-VALID_CHUNK_TYPES = {"section", "method", "result", "claim"}
+VALID_CHUNK_TYPES = {"section", "method", "result", "claim", "figure"}
 
 class QueryAssetsRequest(BaseModel):
     query: str = Field(..., min_length=1, description="Search query text")

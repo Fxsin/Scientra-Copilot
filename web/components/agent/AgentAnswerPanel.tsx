@@ -1,10 +1,9 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, Sparkles, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
 
 interface AgentAnswerPanelProps {
   answer: string;
@@ -15,6 +14,7 @@ interface AgentAnswerPanelProps {
   papersCited: number;
   highlightedRef: string | null;
   onRefClick: (refId: string) => void;
+  answerMode?: string;
 }
 
 const CHUNK_TYPE_COLORS: Record<string, string> = {
@@ -24,9 +24,27 @@ const CHUNK_TYPE_COLORS: Record<string, string> = {
   claim: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
 };
 
+function isLlmUnavailable(answer: string): boolean {
+  const lower = answer.toLowerCase();
+  return (
+    lower.includes("anthropic_api_key not set") ||
+    lower.includes("llm synthesis is unavailable") ||
+    lower.includes("context was retrieved successfully but llm") ||
+    lower.includes("agent error")
+  );
+}
+
+const FALLBACK_MESSAGE = `Scientra retrieved relevant evidence from your literature library, but LLM synthesis is currently unavailable.
+
+**You can still inspect the retrieved context below**, or disable "Use LLM" in Advanced Options to switch to extractive mode (no API key required).
+
+---
+
+*Retrieved evidence is shown in the context panel below.*`;
+
 export function AgentAnswerPanel({
   answer, intent, model, elapsedMs, contextUsed, papersCited,
-  highlightedRef, onRefClick,
+  highlightedRef, onRefClick, answerMode,
 }: AgentAnswerPanelProps) {
   const [copied, setCopied] = useState(false);
   const answerRef = useRef<HTMLDivElement>(null);
@@ -37,13 +55,42 @@ export function AgentAnswerPanel({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Determine display mode
+  const isLlmError = isLlmUnavailable(answer);
+  const isFallback = model.includes("evidence-only-fallback") || model.includes("extractive");
+  const isLlmSuccess = !isLlmError && !isFallback && !model.includes("no LLM");
+  const effectiveAnswer = isLlmError ? FALLBACK_MESSAGE : answer;
+
+  // Mode badge
+  let modeLabel: string;
+  if (answerMode === "evidence_only") {
+    modeLabel = "Evidence-only mode";
+  } else if (isLlmSuccess) {
+    modeLabel = answerMode === "auto" ? "Auto → LLM synthesis" : "LLM synthesis";
+  } else if (isFallback) {
+    modeLabel = answerMode === "llm" ? "LLM unavailable — evidence retrieved" : "Auto → Evidence fallback";
+  } else {
+    modeLabel = "Evidence-only mode";
+  }
+  const ModeIcon = isLlmSuccess ? Sparkles : Search;
+
   return (
     <div className="rounded-xl border bg-card p-4 shadow-sm">
       <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground flex-wrap">
+        <span className={cn(
+          "inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-medium",
+          isLlmError || isFallback
+            ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
+            : isLlmSuccess
+            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
+            : "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+        )}>
+          <ModeIcon className="h-3 w-3" />
+          {modeLabel}
+        </span>
         <span className="rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary">
           {intent || "hybrid"}
         </span>
-        <span>{model}</span>
         <span>{elapsedMs?.toFixed(0)}ms</span>
         <span>{contextUsed} chunks</span>
         <span>{papersCited} papers</span>
@@ -56,7 +103,7 @@ export function AgentAnswerPanel({
           {copied ? "Copied" : "Copy"}
         </button>
       </div>
-      <div ref={answerRef} className="prose prose-sm dark:prose-invert max-w-none">
+      <div ref={answerRef} className="prose prose-sm dark:prose-invert max-w-none leading-relaxed">
         <ReactMarkdown
           components={{
             p: ({ children }) => {
@@ -88,7 +135,7 @@ export function AgentAnswerPanel({
             },
           }}
         >
-          {answer}
+          {effectiveAnswer}
         </ReactMarkdown>
       </div>
     </div>

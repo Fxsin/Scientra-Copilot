@@ -15,7 +15,7 @@
 
 ## What is Scientra Copilot?
 
-Scientra Copilot transforms scientific literature into structured, searchable, machine-readable knowledge. It automatically processes PDFs, extracts evidence (key results, methods, core findings, discussion points), builds semantic indexes, organizes papers into research facets with hierarchical subtopics, and exposes everything through APIs and an interactive web interface.
+Scientra Copilot transforms scientific literature into structured, searchable, machine-readable knowledge. It automatically processes PDFs, extracts evidence, builds semantic indexes, and provides an **AI-powered chat interface** that answers research questions grounded in your literature with traceable citations.
 
 > **Move from collecting papers to understanding knowledge and discovering ideas.**
 
@@ -23,211 +23,133 @@ Scientra Copilot transforms scientific literature into structured, searchable, m
 
 ## Core Capabilities
 
+### 💬 Literature Chat (NEW — V1.5)
+- **AI-powered Q&A** over your entire literature library
+- Dual-source retrieval: `pdf_asset_chunks` (quality-filtered) + `evidence_chunks` (broad coverage)
+- Three answer modes: **Auto** (LLM if configured, else fallback), **LLM synthesis**, **Evidence-only**
+- Multi-provider LLM support: **DeepSeek** or **Anthropic Claude**
+- Citations with `[Ref:N]` traceable to source evidence
+- Paper-specific chat on every paper detail page (`/paper/{id}`)
+- Anti-hallucination guardrails: no fabricated DOIs, no invented papers
+- 28-case evaluation framework: 100% pass rate
+
+### 📊 PDF Data Assetization (Phase 0–1B)
+- **10 asset types**: sections, methods, results, entities, claims, evidence links, agent chunks
+- **Entity extraction**: 16 types (protein, gene, species, receptor, pathway, etc.)
+- **Quality filtering**: entity noise removal (26% → 272 clean entities), chunk quality scoring
+- **Figure extraction**: 44 figures across 30 papers, with caption extraction and rule-based type classification
+- **Figure interpretation** (AI-powered, text-only): structured evidence type, strength, claims from captions
+- **Agent embedding**: 2,484 quality-filtered chunks in LanceDB (BGE-M3, 1024-dim)
+
 ### 📄 Literature Processing
 - PDF ingestion → GROBID parsing → metadata extraction → AI summarization
 - Incremental processing with resume-from-failure
 - Automatic tagging and knowledge extraction
 
 ### 🔬 Evidence Extraction V2.3
-- **Key results** — experimental findings with direction detection (increase/decrease/no change/association)
-- **Core findings** — author-level conclusions from abstract/conclusion
-- **Methods** — 73-term vocabulary matching + pattern extraction
-- **Discussion points** — 7-type classification (interpretation, mechanism, comparison, limitation, etc.)
-- **Result-discussion links** — automatic linking between results and their interpretations
-- Multi-section fallback (Results → Discussion → Abstract → Full text)
-- 1267 evidence chunks embedded in LanceDB with BGE-M3
+- **Key results**, **Core findings**, **Methods**, **Discussion points**
+- Result-discussion linking with confidence scoring
+- 1,267 evidence chunks embedded in LanceDB with BGE-M3
 
-### 🗺️ Research Map V3 — Facet-First Hierarchical
-- **14 generic research facets** classify papers by research type (not by keyword similarity)
-- **Hierarchical structure**: Facets → Subtopics (with controlled intent-based naming)
-- **Facet View** and **Topic View** toggle
-- **Topic Deduplication** — automatically merges similar clusters
-- **Topic Evolution** — vertical timeline with evidence-rich phase cards (Early/Middle/Recent)
-- **Evidence Coverage** tracking per topic and subtopic
-- **Research Facets** distribution with horizontal bar charts
-- **Phase Comparison** table across Early/Middle/Recent phases
-- **Stable & cached** — consistent results via `research_map_v3_facet_hierarchical` cache
+### 🗺️ Research Map V3
+- 14 generic research facets, hierarchical subtopics
+- Topic Evolution with evidence-rich phase cards
+- Facet View and Topic View toggle
 
-### 🔍 Evidence Search
-- Search 1267 structured evidence chunks via `/query/evidence`
-- Filter by chunk type: Key results, Core findings, Methods, Discussion, Limitations, Open questions
-- Integrated into Topic Detail pages and available as standalone `/evidence` page
-- Real-time semantic search powered by BGE-M3 + LanceDB
+### 🔍 Semantic Search
+- `/query/assets` — search quality-filtered asset chunks
+- `/query/evidence` — search evidence chunks
+- Filter by chunk type: section, method, result, claim, figure
+- BGE-M3 vector search + keyword hybrid
 
-### 🔥 Hotspots
-- **Trending Topics** — growth score based on recency + evidence richness
-- **Hot Papers** — scored by recency, topic relevance, and evidence content
-- **Emerging Facets** — research areas with high recent publication activity
-- **Method Shifts** — detected changes in experimental methods over time
-- **Evidence Signals** — chunk type distribution statistics
-- Cached with automatic invalidation on research map changes
-
-### 🕳️ Research Gaps
-- Auto-detected from facet distribution analysis
-- Identifies under-represented research areas (<10% paper share)
-- Flags topics with low structured evidence coverage
-- Method diversity assessment
-- Suggested actions based on data
-
-### 🕸️ Knowledge Network
-- 123 nodes × 330 edges connecting papers, facets, subtopics, methods, and findings
-- 7 edge types: paper→facet, paper→subtopic, paper→method, paper→finding, etc.
-- Filterable node explorer and relationship table
-- Insights based on network statistics
-
-### 📊 Library Intelligence Report
-- Auto-generated executive summary from all data modules
-- Coverage summary, Research Map overview, Hotspots, Gaps, Knowledge Network
-- Evidence statistics and recommended next actions
-- Aggregates data from all real modules — no mock content
-
-### 🧠 Semantic Retrieval
-- Three-level search: Metadata → Summary → Chunk-level Evidence
-- Keyword, Vector, and Hybrid modes
-- Powered by BGE-M3 embeddings + LanceDB
-
-### 🤖 Agent-Ready
-- Query API + Agent SDK
-- Context Packs with citation-grounded evidence
-- Safe retrieval: agents never access raw PDFs or internal databases
-
----
-
-## Web Interface — All 10 Pages with Real Data
-
-| Page | Description | Data Source |
-|------|-------------|-------------|
-| `/research-map` | Facet-first hierarchical topic explorer | Research Map cache |
-| `/research-map/topic/{id}` | Topic detail with evidence, evolution, search | Cache + paper metadata |
-| `/library` | Paginated paper library with search/filter | `/papers` API |
-| `/paper/{id}` | Paper metadata, summary, evidence, related papers | API endpoints |
-| `/evidence` | Standalone evidence chunk search | `/query/evidence` |
-| `/hotspots` | Trending topics, hot papers, emerging facets | `/hotspots` API |
-| `/research-gaps` | Auto-detected evidence gaps and limitations | `/research-gaps` API |
-| `/knowledge-network` | Paper-facet-method-finding relationship explorer | `/knowledge-network` API |
-| `/report` | Auto-generated library intelligence report | `/report` API |
-| `/topic-explorer` | Browse topics by research facet | `/research-map` API |
-
-**All pages use real data. No mock/demo content in any user-facing page.**
+### 🔥 Hotspots · 🕳️ Research Gaps · 🕸️ Knowledge Network · 📊 Report
+- Trending topics, hot papers, emerging facets
+- Auto-detected research gaps from facet distribution
+- 123 nodes × 330 edges network graph
+- Auto-generated library intelligence report
 
 ---
 
 ## Quick Start
 
-### Requirements
-- Python 3.11+
-- Docker (for GROBID)
-- 8GB+ RAM
-
-### Development Start (Recommended)
+### 1. Install & Run
 
 ```bash
-# One-command startup with port detection, cache sync, and schema validation
+# Requirements: Python 3.11+, Docker (for GROBID), Node.js 18+
+
+# Start everything (API + Web)
 python Scripts/dev_restart.py
 
-# With auto browser open
-python Scripts/dev_restart.py --open
-
-# API only
-python Scripts/dev_restart.py --no-web
+# Or start components separately:
+python -m scientra.server          # API on http://127.0.0.1:8710
+cd web && npm run dev              # Web on http://127.0.0.1:3000
 ```
 
-Options: `--api-port`, `--web-port`, `--kill-old`, `--no-web`, `--no-cache-clean`, `--open`, `--strict`
-
-### Production Start
-
-```bash
-python Scripts/start_all.py              # Full: GROBID + API + Web
-python Scripts/start_all.py --no-browser # Skip auto browser
-python Scripts/start_all.py --api-only   # API only
-```
-
-### Import Literature
+### 2. Import Literature
 
 ```bash
 # Place PDFs in 00_Inbox/
 python workflow.py run
 ```
 
-Pipeline: PDF → Metadata → Tags → Summary → Evidence → Embedding → Search Index
-
-### Rebuild Research Map
+### 3. Set Up LLM for Chat (Recommended)
 
 ```bash
-python -m scientra.research_map_builder --force
-python -m scientra.research_map_builder --status
+# Interactive setup — choose DeepSeek or Anthropic
+python Scripts/setup_llm.py
+
+# Or set environment variable:
+# PowerShell:  $env:DEEPSEEK_API_KEY = "sk-..."
+# Linux/macOS: export DEEPSEEK_API_KEY="sk-..."
 ```
 
-### Regenerate Evidence Chunks
+The key is stored in `Config/llm_config.yaml` (gitignored, never committed).
 
-```bash
-python -m scientra.evidence_chunks --force
-python -m scientra.evidence_embedding --force
+### 4. Open Chat
+
+```
+http://127.0.0.1:3000/chat
 ```
 
-### Web Frontend Startup
-
-The frontend is a Next.js 16 application located in `web/`. It connects to the API server via environment variables.
-
-**Quick start (automatic):**
-```bash
-python Scripts/dev_restart.py
-```
-This automatically starts both API and Web, syncs `.env.local`, and validates the connection.
-
-**Manual start:**
-```bash
-cd web
-npm install        # first time only
-npm run dev        # starts on http://localhost:3000
-```
-
-**API connection configuration:**
-
-The frontend reads API address from environment variables (priority order):
-1. `NEXT_PUBLIC_SCIENTRA_API_URL` — full URL, e.g., `http://127.0.0.1:8711`
-2. `NEXT_PUBLIC_SCIENTRA_API_PORT` — port only, defaults to `8710`
-
-These can be set in `web/.env.local`:
-```
-NEXT_PUBLIC_SCIENTRA_API_URL=http://127.0.0.1:8711
-NEXT_PUBLIC_SCIENTRA_API_PORT=8711
-```
-
-**Port conflict:** If port 3000 is occupied, Next.js auto-increments to 3001, 3002, etc. Specify manually with:
-```bash
-npm run dev -- -p 3005
-```
-
-**Production build:**
-```bash
-cd web
-npm run build
-npm start          # serves on http://localhost:3000
-```
-
-**Troubleshooting:**
-- `localhost refused to connect` → API server not running. Check `curl http://127.0.0.1:8710/health`
-- `Research Map shows no data` → Wrong API port. Check `web/.env.local` matches running API port
-- `Build errors` → Clear cache: `rm -rf web/.next && npm run build`
-- `Schema mismatch warning` → Old API server running. Run `python Scripts/dev_restart.py`
+Select **Answer Mode: Auto** and ask questions about your literature.
 
 ---
 
-## Testing
+## Web Interface — 11 Pages
 
-```bash
-cd web
+| Page | Description |
+|---|---|
+| `/chat` | **AI Chat** — ask questions, get cited answers |
+| `/research-map` | Facet-first hierarchical topic explorer |
+| `/research-map/topic/{id}` | Topic detail with evidence, evolution |
+| `/library` | Paginated paper library with search/filter |
+| `/paper/{id}` | Paper metadata, summary, evidence, **Ask this paper** |
+| `/evidence` | Standalone evidence chunk search |
+| `/hotspots` | Trending topics, hot papers, emerging facets |
+| `/research-gaps` | Auto-detected evidence gaps |
+| `/knowledge-network` | Paper-facet-method-finding network |
+| `/report` | Auto-generated library intelligence report |
+| `/topic-explorer` | Browse topics by research facet |
 
-npm run test:summary-parser       # 149 tests — summary parsing integrity
-npm run test:topic-evolution      # 27 tests — topic evolution analysis
-npm run test:research-map         # 17 tests — research map data integrity
-npm run test:hotspots             # 20 tests — hotspots real data
-npm run test:knowledge-network    # 10 tests — knowledge network integrity
-npm run test:report               # 15 tests — report generation
-npm run test:no-mock-pages        # 4 tests — mock data guard
-npm run build                     # TypeScript + Next.js build
-```
+---
+
+## API Endpoints
+
+| Endpoint | Description |
+|---|---|
+| `GET /health` | API + LanceDB status |
+| `GET /papers` | Paginated paper list |
+| `GET /paper/{id}/metadata` | Paper metadata |
+| `GET /paper/{id}/summary` | AI-generated summary |
+| `GET /paper/{id}/evidence` | Structured evidence |
+| `POST /query/evidence` | Semantic evidence chunk search |
+| **`POST /query/assets`** | **Search quality-filtered asset chunks** |
+| **`POST /v1/agent/ask`** | **Literature Agent — AI-powered Q&A** |
+| `GET /research-map` | Facet-first hierarchical topics |
+| `GET /hotspots` | Trending topics, hot papers |
+| `GET /research-gaps` | Auto-detected research gaps |
+| `GET /knowledge-network` | Paper-facet-method-finding network |
+| `GET /report` | Library intelligence report |
 
 ---
 
@@ -236,21 +158,39 @@ npm run build                     # TypeScript + Next.js build
 ```text
 PDF Papers
     ↓
-GROBID Parsing
+GROBID Parsing → Metadata → Tags → AI Summarization
     ↓
-Metadata Extraction → Tags → AI Summarization
+Evidence Extraction V2.3
     ↓
-Evidence Extraction V2.3 (key_results, core_findings, methods, discussion_points, links)
+┌─────────────────────────────────────────────┐
+│  PDF Data Assetization Layer                │
+│  sections · methods · results · entities    │
+│  claims · evidence links · agent chunks      │
+│  figures · figure interpretations           │
+│  quality checks · noise filtering           │
+└─────────────────────────────────────────────┘
     ↓
-Research Facet Classification (14 generic facets, 45 intents)
+BGE-M3 Embeddings → LanceDB
+├── evidence_chunks (1,267 rows)
+├── literature_vectors (319 rows)
+└── pdf_asset_chunks (2,484 rows)
     ↓
-BGE-M3 Embeddings → LanceDB (evidence_chunks + literature_vectors)
+┌─────────────────────────────────────────────┐
+│  Query Layer                                │
+│  /query/assets · /query/evidence            │
+│  /v1/agent/ask (Literature Agent)           │
+└─────────────────────────────────────────────┘
     ↓
-Research Map Cache (facet-first hierarchical, stable, fingerprint-validated)
+┌─────────────────────────────────────────────┐
+│  Literature Agent V1                        │
+│  Intent Detection → Dual-Source Retrieval   │
+│  → Context Merge → DeepSeek/Claude → Answer │
+│  Anti-hallucination guardrails              │
+│  28-case evaluation (100% pass)             │
+└─────────────────────────────────────────────┘
     ↓
-Query API (/research-map, /hotspots, /research-gaps, /knowledge-network, /report, /query/evidence)
-    ↓
-Web Frontend (10 pages, all real data)
+Web Frontend (11 pages, all real data)
+Chat · Research Map · Paper Detail · Evidence · Hotspots · Gaps · Network · Report
 ```
 
 ---
@@ -258,57 +198,13 @@ Web Frontend (10 pages, all real data)
 ## Backend Modules
 
 | Module | Description |
-|--------|-------------|
-| `scientra/evidence_extraction.py` | V2.3 engine — key_results, methods, core_findings, discussion_points, result-discussion links |
-| `scientra/research_facets.py` | 14 generic research facets with 320+ signals |
-| `scientra/research_map_builder.py` | Facet-first hierarchical cache builder with dedup + subtopic clustering |
-| `scientra/evidence_chunks.py` | Converts evidence.json → searchable chunks |
-| `scientra/evidence_embedding.py` | BGE-M3 embedding → LanceDB |
-| `scientra/server.py` | FastAPI server with 10+ endpoints |
-| `scientra/embedding.py` | BGE-M3 embedder wrapper |
-
-## API Endpoints
-
-| Endpoint | Description |
-|----------|-------------|
-| `GET /health` | API + LanceDB status |
-| `GET /version` | Schema version (research_map_schema: v2) |
-| `GET /stats` | Paper count, tag/year distributions |
-| `GET /papers` | Paginated paper list with search/filter |
-| `GET /paper/{id}/metadata` | Paper metadata |
-| `GET /paper/{id}/summary` | AI-generated summary |
-| `GET /paper/{id}/evidence` | Structured evidence (key_results, methods, etc.) |
-| `GET /paper/{id}/related` | Related papers by vector similarity |
-| `GET /research-map` | Facet-first hierarchical topics + relationships |
-| `GET /research-map/topic/{id}` | Topic detail, evolution phases, evidence |
-| `POST /query/evidence` | Semantic evidence chunk search |
-| `GET /hotspots` | Trending topics, hot papers, emerging facets |
-| `GET /research-gaps` | Auto-detected research gaps |
-| `GET /knowledge-network` | Paper-facet-method-finding network |
-| `GET /report` | Auto-generated library intelligence report |
-
----
-
-## Research Facets (14 total)
-
-| Facet | Typical Research |
-|-------|-----------------|
-| Bioactivity / Phenotype | Dose-response, toxicity, efficacy |
-| Structure / Modeling | Protein structure, cryo-EM, docking |
-| Domain / Mutagenesis / Engineering | Domain function, mutations, chimeras |
-| Target / Binding / Interaction | Receptor ID, binding assays, affinity |
-| Resistance / Genetics / Adaptation | Resistance mechanisms, alleles, fitness |
-| Expression / Production / Application | Recombinant expression, field trials |
-| Omics / Response Profiling | Transcriptomics, proteomics, pathways |
-| Method / Resource / Review | Reviews, protocols, databases |
-| Gene Function / Functional Genomics | CRISPR, knockouts, overexpression |
-| Genetics / QTL Mapping / GWAS | QTL, GWAS, association mapping |
-| Signaling / Regulation / Pathway | Signal transduction, transcription factors |
-| Development / Morphology / Physiology | Organ development, yield, architecture |
-| Subcellular Localization / Trafficking | Protein localization, organelles |
-| Stress Physiology / Environmental Response | Drought, salt, oxidative stress |
-
-All facets use generic research terminology — no domain-specific hardcoding. New facets can be added via configuration.
+|---|---|
+| `scientra/agent/` | **Literature Agent V1** — chat, context builder, eval framework |
+| `scientra/pdf_data_assets/` | **PDF Data Assetization** — builders, quality, embedding, figures |
+| `scientra/evidence_extraction.py` | Evidence Extraction V2.3 |
+| `scientra/embedding.py` | BGE-M3 embedder + embedding engine |
+| `scientra/research_map_builder.py` | Research Map cache builder |
+| `scientra/server.py` | FastAPI server (39 routes) |
 
 ---
 
@@ -316,39 +212,71 @@ All facets use generic research terminology — no domain-specific hardcoding. N
 
 ```text
 Scientra_Copilot/
-├── 00_Inbox/           # PDF import directory
-├── 01_PDF/             # Processed PDFs
-├── 02_Metadata/        # Extracted metadata (YAML)
-├── 03_Evidence/        # Evidence extraction output (evidence.json, chunks, sections)
-├── 03_Summary/         # AI-generated summaries
-├── 04_VectorDB/        # LanceDB vector store
-├── 05_Index/           # Research map cache + hotspots cache
-├── Config/             # Workflow and extraction configuration
-├── Scripts/            # Startup, dev restart, build, verification scripts
-├── docs/               # Documentation
-├── scientra/           # Backend Python modules
-├── web/                # Next.js frontend
-│   ├── app/            # Page routes (10 pages)
-│   ├── components/     # Reusable UI components
-│   ├── lib/            # Types, API client, topic evolution, summary parser
-│   └── scripts/        # Test suites (7 test files)
-├── workflow.py         # Main processing workflow
-└── agent_sdk.py        # Agent SDK
+├── 00_Inbox/              # PDF import directory
+├── 01_PDF/                # Processed PDFs
+├── 02_Metadata/           # Extracted metadata (YAML)
+├── 03_Evidence/           # Evidence extraction output
+├── 03_Summary/            # AI-generated summaries + raw text
+├── 04_VectorDB/           # LanceDB vector store
+├── 05_Index/              # Research map + hotspots cache
+├── 06_PDF_DataAssets/     # Structured data assets (gitignored)
+├── Config/                # Configuration files
+│   ├── llm_config.yaml    # LLM API key (gitignored)
+│   └── pdf_data_assets.yaml
+├── Scripts/               # Setup, dev restart, verification
+│   ├── setup_llm.py       # First-time LLM setup
+│   └── dev_restart.py     # One-command startup
+├── docs/                  # Documentation
+├── scientra/              # Backend Python modules
+│   ├── agent/             # Literature Agent V1
+│   └── pdf_data_assets/   # Data assetization
+├── web/                   # Next.js frontend
+│   ├── app/chat/          # Chat page
+│   ├── app/paper/         # Paper detail (with Ask this paper)
+│   └── components/agent/  # Shared agent UI components
+├── workflow.py            # Main processing workflow
+└── README.md
 ```
 
 ---
 
-## Use Cases
+## LLM Setup (First-Time Users)
 
-Scientra is domain-agnostic and works with any research field:
+```bash
+# Interactive setup
+python Scripts/setup_llm.py
 
-- Life Sciences & Medicine
-- Bioinformatics & Genomics
-- Plant Molecular Biology & Agriculture
-- AI & Computer Science
-- Materials Science & Chemistry
-- Environmental Science
-- Social Sciences
+# Choose provider:
+#   1. DeepSeek  (https://platform.deepseek.com)
+#   2. Anthropic (https://console.anthropic.com)
+
+# Paste your API key when prompted.
+# Config saved to Config/llm_config.yaml (gitignored).
+```
+
+The Chat page defaults to **Auto** mode — uses LLM if configured, otherwise shows evidence-only fallback. No API key is ever exposed to the frontend.
+
+---
+
+## Testing
+
+```bash
+# Web tests
+cd web
+npm run test:summary-parser       # 149 tests
+npm run test:no-mock-pages        # Mock data guard
+npm run build                     # TypeScript + Next.js
+
+# Agent evaluation
+python -m scientra.agent.eval.regression_runner --use-llm false --case-type all
+
+# Figure extraction test
+python Scripts/test_figure_extraction.py
+
+# API tests
+python Scripts/test_query_assets_api.py
+python Scripts/test_agent_api.py
+```
 
 ---
 
@@ -358,27 +286,27 @@ Scientra is domain-agnostic and works with any research field:
 - PDF Processing Pipeline
 - Evidence Extraction V2.3
 - Research Map V3 (facet-first hierarchical)
-- Topic Evolution with evidence-rich phases
-- Evidence Search (standalone + integrated)
-- Hotspots (trending topics, hot papers, method shifts)
-- Research Gaps (auto-detection from facet distribution)
-- Knowledge Network (paper-facet-method-finding graph)
-- Library Intelligence Report (auto-generated)
-- Mock Data Decommission (all 10 pages use real data)
-- Stable caching with fingerprint-based invalidation
+- Evidence Search + Hotspots + Research Gaps + Knowledge Network
+- Library Intelligence Report
+- **PDF Data Assetization** (sections, methods, results, entities, claims, chunks)
+- **Quality filtering + entity noise removal**
+- **Agent embedding** (pdf_asset_chunks in LanceDB)
+- **Literature Agent V1** (chat, dual-source retrieval, citations)
+- **Agent evaluation framework** (28 cases, 100% pass)
+- **Web Chat** (/chat + paper detail Ask this paper)
+- **Chat UX polish** (error handling, readability, answer modes)
+- **Figure + Caption Extraction** (44 figures, 66% caption rate)
+- **Multi-provider LLM** (DeepSeek + Anthropic, config file)
+- **First-time user setup** (`Scripts/setup_llm.py`)
+- Mock Data Decommission (all pages use real data)
 
 ### Upcoming
-- User-configurable facets and intents
-- Citation network extraction and visualization
+- Figure AI Interpretation at scale (with LLM key)
+- Table Extraction (Phase 2)
 - Multi-project/library support
-- Collaborative workspaces
 - Zotero integration
 
 ---
-
-## Contributing
-
-Contributions welcome. See `CONTRIBUTING.md` for development setup and guidelines.
 
 ## License
 

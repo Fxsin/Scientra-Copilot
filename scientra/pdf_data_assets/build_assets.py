@@ -471,6 +471,93 @@ def build_all(root: Path | None = None, force: bool = False) -> dict[str, Any]:
     return summary
 
 
+# ── Phase 1: Figure Extraction ──
+
+def run_figure_extraction(
+    paper_id: str, root: Path | None = None, force: bool = False
+) -> dict[str, Any]:
+    if root is None:
+        root = _get_project_root()
+    from scientra.pdf_data_assets.figure_asset_builder import FigureAssetBuilder
+    from scientra.pdf_data_assets.agent_chunk_builder import AgentChunkBuilder
+    from scientra.pdf_data_assets.asset_registry import AssetRegistry, RegistryEntry
+    from scientra.pdf_data_assets.schemas import BuildStatus
+
+    builder = FigureAssetBuilder(root)
+    chunk_builder = AgentChunkBuilder(root)
+    registry = AssetRegistry(root)
+
+    print(f"\n=== Figure Extraction: {paper_id} ===\n")
+    try:
+        figures = builder.build(paper_id, force=force)
+        print(f"  Figures extracted: {len(figures)}")
+
+        # Regenerate chunks to include figure chunks
+        chunks = chunk_builder.build(paper_id, force=True)
+        print(f"  Chunks regenerated: {len(chunks)} (now includes figure chunks)")
+
+        entry = registry.get_entry(paper_id)
+        if entry:
+            entry.figure_assets = len(figures)
+            registry.upsert_entry(entry)
+            registry.update_totals()
+
+        print(f"\n[OK] Figure extraction complete for {paper_id}")
+        return {"paper_id": paper_id, "status": "success", "figures": len(figures), "chunks": len(chunks)}
+    except Exception as e:
+        logger.error(f"Figure extraction failed for {paper_id}: {e}")
+        return {"paper_id": paper_id, "status": "failed", "error": str(e)}
+
+
+def run_figure_extraction_all(root: Path | None = None, force: bool = False) -> dict[str, Any]:
+    if root is None:
+        root = _get_project_root()
+    from scientra.pdf_data_assets.evidence_adapter import EvidenceAdapter
+
+    adapter = EvidenceAdapter(root)
+    paper_ids = adapter.list_paper_ids()
+    results = []
+    total_figures = 0
+    for pid in paper_ids:
+        r = run_figure_extraction(pid, root=root, force=force)
+        results.append(r)
+        if r["status"] == "success":
+            total_figures += r.get("figures", 0)
+
+    print(f"\n=== Figure Extraction Complete ===")
+    print(f"Papers: {len(paper_ids)} | Total figures: {total_figures}")
+    return {"total": len(paper_ids), "total_figures": total_figures, "results": results}
+
+
+# ── Phase 1B: Figure Interpretation ──
+
+def run_figure_interpretation(paper_id: str, root: Path | None = None, force: bool = False) -> dict[str, Any]:
+    if root is None: root = _get_project_root()
+    from scientra.pdf_data_assets.figure_interpreter import FigureInterpreter
+    interpreter = FigureInterpreter(root)
+    print(f"\n=== Figure Interpretation: {paper_id} ===\n")
+    if not interpreter.llm_available:
+        print("  ANTHROPIC_API_KEY not set — all figures will be pending")
+    result = interpreter.interpret_paper(paper_id, force=force)
+    stats = result.get("stats", {})
+    print(f"  Total: {stats.get('total',0)} | Interpreted: {stats.get('interpreted',0)} | "
+          f"Skipped: {stats.get('skipped',0)} | Pending: {stats.get('pending',0)}")
+    print(f"\n[OK] Figure interpretation complete for {paper_id}")
+    return result
+
+def run_figure_interpretation_all(root: Path | None = None, force: bool = False) -> dict[str, Any]:
+    if root is None: root = _get_project_root()
+    from scientra.pdf_data_assets.figure_interpreter import FigureInterpreter
+    interpreter = FigureInterpreter(root)
+    print(f"\n=== Figure Interpretation: ALL ===\n")
+    print(f"  LLM available: {interpreter.llm_available}")
+    result = interpreter.interpret_all(force=force)
+    stats = result.get("stats", {})
+    print(f"\n=== Complete ===\nPapers: {result.get('papers',0)} | "
+          f"Total figs: {stats.get('total',0)} | Interpreted: {stats.get('interpreted',0)} | "
+          f"Skipped: {stats.get('skipped',0)} | Pending: {stats.get('pending',0)}")
+    return result
+
 # ── CLI ──
 
 def main() -> int:
@@ -506,8 +593,34 @@ Examples:
     parser.add_argument("--quality-report", action="store_true",
                         help="Generate full-library quality report")
 
+    # Phase 1
+    parser.add_argument("--figures", action="store_true",
+                        help="Build figure assets (Phase 1: Figure + Caption Extraction)")
+    parser.add_argument("--interpret-figures", action="store_true",
+                        help="AI interpretation of figures from captions (Phase 1B)")
+
     args = parser.parse_args()
     root = _get_project_root()
+
+    # Phase 1B: Figure interpretation
+    if args.interpret_figures:
+        if args.paper_id:
+            run_figure_interpretation(args.paper_id, root=root, force=args.force)
+        elif args.all:
+            run_figure_interpretation_all(root=root, force=args.force)
+        else:
+            print("Use --interpret-figures with --paper-id or --all")
+        return 0
+
+    # Phase 1: Figure extraction
+    if args.figures:
+        if args.paper_id:
+            run_figure_extraction(args.paper_id, root=root, force=args.force)
+        elif args.all:
+            run_figure_extraction_all(root=root, force=args.force)
+        else:
+            print("Use --figures with --paper-id or --all")
+        return 0
 
     # Phase 0.5 commands (can run standalone or on top of existing builds)
     if args.quality_report:

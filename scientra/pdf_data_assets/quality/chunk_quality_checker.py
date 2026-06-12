@@ -63,7 +63,58 @@ ENTITY_STOPWORDS: set[str] = {
 }
 
 # Chunk types that should have evidence traceability
-EVIDENCE_TRACEABLE_TYPES = {"method", "result", "claim"}
+EVIDENCE_TRACEABLE_TYPES = {"method", "result", "claim", "figure"}
+
+# ── Phase 0.9D: Method noise patterns ──
+
+GENERIC_METHOD_PHRASES: set[str] = {
+    "using the approach", "using this method", "this method", "the approach",
+    "leaves were used", "japonica were used", "samples were used",
+    "was used", "were used", "using a method", "using the methods",
+    "the method described", "as described previously", "performed as described",
+    "according to the manufacturer", "using the same method", "the same approach",
+    "using this approach", "as described above", "as previously described",
+    "carried out as described", "following the protocol", "using standard protocols",
+    "conventional methods", "standard methods were", "routine methods",
+    "according to standard", "as recommended by", "following the method",
+    "the procedure described", "the protocol described", "as reported previously",
+}
+
+SPECIFIC_METHOD_WORDS: set[str] = {
+    "pcr", "qpcr", "rt-qpcr", "rt-qpcr", "rna-seq", "rnaseq", "transcriptom",
+    "proteomics", "western blot", "sds-page", "sds page", "elisa",
+    "binding assay", "ligand blot", "competition assay", "bioassay",
+    "lc50", "ld50", "mortality assay", "toxicity assay",
+    "crispr", "rnai", "cloning", "expression", "purification",
+    "microscopy", "confocal", "immunofluorescence", "immunohistochemistry",
+    "phylogenetic", "sequence alignment", "molecular docking",
+    "cryo-em", "cryo em", "structure modeling", "homology modeling",
+    "statistical analysis", "regression", "anova", "t-test",
+    "surface plasmon resonance", "spr", "mass spectrometry",
+    "chromatography", "hplc", "flow cytometry", "fac",
+    "electrophoresis", "blot", "hybridization",
+    "site-directed mutagenesis", "mutagenesis", "knockout", "knockdown",
+    "recombinant", "heterologous expression", "transformation",
+    "sequencing", "genotyping", "phenotyping",
+    "diet overlay", "leaf disc", "feeding assay", "diet incorporation",
+    "field trial", "greenhouse", "field-collected", "lab colony",
+}
+
+def _detect_method_noise(text: str) -> tuple[bool, list[str]]:
+    """Check if method chunk text contains only generic phrases."""
+    text_lower = text.lower()
+    flags: list[str] = []
+    for phrase in GENERIC_METHOD_PHRASES:
+        if phrase in text_lower:
+            flags.append("generic_method_phrase")
+            break
+    has_specific = any(w in text_lower for w in SPECIFIC_METHOD_WORDS)
+    if not has_specific:
+        flags.append("missing_specific_method_name")
+    if len(text.strip()) < 50:
+        flags.append("low_information_method")
+    is_noise = bool(flags) and not has_specific
+    return is_noise, flags
 
 
 class ChunkQualityChecker:
@@ -145,6 +196,13 @@ class ChunkQualityChecker:
                     score -= 15
                     notes.append(f"high_entity_noise ({noise_count}/{len(entities)} stopwords)")
 
+            # Check 7b: method noise (Phase 0.9D)
+            if ctype == "method":
+                is_noise, noise_flags = _detect_method_noise(text)
+                if is_noise:
+                    score -= 25
+                    notes.extend(noise_flags)
+
             # Check 8: source_section traceability
             source_section = chunk.get("source_section", "unknown")
             if source_section == "unknown":
@@ -170,6 +228,11 @@ class ChunkQualityChecker:
             has_source_text = bool(chunk.get("source_section", "unknown") != "unknown" or text_len >= self.MIN_TEXT_LENGTH)
 
             vector_ready = all([has_text, has_paper_id, has_type, has_source, has_source_text])
+            # Method noise exclusion
+            if vector_ready and ctype == "method":
+                is_noise, _ = _detect_method_noise(text)
+                if is_noise:
+                    vector_ready = False
 
             if vector_ready:
                 vector_ready_count += 1
