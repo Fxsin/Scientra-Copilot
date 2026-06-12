@@ -14,7 +14,7 @@ Usage:
   python Scripts/dev_restart.py --api-port 8710 --web-port 3000
   python Scripts/dev_restart.py --kill-old
   python Scripts/dev_restart.py --no-web
-  python Scripts/dev_restart.py --open
+  python Scripts/dev_restart.py --no-browser
 """
 
 from __future__ import annotations
@@ -359,7 +359,7 @@ def write_env_local(api_port: int) -> None:
 # =============================================================================================================================================================================================
 
 def clean_next_cache() -> None:
-    """Remove web/.next directory."""
+    """Remove web/.next directory. Kills stale Next.js processes if needed."""
     next_dir = PROJECT_ROOT / "web" / ".next"
     if not next_dir.exists():
         print(f"  No .next cache to clean")
@@ -367,9 +367,20 @@ def clean_next_cache() -> None:
     try:
         shutil.rmtree(next_dir)
         print(f"  {green('OK')} Cleaned web/.next cache")
-    except PermissionError:
-        print(f"  {yellow('WARN')} Cannot delete web/.next — permission denied")
-        print(f"      Files may be locked by a running dev server. Close it and re-run.")
+    except (PermissionError, OSError) as e:
+        print(f"  {yellow('WARN')} Cache files are locked — checking for stale Next.js processes...")
+        # Find and kill any Next.js dev server processes
+        killed = _kill_stale_nextjs()
+        if killed:
+            time.sleep(1)
+            try:
+                shutil.rmtree(next_dir)
+                print(f"  {green('OK')} Cleaned web/.next cache (after killing stale process)")
+                return
+            except Exception:
+                pass
+        print(f"  {yellow('WARN')} Could not clean .next: {e}")
+        print(f"      Close any running dev servers and re-run.")
     except Exception as e:
         print(f"  {yellow('WARN')} Could not clean .next: {e}")
 
@@ -378,16 +389,41 @@ def clean_next_cache() -> None:
 # Step 7: Start Web frontend
 # =============================================================================================================================================================================================
 
+def _kill_stale_nextjs() -> bool:
+    """Kill Next.js processes that are listening but NOT responding (crashed/stale)."""
+    killed = False
+    for port in DEFAULT_WEB_PORTS:
+        if is_port_in_use(port):
+            # Only kill if port is occupied but NOT responding
+            if not http_ok(f"http://localhost:{port}", timeout=1.5):
+                proc_name, pid = get_process_on_port(port)
+                if proc_name and pid and "node" in proc_name.lower():
+                    print(f"      Found crashed Next.js on port {port} (PID {pid}) — killing...")
+                    if kill_process_on_port(port):
+                        killed = True
+    return killed
+
+
 def find_web_port(requested: int | None) -> int:
-    """Find a suitable web port."""
+    """Find a suitable web port. Reuses existing Next.js, kills only crashed ones."""
     ports_to_try = [requested] if requested else DEFAULT_WEB_PORTS
     for port in ports_to_try:
         if not is_port_in_use(port):
             return port
-        # Check if it's already a Next.js dev server (acceptable reuse)
-        if http_ok(f"http://localhost:{port}", timeout=1.0):
+        # Port is in use — check if it's a working Next.js server
+        if http_ok(f"http://localhost:{port}", timeout=1.5):
             print(f"  {green('OK')} Web already running on port {port} — reusing")
             return port
+        # Port occupied but NOT responding — try to free it
+        proc_name, pid = get_process_on_port(port)
+        if proc_name and pid:
+            print(f"  {yellow('WARN')} Port {port} occupied by {proc_name} (PID {pid}) — not responding, freeing...")
+            if kill_process_on_port(port):
+                time.sleep(1)
+                if not is_port_in_use(port):
+                    return port
+        # Could not free — try next port
+        print(f"      Could not free port {port} — trying next")
     # Fallback
     for fallback in range(3003, 3010):
         if not is_port_in_use(fallback):
@@ -396,37 +432,57 @@ def find_web_port(requested: int | None) -> int:
 
 
 def start_web(web_port: int) -> subprocess.Popen | None:
-    """Start the Next.js dev server."""
+    """Start the Next.js dev server. Auto-retries if a stale process is detected."""
     web_dir = PROJECT_ROOT / "web"
     npm = "npm.cmd" if sys.platform == "win32" else "npm"
 
-    print(f"\n{cyan('=========')} Starting Web frontend on port {web_port} {cyan('=========')}")
+    for attempt in range(2):
+        if attempt > 0:
+            print(f"\n  {yellow('WARN')} Retrying after killing stale Next.js processes...")
+            _kill_stale_nextjs()
+            time.sleep(2)
 
-    try:
-        proc = subprocess.Popen(
-            [npm, "run", "dev", "--", "-p", str(web_port)],
-            cwd=str(web_dir),
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
-        )
-    except Exception as e:
-        print(f"  {red('ERR')} Failed to start web process: {e}")
-        return None
+        print(f"\n{cyan('=========')} Starting Web frontend on port {web_port} {cyan('=========')}")
 
-    print(f"  Next.js is compiling (Turbopack). First run may take 1-2 minutes...")
-    print(f"  Waiting for web server...", end="", flush=True)
-
-    deadline = time.monotonic() + 120.0
-    while time.monotonic() < deadline:
-        if proc.poll() is not None:
-            print(f"\n  {red('ERR')} Web process exited with code {proc.returncode}")
+        try:
+            proc = subprocess.Popen(
+                [npm, "run", "dev", "--", "-p", str(web_port)],
+                cwd=str(web_dir),
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
+            )
+        except Exception as e:
+            print(f"  {red('ERR')} Failed to start web process: {e}")
             return None
-        if http_ok(f"http://localhost:{web_port}", timeout=1.0):
-            print(f" {green('OK')}")
+
+        print(f"  Next.js is compiling (Turbopack). First run may take 1-2 minutes...")
+        print(f"  Waiting for web server...", end="", flush=True)
+
+        deadline = time.monotonic() + 120.0
+        while time.monotonic() < deadline:
+            if proc.poll() is not None:
+                exit_code = proc.returncode
+                # Check if the port already has a working server (another instance)
+                if http_ok(f"http://localhost:{web_port}", timeout=1.0):
+                    print(f"\n  {green('OK')} Web already running on port {web_port} (another instance)")
+                    return proc  # reuse existing
+                print(f"\n  {red('ERR')} Web process exited with code {exit_code}")
+                if attempt == 0:
+                    print(f"  {yellow('WARN')} Will attempt to kill stale processes and retry...")
+                    break
+                return None
+            if http_ok(f"http://localhost:{web_port}", timeout=1.0):
+                print(f" {green('OK')}")
+                return proc
+            print(".", end="", flush=True)
+            time.sleep(1.5)
+        else:
+            # Timeout — process may still be compiling
+            print(f"\n  {yellow('WARN')} Web did not respond within 120s — may still be compiling")
             return proc
-        print(".", end="", flush=True)
-        time.sleep(1.5)
+
+    return None
 
     print(f"\n  {yellow('WARN')} Web did not respond within 120s — may still be compiling")
     print(f"      Visit http://localhost:{web_port} manually in a moment.")
@@ -579,7 +635,7 @@ Examples:
   python Scripts/dev_restart.py --api-port 8710    # Force API port
   python Scripts/dev_restart.py --kill-old         # Kill old API if needed
   python Scripts/dev_restart.py --no-web           # API only
-  python Scripts/dev_restart.py --open             # Auto-open browser
+  python Scripts/dev_restart.py --no-browser         # Skip opening browser
   python Scripts/dev_restart.py --strict           # Fail on schema issues
         """,
     )
@@ -588,7 +644,7 @@ Examples:
     parser.add_argument("--kill-old", action="store_true", help="Attempt to kill old API processes on occupied ports")
     parser.add_argument("--no-web", action="store_true", help="Only start API, skip web frontend")
     parser.add_argument("--no-cache-clean", action="store_true", help="Skip .next cache cleanup")
-    parser.add_argument("--open", action="store_true", help="Open browser to Research Map after startup")
+    parser.add_argument("--no-browser", action="store_true", help="Do not open browser after startup")
     parser.add_argument("--strict", action="store_true", help="Exit with error if schema validation fails")
     args = parser.parse_args()
 
@@ -643,8 +699,8 @@ Examples:
     # ── Step 9: URLs ──
     print_urls(api_port, web_port)
 
-    # ── Browser ──
-    if args.open and web_port:
+    # ── Browser (open by default) ──
+    if not args.no_browser and web_port:
         import webbrowser
         url = f"http://localhost:{web_port}/research-map"
         print(f"\n  Opening {url} ...")

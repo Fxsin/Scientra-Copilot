@@ -284,9 +284,9 @@ function PaperCard({ paper, onClick }: { paper: PaperItem; onClick: () => void }
 
       {/* AI snippet */}
       {snippet ? (
-        <div className="mt-2 flex gap-2">
+        <div className="mt-2 flex gap-2 min-w-0">
           <span className="text-[10px] text-slate-350 font-medium shrink-0 mt-0.5">AI insight</span>
-          <p className="text-xs text-slate-500 leading-relaxed line-clamp-2">
+          <p className="text-xs text-slate-500 leading-relaxed line-clamp-2 overflow-hidden" title={snippet}>
             <ScientificText text={snippet} />
           </p>
         </div>
