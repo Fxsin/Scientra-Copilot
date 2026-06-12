@@ -11,6 +11,7 @@ import {
   Library,
   Settings,
   FlaskConical,
+  MessageCircle,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -21,6 +22,7 @@ const PRIMARY_NAV_ITEMS = [
   { href: "/research-gaps", label: "Research Gaps", icon: SearchCheck },
   { href: "/topic-explorer", label: "Topic Explorer", icon: GitBranch },
   { href: "/knowledge-network", label: "Knowledge Network", icon: Share2 },
+  { href: "/chat", label: "Chat", icon: MessageCircle },
 ] as const;
 
 const SECONDARY_NAV_ITEMS = [

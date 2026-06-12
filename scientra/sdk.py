@@ -123,18 +123,75 @@ def get_agent_sdk() -> LiteratureAgentSDK:
     return _default_sdk
 
 
-# ── Phase 0.7: Literature Agent V1 ──
+# ── Phase 0.8: query_assets + enhanced ask_literature ──
+
+def query_assets(
+    query: str,
+    top_k: int = 10,
+    chunk_types: list[str] | None = None,
+    paper_id: str | None = None,
+    min_quality_score: float = 0.0,
+) -> dict[str, Any]:
+    """Search pdf_asset_chunks directly. Returns structured results with provenance.
+
+    This is the SDK entry point for asset-native search without LLM.
+    """
+    try:
+        from scientra.agent.context_builder import ContextBuilder
+        cb = ContextBuilder()
+        chunks = cb.search_assets(
+            query=query,
+            top_k=min(top_k, 50),
+            chunk_types=chunk_types,
+            paper_id=paper_id,
+            min_quality_score=min_quality_score,
+        )
+    except ImportError:
+        return {"query": query, "results": [], "count": 0, "unique_papers": 0,
+                "warnings": ["ContextBuilder not available"], "elapsed_ms": 0}
+
+    papers = set()
+    results = []
+    for c in chunks:
+        papers.add(c.paper_id)
+        results.append({
+            "chunk_id": c.chunk_id,
+            "paper_id": c.paper_id,
+            "chunk_type": c.chunk_type,
+            "text": c.text,
+            "score": round(c.score, 4) if c.score else 0.0,
+            "linked_evidence_id": c.linked_evidence_id,
+            "linked_evidence_ids": c.linked_evidence_ids if hasattr(c, 'linked_evidence_ids') else [],
+            "source_asset_ids": c.source_asset_ids if hasattr(c, 'source_asset_ids') else [],
+            "confidence": c.confidence,
+            "quality_score": c.quality_score,
+            "citation_key": f"[A:{c.paper_id}:{c.chunk_id}]",
+        })
+
+    return {
+        "query": query,
+        "results": results,
+        "count": len(results),
+        "unique_papers": len(papers),
+        "warnings": [],
+        "elapsed_ms": 0,
+    }
+
 
 def ask_literature(
     question: str,
     top_k: int = 10,
     chunk_types: list[str] | None = None,
     include_evidence: bool = True,
+    include_assets: bool = True,
+    paper_id: str | None = None,
+    use_llm: bool = True,
+    return_context: bool = False,
 ) -> dict[str, Any]:
     """Ask a research question using the Literature Agent.
 
     Returns a dict with 'answer', 'citations', 'context_used', 'papers_cited', etc.
-    This is the primary entry point for Agent SDK consumers in Phase 0.7+.
+    This is the primary entry point for Agent SDK consumers in Phase 0.8+.
     """
     try:
         from scientra.agent.literature_agent import LiteratureAgent
@@ -142,9 +199,7 @@ def ask_literature(
         return {
             "question": question,
             "answer": "[Error: Literature Agent not available. Ensure scientra/agent/ is installed.]",
-            "citations": [],
-            "context_used": 0,
-            "papers_cited": 0,
+            "citations": [], "context_used": 0, "papers_cited": 0,
         }
 
     agent = LiteratureAgent()
@@ -153,9 +208,13 @@ def ask_literature(
         top_k=top_k,
         chunk_types=chunk_types,
         include_evidence=include_evidence,
+        include_assets=include_assets,
+        paper_id=paper_id,
+        use_llm=use_llm,
+        return_context=return_context,
     )
 
-    return {
+    result = {
         "question": response.question,
         "answer": response.answer,
         "citations": [
@@ -177,4 +236,23 @@ def ask_literature(
         "elapsed_ms": response.elapsed_ms,
         "intent": response.intent,
     }
+
+    if return_context and response.raw_context:
+        ctx = response.raw_context
+        result["context"] = {
+            "chunks": [
+                {
+                    "chunk_id": getattr(c, 'chunk_id', ''),
+                    "paper_id": getattr(c, 'paper_id', ''),
+                    "chunk_type": getattr(c, 'chunk_type', ''),
+                    "text": getattr(c, 'text', ''),
+                    "source": getattr(c, 'source', ''),
+                    "score": getattr(c, 'score', 0.0),
+                }
+                for c in getattr(ctx, 'chunks', [])
+            ],
+            "papers": getattr(ctx, 'papers', {}),
+        }
+
+    return result
 

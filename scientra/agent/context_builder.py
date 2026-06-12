@@ -64,6 +64,34 @@ class ContextBuilder:
             self._embedder = BgeM3Embedder(model_name="BAAI/bge-m3")
         return self._embedder
 
+    def search_assets(
+        self,
+        query: str,
+        top_k: int = 10,
+        chunk_types: list[str] | None = None,
+        paper_id: str | None = None,
+        min_quality_score: float = 0.0,
+    ) -> list[ContextChunk]:
+        """Search pdf_asset_chunks only. Used by /query/assets API."""
+        t0 = time.time()
+        query_vector = self.embedder.encode([query], batch_size=1)[0]
+        chunks = self._search_table(
+            table_name="pdf_asset_chunks",
+            query_vector=query_vector,
+            top_k=top_k,
+            chunk_types=chunk_types,
+            source_label="pdf_asset_chunks",
+        )
+        # Post-filter: paper_id + quality_score
+        filtered: list[ContextChunk] = []
+        for c in chunks:
+            if paper_id and c.paper_id != paper_id:
+                continue
+            if c.quality_score < min_quality_score:
+                continue
+            filtered.append(c)
+        return filtered
+
     def build_context(
         self,
         question: str,

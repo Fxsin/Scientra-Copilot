@@ -97,20 +97,57 @@ class LiteratureAgent:
         top_k: int = 10,
         chunk_types: list[str] | None = None,
         include_evidence: bool = True,
+        include_assets: bool = True,
+        paper_id: str | None = None,
+        use_llm: bool = True,
+        return_context: bool = False,
     ) -> AgentResponse:
-        """Ask a research question. Returns cited answer."""
+        """Ask a research question. Returns cited answer.
+
+        Args:
+            question: Research question
+            top_k: Max chunks per source
+            chunk_types: Filter by section/method/result/claim
+            include_evidence: Search evidence_chunks
+            include_assets: Search pdf_asset_chunks
+            paper_id: Limit to single paper
+            use_llm: If False, return extractive answer without Claude
+            return_context: Include raw context in response
+        """
         t0 = time.time()
 
         # 1. Detect intent
         intent = self._detect_intent(question)
 
-        # 2. Build context from dual-source retrieval
-        context = self.context_builder.build_context(
-            question=question,
-            top_k=top_k,
-            chunk_types=chunk_types,
-            include_evidence=include_evidence,
-        )
+        # 2. Build context from configured sources
+        if include_assets and include_evidence:
+            context = self.context_builder.build_context(
+                question=question, top_k=top_k,
+                chunk_types=chunk_types, include_evidence=True,
+            )
+        elif include_assets:
+            context = self.context_builder.build_context(
+                question=question, top_k=top_k,
+                chunk_types=chunk_types, include_evidence=False,
+            )
+        elif include_evidence:
+            context = self.context_builder.build_context(
+                question=question, top_k=top_k,
+                chunk_types=chunk_types, include_evidence=True,
+            )
+            # Remove asset chunks if any leaked
+            context.chunks = [c for c in context.chunks if c.source != "pdf_asset_chunks"]
+        else:
+            context = self.context_builder.build_context(
+                question=question, top_k=top_k,
+                chunk_types=chunk_types, include_evidence=True,
+            )
+
+        # Post-filter by paper_id
+        if paper_id:
+            context.chunks = [c for c in context.chunks if c.paper_id == paper_id]
+            # Rebuild papers dict
+            context.papers = {paper_id: context.papers.get(paper_id, {})} if paper_id in context.papers else {}
 
         # ── Safety guard: empty context ──
         if not context.chunks:
@@ -124,7 +161,7 @@ class LiteratureAgent:
                 model=self.model,
                 elapsed_ms=round(elapsed, 1),
                 intent=intent,
-                raw_context=context,
+                raw_context=context if return_context else None,
             )
 
         # ── Safety guard: out-of-scope detection ──
@@ -143,17 +180,33 @@ class LiteratureAgent:
                 model=self.model,
                 elapsed_ms=round(elapsed, 1),
                 intent=intent,
-                raw_context=context,
+                raw_context=context if return_context else None,
             )
 
-        # 3. Format prompt
+        # 3. If use_llm=False, return extractive answer
+        if not use_llm:
+            extractive_lines = []
+            for i, c in enumerate(context.chunks[:top_k], 1):
+                extractive_lines.append(f"[Ref:{i}] [{c.chunk_type}] {c.text[:200]}")
+            extractive_answer = "Extractive context (no LLM):\n" + "\n".join(extractive_lines)
+            citations = self._parse_citations(extractive_answer, context)
+            elapsed = (time.time() - t0) * 1000
+            return AgentResponse(
+                question=question,
+                answer=extractive_answer,
+                citations=citations,
+                context_used=len(context.chunks),
+                papers_cited=len(context.papers),
+                model="extractive (no LLM)",
+                elapsed_ms=round(elapsed, 1),
+                intent=intent,
+                raw_context=context if return_context else None,
+            )
+
+        # 4. Format prompt + call Claude
         system_prompt = self._build_system_prompt()
         user_prompt = self._build_user_prompt(question, context)
-
-        # 4. Call Claude
         raw_answer = self._call_claude(system_prompt, user_prompt)
-
-        # ── Safety guard: post-process answer ──
         raw_answer = self._sanitize_answer(raw_answer, context)
 
         # 5. Parse citations
@@ -170,7 +223,7 @@ class LiteratureAgent:
             model=self.model,
             elapsed_ms=round(elapsed, 1),
             intent=intent,
-            raw_context=context,
+            raw_context=context if return_context else None,
         )
 
     def _is_out_of_scope(self, question: str) -> bool:

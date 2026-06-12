@@ -4,6 +4,8 @@ import type {
   PaperMetadata, PaperSummary, PaperTags, PapersResponse,
   QueryRequest, QueryResponse, QueryResultItem,
   ResearchMapTopic, StatsResponse,
+  AgentAskRequest, AgentAskResponse,
+  QueryAssetsRequest, QueryAssetsResponse,
 } from "./types";
 import { sanitizeResult } from "./types";
 
@@ -558,4 +560,72 @@ export function retryImportJob(importId: string): Promise<RunResponse> {
 
 export function runAllImportJobs(): Promise<RunResponse> {
   return postImportAction("/import/jobs/run-all");
+}
+
+/* ── Phase 0.9: Literature Agent Chat ── */
+
+export async function askLiteratureAgent(
+  params: AgentAskRequest,
+): Promise<AgentAskResponse> {
+  const body = JSON.stringify({
+    question: params.question,
+    top_k: params.top_k ?? 10,
+    chunk_types: params.chunk_types ?? null,
+    include_assets: params.include_assets ?? true,
+    include_evidence: params.include_evidence ?? true,
+    paper_id: params.paper_id ?? null,
+    use_llm: params.use_llm ?? false,
+    return_context: params.return_context ?? true,
+  });
+
+  const res = await fetch(`${API_BASE_URL}/v1/agent/ask`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body,
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new ApiError({
+      kind: "http_error",
+      message: `Agent API error (${res.status}): ${text.slice(0, 200)}`,
+      status: res.status,
+      url: `${API_BASE_URL}/v1/agent/ask`,
+      responseText: text,
+    });
+  }
+
+  return res.json() as Promise<AgentAskResponse>;
+}
+
+export async function queryAssets(
+  params: QueryAssetsRequest,
+): Promise<QueryAssetsResponse> {
+  const body = JSON.stringify({
+    query: params.query,
+    top_k: params.top_k ?? 10,
+    chunk_types: params.chunk_types ?? null,
+    paper_id: params.paper_id ?? null,
+    min_quality_score: params.min_quality_score ?? 0,
+    include_metadata: params.include_metadata ?? true,
+  });
+
+  const res = await fetch(`${API_BASE_URL}/query/assets`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body,
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new ApiError({
+      kind: "http_error",
+      message: `Query assets error (${res.status}): ${text.slice(0, 200)}`,
+      status: res.status,
+      url: `${API_BASE_URL}/query/assets`,
+      responseText: text,
+    });
+  }
+
+  return res.json() as Promise<QueryAssetsResponse>;
 }

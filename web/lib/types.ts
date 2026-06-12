@@ -605,6 +605,93 @@ export interface NetworkLinkExtended extends NetworkLink {
   label?: string;
 }
 
+/* ── Phase 0.9: Agent Chat Types ── */
+
+export interface AgentCitation {
+  ref_id: string;
+  chunk_id: string;
+  paper_id: string;
+  paper_title: string;
+  paper_year: number | null;
+  text_snippet: string;
+  linked_evidence_id: string;
+  source: string;
+  confidence: string;
+}
+
+export interface AgentContextItem {
+  chunk_id: string;
+  paper_id: string;
+  chunk_type: string;
+  text: string;
+  source: string;
+  score: number;
+}
+
+export interface AgentContextPack {
+  chunks: AgentContextItem[];
+  papers: Record<string, unknown>;
+}
+
+export interface AgentAskResponse {
+  question: string;
+  answer: string;
+  citations: AgentCitation[];
+  context_used: number;
+  papers_cited: number;
+  model: string;
+  elapsed_ms: number;
+  intent: string;
+  context: AgentContextPack | null;
+}
+
+export interface AgentAskRequest {
+  question: string;
+  top_k?: number;
+  chunk_types?: string[];
+  include_assets?: boolean;
+  include_evidence?: boolean;
+  paper_id?: string | null;
+  use_llm?: boolean;
+  return_context?: boolean;
+}
+
+export interface QueryAssetResult {
+  chunk_id: string;
+  paper_id: string;
+  chunk_type: string;
+  text: string;
+  score: number;
+  linked_evidence_id: string;
+  linked_evidence_ids: string[];
+  source_asset_ids: string[];
+  entities: string[];
+  linked_claims: string[];
+  linked_methods: string[];
+  confidence: string;
+  quality_score: number;
+  citation_key: string;
+  metadata: Record<string, unknown>;
+}
+
+export interface QueryAssetsResponse {
+  query: string;
+  results: QueryAssetResult[];
+  count: number;
+  unique_papers: number;
+  warnings: string[];
+  elapsed_ms: number;
+}
+
+export interface QueryAssetsRequest {
+  query: string;
+  top_k?: number;
+  chunk_types?: string[];
+  paper_id?: string | null;
+  min_quality_score?: number;
+  include_metadata?: boolean;
+}
+
 /* ── Helpers ── */
 
 /** Strip source_path and any server-internal fields from a query result. */

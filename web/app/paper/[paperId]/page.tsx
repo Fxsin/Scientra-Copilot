@@ -14,6 +14,7 @@ import { parseAISummary, type ParsedSummary } from "@/lib/summary-parser";
 import type { PaperMetadata, PaperSummary, PaperTags, RelatedPaper } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { ScientificText } from "@/components/scientific-text";
+import { PaperAskCard } from "@/components/agent/PaperAskCard";
 
 type LoadState = "loading" | "ok" | "error";
 
@@ -138,6 +139,9 @@ export default function PaperDetailPage() {
           ) : (
             <EmptySummary />
           )}
+          {/* ── Ask this paper (Phase 0.9B) ── */}
+          <PaperAskCard paperId={paperId} />
+
         </div>
 
         {/* ━━━ RIGHT (32%) — sticky ━━━ */}

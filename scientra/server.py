@@ -1465,6 +1465,88 @@ def _load_summary_text(root: Path, paper_id: str) -> str | None:
 
 # ── App factory ──
 
+# ── Phase 0.8: Request/Response models (module-level for FastAPI compatibility) ──
+
+VALID_CHUNK_TYPES = {"section", "method", "result", "claim"}
+
+class QueryAssetsRequest(BaseModel):
+    query: str = Field(..., min_length=1, description="Search query text")
+    top_k: int = Field(default=10, ge=1, le=50)
+    chunk_types: list[str] | None = None
+    paper_id: str | None = None
+    min_quality_score: float = Field(default=0.0, ge=0.0, le=100.0)
+    include_metadata: bool = True
+
+class AssetResultItem(BaseModel):
+    chunk_id: str
+    paper_id: str
+    chunk_type: str
+    text: str
+    score: float = 0.0
+    linked_evidence_id: str = ""
+    linked_evidence_ids: list[str] = Field(default_factory=list)
+    source_asset_ids: list[str] = Field(default_factory=list)
+    entities: list[str] = Field(default_factory=list)
+    linked_claims: list[str] = Field(default_factory=list)
+    linked_methods: list[str] = Field(default_factory=list)
+    confidence: str = "medium"
+    quality_score: float = 0.0
+    citation_key: str = ""
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+class QueryAssetsResponse(BaseModel):
+    query: str
+    results: list[AssetResultItem] = Field(default_factory=list)
+    count: int = 0
+    unique_papers: int = 0
+    warnings: list[str] = Field(default_factory=list)
+    elapsed_ms: float = 0.0
+
+class AgentAskRequest(BaseModel):
+    question: str = Field(..., min_length=1)
+    top_k: int = Field(default=10, ge=1, le=50)
+    chunk_types: list[str] | None = None
+    include_evidence: bool = True
+    include_assets: bool = True
+    paper_id: str | None = None
+    use_llm: bool = True
+    return_context: bool = False
+
+class AgentCitation(BaseModel):
+    ref_id: str
+    chunk_id: str
+    paper_id: str
+    paper_title: str = ""
+    paper_year: int | None = None
+    text_snippet: str = ""
+    linked_evidence_id: str = ""
+    source: str = ""
+    confidence: str = "medium"
+
+class AgentContextChunk(BaseModel):
+    chunk_id: str = ""
+    paper_id: str = ""
+    chunk_type: str = ""
+    text: str = ""
+    source: str = ""
+    score: float = 0.0
+
+class AgentContextPack(BaseModel):
+    chunks: list[AgentContextChunk] = Field(default_factory=list)
+    papers: dict[str, Any] = Field(default_factory=dict)
+
+class AgentAskResponse(BaseModel):
+    question: str
+    answer: str
+    citations: list[AgentCitation] = Field(default_factory=list)
+    context_used: int = 0
+    papers_cited: int = 0
+    model: str = ""
+    elapsed_ms: float = 0.0
+    intent: str = ""
+    context: AgentContextPack | None = None
+
+
 def create_app(root: Path | None = None) -> FastAPI:
     if FastAPI is None:
         raise RuntimeError("FastAPI is required. Install: pip install fastapi uvicorn")
@@ -2621,37 +2703,83 @@ def create_app(root: Path | None = None) -> FastAPI:
     def v1_hybrid(request: LiteratureQueryRequest) -> LiteratureQueryResponse:
         return _route(request, QueryType.hybrid_search)
 
-    # ── Phase 0.7: Literature Agent V1 ──
+    # ── Phase 0.8: /query/assets + enhanced /v1/agent/ask ──
 
-    class AgentAskRequest(BaseModel):
-        question: str
-        top_k: int = Field(default=10, ge=1, le=50)
-        chunk_types: list[str] | None = None
-        include_evidence: bool = True
+    @api.post("/query/assets", response_model=QueryAssetsResponse)
+    def query_assets_endpoint(payload: QueryAssetsRequest) -> QueryAssetsResponse:
+        import time as _time
+        t0 = _time.time()
+        warnings: list[str] = []
+        results: list[AssetResultItem] = []
 
-    class AgentCitation(BaseModel):
-        ref_id: str
-        chunk_id: str
-        paper_id: str
-        paper_title: str = ""
-        paper_year: int | None = None
-        text_snippet: str = ""
-        linked_evidence_id: str = ""
-        source: str = ""
-        confidence: str = "medium"
+        # Validate chunk_types
+        if payload.chunk_types:
+            invalid = set(payload.chunk_types) - VALID_CHUNK_TYPES
+            if invalid:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid chunk_types: {list(invalid)}. Allowed: {sorted(VALID_CHUNK_TYPES)}"
+                )
 
-    class AgentAskResponse(BaseModel):
-        question: str
-        answer: str
-        citations: list[AgentCitation] = Field(default_factory=list)
-        context_used: int = 0
-        papers_cited: int = 0
-        model: str = ""
-        elapsed_ms: float = 0.0
-        intent: str = ""
+        try:
+            from scientra.agent.context_builder import ContextBuilder
+            cb = ContextBuilder()
+            chunks = cb.search_assets(
+                query=payload.query,
+                top_k=payload.top_k,
+                chunk_types=payload.chunk_types,
+                paper_id=payload.paper_id,
+                min_quality_score=payload.min_quality_score,
+            )
+        except Exception as e:
+            warnings.append(f"pdf_asset_chunks search failed: {e}")
+            chunks = []
+
+        papers: set[str] = set()
+        for c in chunks:
+            papers.add(c.paper_id)
+            meta: dict[str, Any] = {}
+            if payload.include_metadata:
+                meta = {
+                    "source_section": getattr(c, 'source_section', 'unknown') if hasattr(c, 'source_section') else "unknown",
+                    "paper_title": getattr(c, 'paper_title', '') if hasattr(c, 'paper_title') else "",
+                    "paper_year": getattr(c, 'paper_year', None) if hasattr(c, 'paper_year') else None,
+                }
+            citation_key = f"[A:{c.paper_id}:{c.chunk_id}]" if c.paper_id and c.chunk_id else ""
+
+            results.append(AssetResultItem(
+                chunk_id=c.chunk_id,
+                paper_id=c.paper_id,
+                chunk_type=c.chunk_type,
+                text=c.text,
+                score=round(c.score, 4) if c.score else 0.0,
+                linked_evidence_id=c.linked_evidence_id,
+                linked_evidence_ids=c.linked_evidence_ids if hasattr(c, 'linked_evidence_ids') else [],
+                source_asset_ids=c.source_asset_ids if hasattr(c, 'source_asset_ids') else [],
+                entities=[],  # populated from metadata_json in future
+                linked_claims=[],  # populated from metadata_json in future
+                linked_methods=[],  # populated from metadata_json in future
+                confidence=c.confidence,
+                quality_score=c.quality_score,
+                citation_key=citation_key,
+                metadata=meta,
+            ))
+
+        elapsed = (_time.time() - t0) * 1000
+
+        return QueryAssetsResponse(
+            query=payload.query,
+            results=results,
+            count=len(results),
+            unique_papers=len(papers),
+            warnings=warnings,
+            elapsed_ms=round(elapsed, 1),
+        )
+
+    # ── /v1/agent/ask (enhanced) ──
 
     @api.post("/v1/agent/ask", response_model=AgentAskResponse)
-    def v1_agent_ask(request: AgentAskRequest) -> AgentAskResponse:
+    def v1_agent_ask(payload: AgentAskRequest) -> AgentAskResponse:
         try:
             from scientra.agent.literature_agent import LiteratureAgent
         except ImportError as e:
@@ -2659,11 +2787,33 @@ def create_app(root: Path | None = None) -> FastAPI:
 
         agent = LiteratureAgent()
         response = agent.ask(
-            question=request.question,
-            top_k=request.top_k,
-            chunk_types=request.chunk_types,
-            include_evidence=request.include_evidence,
+            question=payload.question,
+            top_k=payload.top_k,
+            chunk_types=payload.chunk_types,
+            include_evidence=payload.include_evidence,
+            include_assets=payload.include_assets,
+            paper_id=payload.paper_id,
+            use_llm=payload.use_llm,
+            return_context=payload.return_context,
         )
+
+        context_pack = None
+        if payload.return_context and response.raw_context:
+            ctx = response.raw_context
+            context_pack = AgentContextPack(
+                chunks=[
+                    AgentContextChunk(
+                        chunk_id=getattr(c, 'chunk_id', ''),
+                        paper_id=getattr(c, 'paper_id', ''),
+                        chunk_type=getattr(c, 'chunk_type', ''),
+                        text=getattr(c, 'text', ''),
+                        source=getattr(c, 'source', ''),
+                        score=getattr(c, 'score', 0.0),
+                    )
+                    for c in getattr(ctx, 'chunks', [])
+                ],
+                papers=getattr(ctx, 'papers', {}),
+            )
 
         return AgentAskResponse(
             question=response.question,
@@ -2687,6 +2837,7 @@ def create_app(root: Path | None = None) -> FastAPI:
             model=response.model,
             elapsed_ms=response.elapsed_ms,
             intent=response.intent,
+            context=context_pack,
         )
 
     return api
