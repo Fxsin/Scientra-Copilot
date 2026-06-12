@@ -8,6 +8,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.11+-blue.svg">
   <img src="https://img.shields.io/badge/license-MIT-green.svg">
+  <img src="https://img.shields.io/badge/version-v1.0--alpha-blue.svg">
   <img src="https://img.shields.io/badge/status-active%20development-orange.svg">
 </p>
 
@@ -23,14 +24,18 @@ Scientra Copilot transforms scientific literature into structured, searchable, m
 
 ## Core Capabilities
 
-### 💬 Literature Chat (NEW — V1.5)
-- **AI-powered Q&A** over your entire literature library
-- Dual-source retrieval: `pdf_asset_chunks` (quality-filtered) + `evidence_chunks` (broad coverage)
-- Three answer modes: **Auto** (LLM if configured, else fallback), **LLM synthesis**, **Evidence-only**
-- Multi-provider LLM support: **DeepSeek** or **Anthropic Claude**
-- Citations with `[Ref:N]` traceable to source evidence
-- Paper-specific chat on every paper detail page (`/paper/{id}`)
-- Anti-hallucination guardrails: no fabricated DOIs, no invented papers
+### 💬 Literature Chat (V1.0-alpha)
+- **4 intent-specific query types**: claim, research gap, method, result
+- **Evidence Packet Builder** — structured Ref packets with evidence roles, method categories, gap signals
+- **Academic citation format** — "Author et al. (Year) [Ref:N]" in all LLM answers
+- **Boilerplate/disclaimer filter** — excludes publisher notes, copyright, data availability from answers
+- **Domain-agnostic** — 88 generic scientific signals, no hardcoded research fields
+- Dual-source retrieval: `pdf_asset_chunks` (2,484 rows) + `evidence_chunks` (1,267 rows)
+- Three answer modes: **Auto**, **LLM synthesis**, **Evidence-only**
+- Multi-provider LLM: **DeepSeek** + **Anthropic Claude**
+- Paper-specific chat on every paper detail page
+- Token usage & cost transparency (inline panel)
+- Anti-hallucination: zero fabricated DOIs, zero `[object Object]`, zero disclaimers in answers
 - 28-case evaluation framework: 100% pass rate
 
 ### 📊 PDF Data Assetization (Phase 0–1B)
@@ -294,11 +299,14 @@ python Scripts/test_agent_api.py
 - **Literature Agent V1** (chat, dual-source retrieval, citations)
 - **Agent evaluation framework** (28 cases, 100% pass)
 - **Web Chat** (/chat + paper detail Ask this paper)
-- **Chat UX polish** (error handling, readability, answer modes)
+- **Chat UX polish** (error handling, readability, answer modes, token panel)
+- **Four-intent evidence packet engine** (claim, gap, method, result)
+- **Academic citation answers** (structured, cited, boilerplate-filtered)
 - **Figure + Caption Extraction** (44 figures, 66% caption rate)
 - **Multi-provider LLM** (DeepSeek + Anthropic, config file)
 - **First-time user setup** (`Scripts/setup_llm.py`)
 - Mock Data Decommission (all pages use real data)
+- **v1.0-alpha** — stable pre-release node
 
 ### Upcoming
 - Figure AI Interpretation at scale (with LLM key)

@@ -148,6 +148,31 @@ CLAIM_CASES = [
         required_behavior=["identifies if context shows conflicting evidence"],
         forbidden_behavior=["resolves conflicts by choosing one side without evidence"],
     ),
+    # Phase 0.9F-P0: claim quality evaluation
+    EvalCase(
+        case_id="C005",
+        category="claim_query",
+        question="What claims need stronger evidence?",
+        expected_intent="claim_query",
+        required_behavior=["identifies weak claims", "explains why evidence is insufficient", "includes citations"],
+        forbidden_behavior=["includes [object Object]", "fabricates claims not in context"],
+    ),
+    EvalCase(
+        case_id="C006",
+        category="claim_query",
+        question="What conclusions are weakly supported?",
+        expected_intent="claim_query",
+        required_behavior=["identifies weakly supported conclusions", "cites sources"],
+        forbidden_behavior=["claims all conclusions are well-supported"],
+    ),
+    EvalCase(
+        case_id="C007",
+        category="claim_query",
+        question="Which claims are supported only indirectly?",
+        expected_intent="claim_query",
+        required_behavior=["distinguishes direct from indirect evidence", "cites specific claims"],
+        forbidden_behavior=["treats indirect evidence as direct proof"],
+    ),
 ]
 
 # ── Category 4: paper_specific_query (3 cases) ──

@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Any
 
 from scientra.agent.context_builder import ContextBuilder, ContextPack
+from scientra.agent.evidence_packet_builder import build_evidence_packet, clean_text, is_boilerplate_or_disclaimer
 
 DEFAULT_MODEL = os.environ.get("SCIENTRA_LLM_MODEL", "")
 DEFAULT_BASE_URL = os.environ.get("SCIENTRA_LLM_BASE_URL", "")
@@ -155,8 +156,16 @@ class LiteratureAgent:
         # 1. Detect intent
         intent = self._detect_intent(question)
 
-        # 2. Build context from configured sources
-        if include_assets and include_evidence:
+        # 2. Build context with intent-specific strategy
+        if intent == "claim_query":
+            context = self._build_claim_context(question, top_k, include_evidence)
+        elif intent == "research_gap_query":
+            context = self._build_research_gap_context(question, top_k, include_evidence)
+        elif intent == "method_query":
+            context = self._build_method_context(question, top_k, include_evidence)
+        elif intent == "result_query":
+            context = self._build_result_context(question, top_k, include_evidence)
+        elif include_assets and include_evidence:
             context = self.context_builder.build_context(
                 question=question, top_k=top_k,
                 chunk_types=chunk_types, include_evidence=True,
@@ -171,7 +180,6 @@ class LiteratureAgent:
                 question=question, top_k=top_k,
                 chunk_types=chunk_types, include_evidence=True,
             )
-            # Remove asset chunks if any leaked
             context.chunks = [c for c in context.chunks if c.source != "pdf_asset_chunks"]
         else:
             context = self.context_builder.build_context(
@@ -240,7 +248,18 @@ class LiteratureAgent:
 
         # 4. Format prompt + call LLM
         system_prompt = self._build_system_prompt(intent)
-        user_prompt = self._build_user_prompt(question, context)
+        if intent == "claim_query":
+            user_prompt = self._build_claim_user_prompt(question, context)
+        elif intent == "research_gap_query":
+            user_prompt = self._build_gap_user_prompt(question, context)
+        elif intent == "method_query":
+            packet = build_evidence_packet(context.chunks, max_items=12, intent="method_query")
+            user_prompt = f"QUESTION: {question}\n\nEVIDENCE PACKET:\n{packet}\n\nINSTRUCTION: Summarize methods by category. Group into molecular, biochemical, bioassay, microscopy, computational. Cite [Ref:N]. Note fragmentary evidence."
+        elif intent == "result_query":
+            packet = build_evidence_packet(context.chunks, max_items=12, intent="result_query")
+            user_prompt = f"QUESTION: {question}\n\nEVIDENCE PACKET:\n{packet}\n\nINSTRUCTION: Summarize results by category. Note repeated findings vs isolated results. Cite [Ref:N]. Separate results from interpretation."
+        else:
+            user_prompt = self._build_user_prompt(question, context)
         raw_answer, usage_raw = self._call_claude(system_prompt, user_prompt)
 
         # Detect if LLM actually responded
@@ -335,16 +354,49 @@ class LiteratureAgent:
         if any(w in q for w in ["toxin", "vip3", "cry1", "cry ", "insecticidal protein",
                                   "bt toxin", "vip", "crystal protein"]):
             return "search_by_toxin"
-        # Method-related
-        if any(w in q for w in ["method", "protocol", "assay", "technique", "rna-seq",
-                                  "expression", "purification", "binding assay", "spr",
-                                  "bioassay", "how to", "how are", "what methods"]):
+        # Method (new evidence-packet path — MUST be before old search_by_method)
+        if any(w in q for w in ["what methods are commonly", "find evidence related to",
+                                  "which papers mention", "what bioassay methods",
+                                  "what experimental methods", "what techniques are",
+                                  "what assays are", "methods are commonly used",
+                                  "methods are used in this", "how to measure",
+                                  "protein expression", "binding assay"]):
+            return "method_query"
+        # Result (new evidence-packet path)
+        if any(w in q for w in ["which results are", "what results are", "what experimental outcomes",
+                                  "what findings are", "what effects are",
+                                  "what are the main results", "frequently reported",
+                                  "repeatedly observed", "outcomes are described",
+                                  "findings are repeatedly", "what conclusions are supported by"]):
+            return "result_query"
+        # Method-related (generic fallback)
+        if any(w in q for w in ["rna-seq", "spr", "how to", "how are",
+                                  "method ", "methods ", "protocol", "technique",
+                                  "assay", "bioassay"]):
             return "search_by_method"
         # Mechanism-related
         if any(w in q for w in ["mechanism", "mode of action", "pathway", "resistance",
                                   "binding", "receptor", "domain", "processing",
                                   "activation", "synergy", "toxicity", "apoptosis"]):
             return "search_by_mechanism"
+        # Research gaps
+        if any(w in q for w in ["research gap", "knowledge gap", "missing evidence",
+                                  "missing data", "unresolved", "still needed",
+                                  "remain unanswered", "insufficient evidence",
+                                  "future work", "remains to be determined",
+                                  "what gaps", "what evidence is missing",
+                                  "what remains", "what experiments are still",
+                                  "limitations are repeatedly", "mechanisms are unclear",
+                                  "gap", "gaps"]):
+            return "research_gap_query"
+        # Claim / evidence quality
+        if any(w in q for w in ["claim", "claims", "conclusion", "conclusions",
+                                  "stronger evidence", "weak evidence", "weakly supported",
+                                  "need validation", "unsupported", "indirect evidence",
+                                  "lack direct evidence", "drawn across papers",
+                                  "supported only indirectly", "need stronger",
+                                  "lack sufficient", "which claims", "what claims"]):
+            return "claim_query"
         # Time-related
         if any(w in q for w in ["year", "recent", "latest", "new", "202"]):
             return "search_by_year"
@@ -445,6 +497,165 @@ class LiteratureAgent:
         lines.append("*This is an extractive summary based on retrieved chunks. Enable LLM synthesis for a more polished interpretation.*")
         return "\n".join(lines)
 
+    def _build_claim_context(self, question: str, top_k: int, include_evidence: bool) -> ContextPack:
+        """Build claim-specific context: prioritize claim chunks, low confidence, weak evidence."""
+        # Fetch more internally, then rerank
+        fetch_k = max(top_k * 3, 30)
+        context = self.context_builder.build_context(
+            question=question, top_k=fetch_k,
+            chunk_types=["claim", "result"],
+            include_evidence=include_evidence,
+        )
+        # Score and rerank: prioritize claim + weak evidence
+        scored = []
+        boilerplate_count = 0
+        for c in context.chunks:
+            score = 0
+            ctype = getattr(c, 'chunk_type', '')
+            conf = getattr(c, 'confidence', '')
+            ev_ids = getattr(c, 'linked_evidence_ids', []) or []
+            text = clean_text(getattr(c, 'text', ''))
+            # Filter boilerplate/disclaimers
+            if ctype == "claim" and is_boilerplate_or_disclaimer(text):
+                boilerplate_count += 1
+                continue
+            if ctype == "claim": score += 3
+            if conf == "low": score += 2
+            elif conf == "medium": score += 1
+            if not ev_ids: score += 1
+            if len(text) < 50: score -= 2
+            scored.append((score, c))
+        scored.sort(key=lambda x: -x[0])
+        reranked = [c for _, c in scored[:top_k]]
+        # Limit per paper
+        paper_counts: dict = {}
+        limited = []
+        for c in reranked:
+            pid = getattr(c, 'paper_id', '')
+            paper_counts[pid] = paper_counts.get(pid, 0) + 1
+            if paper_counts[pid] <= 3:
+                limited.append(c)
+        context.chunks = limited
+        return context
+
+    def _build_claim_user_prompt(self, question: str, context: ContextPack) -> str:
+        """Build evidence packet specifically for claim queries."""
+        packet = build_evidence_packet(context.chunks, max_items=12)
+        return (
+            f"QUESTION: {question}\n\n"
+            f"EVIDENCE PACKET:\n{packet}\n\n"
+            "INSTRUCTION: Analyze the claims in the Evidence Packet. "
+            "Identify which claims need stronger evidence and why. "
+            "Structure your answer with High-priority and Medium-priority weak claims. "
+            "For each: Claim, Current evidence, Why stronger evidence is needed, Missing evidence, Sources. "
+            "Use Citation (Year) [Ref:N] format. End with an Overall assessment. "
+            "If evidence is insufficient, say so clearly. Do NOT fabricate."
+        )
+
+    def _build_research_gap_context(self, question: str, top_k: int, include_evidence: bool) -> ContextPack:
+        """Build gap-specific context: prioritize weak claims, limitations, unclear results."""
+        fetch_k = max(top_k * 3, 30)
+        context = self.context_builder.build_context(
+            question=question, top_k=fetch_k,
+            chunk_types=["claim", "result", "figure"],
+            include_evidence=include_evidence,
+        )
+        gap_signals = ["unclear", "unknown", "remains", "requires further", "future work",
+                       "limitation", "not determined", "inconsistent", "discrepancy",
+                       "indirect", "lacking", "insufficient", "needs more", "suggest",
+                       "may", "might", "could be", "poorly understood", "not well",
+                       "little is known", "no evidence", "missing", "incomplete"]
+        scored = []
+        for c in context.chunks:
+            score = 0
+            ctype = getattr(c, 'chunk_type', '')
+            conf = getattr(c, 'confidence', '')
+            text = clean_text(getattr(c, 'text', ''))
+            if is_boilerplate_or_disclaimer(text):
+                continue
+            if ctype == "claim" and conf in ("low", "medium"): score += 3
+            if any(s in text.lower() for s in gap_signals): score += 2
+            if conf == "low": score += 1
+            if len(text) < 40: score -= 2
+            scored.append((score, c))
+        scored.sort(key=lambda x: -x[0])
+        reranked = [c for _, c in scored[:top_k]]
+        paper_counts: dict = {}
+        limited = []
+        for c in reranked:
+            pid = getattr(c, 'paper_id', '')
+            paper_counts[pid] = paper_counts.get(pid, 0) + 1
+            if paper_counts[pid] <= 3:
+                limited.append(c)
+        context.chunks = limited
+        return context
+
+    def _build_gap_user_prompt(self, question: str, context: ContextPack) -> str:
+        packet = build_evidence_packet(context.chunks, max_items=12, intent="research_gap_query")
+        return (
+            f"QUESTION: {question}\n\n"
+            f"EVIDENCE PACKET:\n{packet}\n\n"
+            "INSTRUCTION: Identify research gaps from the Evidence Packet. "
+            "Structure: ## Evidence-based gaps, ## Inferred gaps (labeled as 'inferred'), "
+            "## Overall assessment. For each gap: Observed evidence, Why this indicates a gap, "
+            "Missing evidence, Sources. Use Citation (Year) [Ref:N] format. "
+            "Be conservative — do not invent gaps. If evidence is insufficient, say so."
+        )
+
+    def _build_method_context(self, question: str, top_k: int, include_evidence: bool) -> ContextPack:
+        fetch_k = max(top_k * 3, 30)
+        context = self.context_builder.build_context(
+            question=question, top_k=fetch_k,
+            chunk_types=["method", "result"],
+            include_evidence=include_evidence,
+        )
+        scored = []
+        for c in context.chunks:
+            score = 0
+            ctype = getattr(c, 'chunk_type', '')
+            text = clean_text(getattr(c, 'text', ''))
+            if is_boilerplate_or_disclaimer(text): continue
+            if ctype == "method": score += 3
+            if any(w in text.lower() for w in ["pcr", "elisa", "blot", "assay", "sequencing", "microscopy",
+                "expression", "purification", "binding", "crispr", "rnai", "mutagenesis", "lc50"]): score += 2
+            if len(text) < 30: score -= 2
+            scored.append((score, c))
+        scored.sort(key=lambda x: -x[0])
+        reranked = [c for _, c in scored[:top_k]]
+        paper_counts: dict = {}; limited = []
+        for c in reranked:
+            pid = getattr(c, 'paper_id', ''); paper_counts[pid] = paper_counts.get(pid, 0) + 1
+            if paper_counts[pid] <= 3: limited.append(c)
+        context.chunks = limited
+        return context
+
+    def _build_result_context(self, question: str, top_k: int, include_evidence: bool) -> ContextPack:
+        fetch_k = max(top_k * 3, 30)
+        context = self.context_builder.build_context(
+            question=question, top_k=fetch_k,
+            chunk_types=["result", "claim"],
+            include_evidence=include_evidence,
+        )
+        scored = []
+        for c in context.chunks:
+            score = 0
+            ctype = getattr(c, 'chunk_type', '')
+            text = clean_text(getattr(c, 'text', ''))
+            if is_boilerplate_or_disclaimer(text): continue
+            if ctype == "result": score += 3
+            if any(w in text.lower() for w in ["showed", "demonstrated", "increased", "decreased",
+                "significant", "observed", "found that", "result", "revealed", "indicated"]): score += 2
+            if len(text) < 40: score -= 2
+            scored.append((score, c))
+        scored.sort(key=lambda x: -x[0])
+        reranked = [c for _, c in scored[:top_k]]
+        paper_counts: dict = {}; limited = []
+        for c in reranked:
+            pid = getattr(c, 'paper_id', ''); paper_counts[pid] = paper_counts.get(pid, 0) + 1
+            if paper_counts[pid] <= 3: limited.append(c)
+        context.chunks = limited
+        return context
+
     def _build_system_prompt(self, intent: str = "hybrid_search") -> str:
         base = (
             "You are Scientra Literature Agent. Answer using ONLY the Evidence Packet. "
@@ -452,15 +663,74 @@ class LiteratureAgent:
             "Use author-year citations: 'Author et al. (Year) [Ref:N]'. "
             "Separate evidence from inference. If evidence is weak or missing, say so.\n"
         )
-        if "claim" in intent or "gap" in intent:
-            return base + (
-                "You are evaluating CLAIM QUALITY and RESEARCH GAPS.\n"
-                "Structure your answer:\n"
-                "## Claims needing stronger evidence\n"
-                "For each weak claim: **Claim**, **Current evidence**, "
-                "**Why stronger evidence is needed**, **Missing evidence**, **Sources**.\n"
-                "Then: ## Overall assessment — what is well-supported vs what remains weak.\n"
-                "Use 'Author et al. (Year) [Ref:N]' format for every citation."
+        if intent == "claim_query":
+            return (
+                "You are a scientific evidence reviewer. Evaluate CLAIM QUALITY.\n"
+                "Output structure:\n"
+                "# Claims needing stronger evidence\n"
+                "## High-priority weak claims\n"
+                "### Claim N: {title}\n"
+                "**Claim:** ...\n**Current evidence:** ...\n"
+                "**Why stronger evidence is needed:** ...\n"
+                "**Missing evidence:** bullet list\n"
+                "**Sources:** Citation (Year) [Ref:N]\n"
+                "## Medium-priority claims (same structure)\n"
+                "## Overall assessment\n"
+                "**Well-supported:** ...\n**Weak/indirect:** ...\n"
+                "**Suggested evidence to add:** ...\n\n"
+                "RULES: Use ONLY the Evidence Packet. Cite [Ref:N] + Citation. "
+                "NEVER invent. If evidence is insufficient, say so. "
+                "Separate evidence from inference. "
+                "IGNORE publisher notes, data accuracy disclaimers, copyright text, "
+                "and metadata warnings — these are NOT scientific claims. "
+                "Only evaluate claims about mechanisms, methods, results, phenotypes, "
+                "or experimental conclusions."
+            )
+        if intent == "research_gap_query":
+            return (
+                "You are a scientific research gap analyst. Identify gaps from evidence.\n"
+                "Output structure:\n"
+                "# Research gaps inferred from the literature library\n"
+                "## Evidence-based gaps\n"
+                "### Gap N: {title}\n"
+                "**Observed evidence:** ...\n**Why this indicates a gap:** ...\n"
+                "**Missing evidence:** bullet list\n"
+                "**Sources:** Citation (Year) [Ref:N]\n"
+                "## Inferred gaps (label each as 'Inferred gap')\n"
+                "**Basis for inference:** ...\n**Why this remains uncertain:** ...\n"
+                "## Overall assessment\n"
+                "**Well-covered areas:** ...\n**Weakly supported areas:** ...\n"
+                "**Priority evidence to add:** ...\n\n"
+                "RULES: Use ONLY the Evidence Packet. Be conservative. "
+                "Label inferences clearly. NEVER invent. "
+                "Use Citation (Year) [Ref:N] format."
+            )
+        if intent == "method_query":
+            return (
+                "You are summarizing RESEARCH METHODS from evidence.\n"
+                "Output structure:\n"
+                "# Common methods in the literature library\n"
+                "## Molecular / genetic methods\n"
+                "## Protein / biochemical methods\n"
+                "## Bioassay / phenotype methods\n"
+                "## Microscopy / imaging methods\n"
+                "## Computational / statistical methods\n"
+                "## Evidence coverage and limitations\n"
+                "For each method: what it is, how used, representative sources.\n"
+                "RULES: Use ONLY the Evidence Packet. Cite [Ref:N]. "
+                "Group by category. If evidence is fragmentary, say so. NEVER invent."
+            )
+        if intent == "result_query":
+            return (
+                "You are summarizing RESEARCH RESULTS from evidence.\n"
+                "Output structure:\n"
+                "# Commonly reported results\n"
+                "## Main result categories (group by topic)\n"
+                "For each: **Observed results**, **How strongly supported**, **Sources**.\n"
+                "## Repeated or convergent findings\n"
+                "## Evidence coverage and limitations\n"
+                "RULES: Use ONLY the Evidence Packet. Cite [Ref:N]. "
+                "Separate results from interpretation. If evidence is sparse, say so. NEVER invent."
             )
         if "method" in intent:
             return base + (
