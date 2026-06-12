@@ -101,11 +101,36 @@ if r_baseline.raw_context and r_baseline.raw_context.chunks:
 else:
     print("    -> SKIP (no baseline context)")
 
-# Test 9: backward compat — old params still work
+# Test 9: backward compat
 print("\n[9] backward compat — old ask() signature")
 r = agent.ask(question="Vip3Aa", top_k=5, include_evidence=True)
 test("old signature works", r.context_used > 0 or len(r.answer) > 10)
 print(f"    -> {r.context_used} chunks")
+
+# Test 10: token_usage in evidence-only
+print("\n[10] token_usage — evidence-only mode")
+r = agent.ask(question="test", top_k=3, use_llm=False)
+tu = r.token_usage
+test("token_usage exists", tu is not None)
+test("source is no_llm", tu and tu.get("source") == "no_llm")
+test("total_tokens is 0", tu and tu.get("total_tokens") == 0)
+print(f"    -> source={tu.get('source') if tu else 'N/A'}")
+
+# Test 11: token_usage with LLM
+has_key = __import__('os').environ.get("DEEPSEEK_API_KEY") or __import__('os').environ.get("ANTHROPIC_API_KEY")
+if has_key:
+    print("\n[11] token_usage — LLM synthesis mode")
+    r = agent.ask(question="What methods are used?", top_k=3, use_llm=True)
+    tu = r.token_usage
+    test("token_usage exists", tu is not None)
+    test("total_tokens > 0", tu and (tu.get("total_tokens") or 0) > 0)
+    test("source is provider_reported", tu and tu.get("source") == "provider_reported")
+    test("cost fields present", tu and "estimated_total_cost_usd" in tu)
+    dot_key = "sk-" in str(r.answer) or "api_key" in str(r.answer).lower()
+    test("no API key in response", not dot_key)
+    print(f"    -> {tu.get('total_tokens')} tokens, est. cost ${tu.get('estimated_total_cost_usd')}" if tu else "N/A")
+else:
+    print("\n[11] token_usage — LLM mode SKIPPED (no API key)")
 
 print()
 print("=" * 60)

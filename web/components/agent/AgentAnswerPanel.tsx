@@ -4,6 +4,8 @@ import { useRef, useState, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 import { Copy, Check, Sparkles, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { TokenUsageBadge, TokenDetailPanel } from "./TokenUsageBadge";
+import type { TokenUsage } from "./TokenUsageBadge";
 
 interface AgentAnswerPanelProps {
   answer: string;
@@ -15,6 +17,7 @@ interface AgentAnswerPanelProps {
   highlightedRef: string | null;
   onRefClick: (refId: string) => void;
   answerMode?: string;
+  tokenUsage?: Record<string, unknown> | null;
 }
 
 const CHUNK_TYPE_COLORS: Record<string, string> = {
@@ -44,9 +47,10 @@ const FALLBACK_MESSAGE = `Scientra retrieved relevant evidence from your literat
 
 export function AgentAnswerPanel({
   answer, intent, model, elapsedMs, contextUsed, papersCited,
-  highlightedRef, onRefClick, answerMode,
+  highlightedRef, onRefClick, answerMode, tokenUsage,
 }: AgentAnswerPanelProps) {
   const [copied, setCopied] = useState(false);
+  const [tokenExpanded, setTokenExpanded] = useState(false);
   const answerRef = useRef<HTMLDivElement>(null);
 
   const handleCopy = async () => {
@@ -76,7 +80,7 @@ export function AgentAnswerPanel({
 
   return (
     <div className="rounded-xl border bg-card p-4 shadow-sm">
-      <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground flex-wrap">
+      <div className="flex items-center gap-2 mb-4 text-xs text-muted-foreground flex-wrap overflow-visible">
         <span className={cn(
           "inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-medium",
           isLlmError || isFallback
@@ -94,6 +98,11 @@ export function AgentAnswerPanel({
         <span>{elapsedMs?.toFixed(0)}ms</span>
         <span>{contextUsed} chunks</span>
         <span>{papersCited} papers</span>
+        <TokenUsageBadge
+          tokenUsage={tokenUsage as Record<string,unknown> | null}
+          expanded={tokenExpanded}
+          onToggle={() => setTokenExpanded(!tokenExpanded)}
+        />
         <button
           onClick={handleCopy}
           className="ml-auto flex items-center gap-1 rounded border px-2 py-0.5 text-xs hover:bg-muted transition-colors"
@@ -103,38 +112,43 @@ export function AgentAnswerPanel({
           {copied ? "Copied" : "Copy"}
         </button>
       </div>
-      <div ref={answerRef} className="prose prose-sm dark:prose-invert max-w-none leading-relaxed">
+
+      {/* Inline token detail panel */}
+      {tokenExpanded && tokenUsage && (
+        <TokenDetailPanel tokenUsage={tokenUsage as TokenUsage} />
+      )}
+
+      <hr className="mb-4 mt-3 border-border/40" />
+      <div ref={answerRef} className="prose prose-sm dark:prose-invert max-w-3xl leading-7 text-[15px]">
         <ReactMarkdown
           components={{
+            h2: ({ children }) => <h2 className="text-lg font-semibold mt-6 mb-2 text-foreground border-b pb-1">{children}</h2>,
+            h3: ({ children }) => <h3 className="text-base font-semibold mt-4 mb-1.5 text-foreground/90">{children}</h3>,
             p: ({ children }) => {
               const text = String(children);
               if (typeof text === "string" && /\[Ref:\d+\]/.test(text)) {
                 const parts = text.split(/(\[Ref:\d+\])/g);
-                return (
-                  <p>
-                    {parts.map((part, i) =>
-                      /\[Ref:\d+\]/.test(part) ? (
-                        <button
-                          key={i}
-                          onClick={() => onRefClick(part)}
-                          className={cn(
-                            "inline rounded bg-primary/10 px-1 text-xs font-mono text-primary hover:bg-primary/20 cursor-pointer transition-colors",
-                            highlightedRef === part && "ring-2 ring-primary"
-                          )}
-                        >
-                          {part}
-                        </button>
-                      ) : (
-                        <span key={i}>{part}</span>
-                      )
-                    )}
-                  </p>
-                );
+                return <p className="my-1.5">{parts.map((part, i) =>
+                  /\[Ref:\d+\]/.test(part) ? (
+                    <button key={i} onClick={() => onRefClick(part)}
+                      className={cn("inline-flex items-center rounded bg-primary/10 px-1.5 py-0.5 text-[11px] font-mono text-primary hover:bg-primary/20 cursor-pointer transition-colors align-middle", highlightedRef === part && "ring-2 ring-primary")}>
+                      {part}
+                    </button>
+                  ) : <span key={i}>{part}</span>
+                )}</p>;
               }
-              return <p>{children}</p>;
+              return <p className="my-1.5">{children}</p>;
             },
-          }}
-        >
+            strong: ({ children }) => {
+              const text = String(children);
+              if (text.startsWith("Claim:") || text.startsWith("Current evidence:") || text.startsWith("Why stronger") || text.startsWith("Missing evidence:") || text.startsWith("Sources:")) {
+                return <span className="inline-block text-[11px] font-medium text-primary/80 bg-primary/5 rounded px-1.5 py-0.5 mr-1">{children}</span>;
+              }
+              return <strong className="font-semibold">{children}</strong>;
+            },
+            ul: ({ children }) => <ul className="my-2 space-y-1 list-disc pl-5">{children}</ul>,
+            li: ({ children }) => <li className="text-sm">{children}</li>,
+          }}>
           {effectiveAnswer}
         </ReactMarkdown>
       </div>

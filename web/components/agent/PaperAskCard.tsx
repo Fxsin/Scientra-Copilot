@@ -130,6 +130,7 @@ export function PaperAskCard({ paperId, defaultOpen = false }: PaperAskCardProps
                 highlightedRef={highlightedRef}
                 onRefClick={scrollToRef}
                 answerMode={answerMode}
+                tokenUsage={response?.token_usage as Record<string,unknown> | null}
               />
               <AgentCitationCards
                 citations={response.citations}

@@ -1535,6 +1535,19 @@ class AgentContextPack(BaseModel):
     chunks: list[AgentContextChunk] = Field(default_factory=list)
     papers: dict[str, Any] = Field(default_factory=dict)
 
+class AgentTokenUsage(BaseModel):
+    provider: str = ""
+    model: str = ""
+    prompt_tokens: int | None = None
+    completion_tokens: int | None = None
+    total_tokens: int | None = None
+    estimated_input_cost_usd: float | None = None
+    estimated_output_cost_usd: float | None = None
+    estimated_total_cost_usd: float | None = None
+    currency: str = "USD"
+    source: str = "unavailable"
+    note: str | None = None
+
 class AgentAskResponse(BaseModel):
     question: str
     answer: str
@@ -1545,6 +1558,7 @@ class AgentAskResponse(BaseModel):
     elapsed_ms: float = 0.0
     intent: str = ""
     context: AgentContextPack | None = None
+    token_usage: AgentTokenUsage | None = None
 
 
 def create_app(root: Path | None = None) -> FastAPI:
@@ -2838,6 +2852,7 @@ def create_app(root: Path | None = None) -> FastAPI:
             elapsed_ms=response.elapsed_ms,
             intent=response.intent,
             context=context_pack,
+            token_usage=AgentTokenUsage(**response.token_usage) if response.token_usage else None,
         )
 
     return api

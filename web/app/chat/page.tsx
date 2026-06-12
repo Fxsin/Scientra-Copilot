@@ -199,6 +199,7 @@ export default function ChatPage() {
             highlightedRef={highlightedRef}
             onRefClick={scrollToRef}
             answerMode={answerMode}
+            tokenUsage={response?.token_usage as Record<string,unknown> | null}
           />
           <AgentCitationCards
             citations={response.citations}

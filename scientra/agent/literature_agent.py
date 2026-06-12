@@ -88,6 +88,7 @@ class AgentResponse:
     elapsed_ms: float = 0.0
     intent: str = "hybrid_search"
     raw_context: ContextPack | None = None
+    token_usage: dict | None = None
 
 
 class LiteratureAgent:
@@ -197,6 +198,7 @@ class LiteratureAgent:
                 elapsed_ms=round(elapsed, 1),
                 intent=intent,
                 raw_context=context if return_context else None,
+                token_usage={"source": "no_llm", "total_tokens": 0, "note": "Empty context; no LLM call."},
             )
 
         # ── Safety guard: out-of-scope detection ──
@@ -233,48 +235,51 @@ class LiteratureAgent:
                 elapsed_ms=round(elapsed, 1),
                 intent=intent,
                 raw_context=context if return_context else None,
+                token_usage={"source": "no_llm", "total_tokens": 0, "note": "Evidence-only mode; no LLM tokens used."},
             )
 
-        # 4. Format prompt + call Claude
-        system_prompt = self._build_system_prompt()
+        # 4. Format prompt + call LLM
+        system_prompt = self._build_system_prompt(intent)
         user_prompt = self._build_user_prompt(question, context)
-        raw_answer = self._call_claude(system_prompt, user_prompt)
+        raw_answer, usage_raw = self._call_claude(system_prompt, user_prompt)
 
         # Detect if LLM actually responded
         if raw_answer.startswith("[Agent Error:"):
-            # Fallback to extractive
             extractive_answer = self._build_extractive_answer(question, intent, context, top_k)
             citations = self._parse_citations(extractive_answer, context)
             elapsed = (time.time() - t0) * 1000
             return AgentResponse(
-                question=question,
-                answer=extractive_answer,
+                question=question, answer=extractive_answer,
                 citations=citations,
-                context_used=len(context.chunks),
-                papers_cited=len(context.papers),
-                model="evidence-only-fallback",
-                elapsed_ms=round(elapsed, 1),
-                intent=intent,
-                raw_context=context if return_context else None,
+                context_used=len(context.chunks), papers_cited=len(context.papers),
+                model="evidence-only-fallback", elapsed_ms=round(elapsed, 1),
+                intent=intent, raw_context=context if return_context else None,
+                token_usage={"source": "unavailable", "total_tokens": 0,
+                             "note": "LLM unavailable; answer from evidence-only fallback."},
             )
 
         raw_answer = self._sanitize_answer(raw_answer, context)
-
-        # 5. Parse citations
         citations = self._parse_citations(raw_answer, context)
-
         elapsed = (time.time() - t0) * 1000
 
+        # Build token usage
+        cost = self._estimate_cost(usage_raw)
+        token_usage = {
+            "provider": self.provider, "model": self.model,
+            "prompt_tokens": usage_raw.get("prompt_tokens"),
+            "completion_tokens": usage_raw.get("completion_tokens"),
+            "total_tokens": usage_raw.get("total_tokens"),
+            "source": usage_raw.get("source", "provider_reported"),
+            "currency": "USD", "note": usage_raw.get("note"),
+            **cost,
+        }
+
         return AgentResponse(
-            question=question,
-            answer=raw_answer,
-            citations=citations,
-            context_used=len(context.chunks),
-            papers_cited=len(context.papers),
-            model=self.model,
-            elapsed_ms=round(elapsed, 1),
-            intent=intent,
-            raw_context=context if return_context else None,
+            question=question, answer=raw_answer, citations=citations,
+            context_used=len(context.chunks), papers_cited=len(context.papers),
+            model=self.model, elapsed_ms=round(elapsed, 1),
+            intent=intent, raw_context=context if return_context else None,
+            token_usage=token_usage,
         )
 
     def _is_out_of_scope(self, question: str) -> bool:
@@ -440,130 +445,211 @@ class LiteratureAgent:
         lines.append("*This is an extractive summary based on retrieved chunks. Enable LLM synthesis for a more polished interpretation.*")
         return "\n".join(lines)
 
-    def _build_system_prompt(self) -> str:
-        return (
-            "You are Scientra Literature Agent, a research assistant specialized in "
-            "scientific literature about Bacillus thuringiensis (Bt) insecticidal proteins, "
-            "particularly Vip3A toxins.\n\n"
-            "CRITICAL RULES — follow strictly:\n"
-            "1. Answer based ONLY on the provided context chunks. NEVER use outside knowledge.\n"
-            "2. Cite sources inline using [Ref:N] where N is the chunk reference number.\n"
-            "   Every key claim MUST have at least one [Ref:N] citation.\n"
-            "3. If the context is empty or contains insufficient information, state:\n"
-            "   'Insufficient evidence in current database.' Do NOT fabricate.\n"
-            "4. NEVER invent DOI numbers, paper titles, author names, data values, or statistics.\n"
-            "5. NEVER use absolute language: do not say 'proves', 'definitively', 'certainly',\n"
-            "   'without doubt', or 'all studies show'. Use 'suggests', 'indicates', 'reports'.\n"
-            "6. Distinguish between directly observed RESULTS and author INTERPRETATIONS.\n"
-            "7. For METHOD questions: group by category (molecular, biochemical, bioassay, etc.).\n"
-            "8. For CLAIM questions: distinguish evidence-based claims from inferences.\n"
-            "9. For RESEARCH GAP questions: separate evidence-based gaps from possible gaps.\n"
-            "10. Mark INFERENCES clearly with 'Inference:' prefix.\n"
-            "11. Keep answers concise (300–700 words). Use scientific terminology.\n"
-            "12. If the question is outside the database scope, state so and redirect.\n"
-            "13. If asked about a fake/nonexistent entity, state: 'No evidence found.'\n"
+    def _build_system_prompt(self, intent: str = "hybrid_search") -> str:
+        base = (
+            "You are Scientra Literature Agent. Answer using ONLY the Evidence Packet. "
+            "NEVER invent papers, data, DOIs, or values. "
+            "Use author-year citations: 'Author et al. (Year) [Ref:N]'. "
+            "Separate evidence from inference. If evidence is weak or missing, say so.\n"
+        )
+        if "claim" in intent or "gap" in intent:
+            return base + (
+                "You are evaluating CLAIM QUALITY and RESEARCH GAPS.\n"
+                "Structure your answer:\n"
+                "## Claims needing stronger evidence\n"
+                "For each weak claim: **Claim**, **Current evidence**, "
+                "**Why stronger evidence is needed**, **Missing evidence**, **Sources**.\n"
+                "Then: ## Overall assessment — what is well-supported vs what remains weak.\n"
+                "Use 'Author et al. (Year) [Ref:N]' format for every citation."
+            )
+        if "method" in intent:
+            return base + (
+                "You are summarizing RESEARCH METHODS.\n"
+                "Structure: ## Common method categories with representative examples. "
+                "Group by molecular, biochemical, bioassay, structural, computational. "
+                "Note evidence coverage and limitations."
+            )
+        return base + (
+            "Structure your answer clearly with headings. "
+            "Every key claim MUST cite [Ref:N]. "
+            "Use 'Author et al. (Year) [Ref:N]' format."
         )
 
     def _build_user_prompt(self, question: str, context: ContextPack) -> str:
+        """Build evidence packet — structured, cleaned context for LLM."""
         parts: list[str] = []
         parts.append(f"QUESTION: {question}\n")
-        parts.append("CONTEXT CHUNKS (from research papers):\n")
+        parts.append("EVIDENCE PACKET (from research papers):\n")
 
         for i, chunk in enumerate(context.chunks, 1):
+            text = self._sanitize_text(getattr(chunk, 'text', ''))
+            if not text or len(text) < 20:
+                continue
+
             title = chunk.paper_title or chunk.paper_id[:60]
-            year_str = f" ({chunk.paper_year})" if chunk.paper_year else ""
+            year = getattr(chunk, 'paper_year', None)
+            year_str = str(year) if year else "?"
+            ctype = getattr(chunk, 'chunk_type', 'unknown')
+            conf = getattr(chunk, 'confidence', 'unknown')
+            source = getattr(chunk, 'source', '')
+            source_short = "Asset" if "asset" in source else "Evidence" if "evidence" in source else source
+
+            # Evidence role
+            role = self._classify_evidence_role(ctype, conf, text)
+
             parts.append(
-                f"[Ref:{i}] Type: {chunk.chunk_type} | Source: {chunk.source} | "
-                f"Paper: {title}{year_str} | Confidence: {chunk.confidence}\n"
-                f"{chunk.text}\n"
+                f"[Ref:{i}] {title} ({year_str}) | Type: {ctype} | Role: {role} | "
+                f"Confidence: {conf} | Source: {source_short}\n"
+                f"{text[:800]}\n"
             )
 
         parts.append(
-            "INSTRUCTION: Answer the QUESTION using ONLY the CONTEXT CHUNKS above. "
-            "Cite specific chunks using [Ref:N] notation. "
-            "If multiple chunks support the same point, cite all relevant refs. "
-            "If the context is insufficient, state what is missing."
+            "INSTRUCTION: Answer using ONLY the Evidence Packet above. "
+            "Cite EVERY key claim with [Ref:N] in brackets exactly. "
+            "Use paper titles (shortened) as citation labels since author names may be unavailable. "
+            "Format: '...finding [Ref:1]' or '(see [Ref:2])'. "
+            "If evidence is weak, note the confidence level from the packet. "
+            "NEVER invent papers, data, or DOIs. Separate evidence from inference clearly."
         )
         return "\n".join(parts)
 
-    def _call_claude(self, system_prompt: str, user_prompt: str) -> str:
-        """Call LLM API (Anthropic or DeepSeek) and return text response."""
+    def _sanitize_text(self, text: str) -> str:
+        """Clean context text of common artifacts."""
+        if not text:
+            return ""
+        # Remove JavaScript artifacts
+        for artifact in ["[object Object]", "object Object", "undefined", "null null", "None None"]:
+            text = text.replace(artifact, "")
+        # Collapse whitespace
+        import re
+        text = re.sub(r'\s+', ' ', text).strip()
+        # Deduplicate repeated phrases (3+ word repeats)
+        words = text.split()
+        if len(words) > 6:
+            for window in [4, 5, 6]:
+                for i in range(len(words) - window * 2):
+                    phrase = " ".join(words[i:i+window])
+                    next_phrase = " ".join(words[i+window:i+window*2])
+                    if phrase == next_phrase and len(phrase) > 10:
+                        words = words[:i+window] + words[i+window*2:]
+                        text = " ".join(words)
+                        break
+        return text
+
+    def _classify_evidence_role(self, ctype: str, confidence: str, text: str) -> str:
+        if ctype == "claim" and confidence in ("low", "medium"):
+            return "weak_claim"
+        if ctype == "claim":
+            return "claim"
+        if ctype == "result":
+            return "supporting_result"
+        if ctype == "method":
+            return "method_context"
+        if ctype == "figure":
+            return "figure_context"
+        if confidence == "low":
+            return "weak_evidence"
+        return "direct_evidence" if confidence == "high" else "background"
+
+    def _call_claude(self, system_prompt: str, user_prompt: str) -> tuple[str, dict]:
+        """Call LLM API and return (text, usage_dict)."""
         if not self.api_key:
             return (
                 "[Agent Error: No LLM API key configured. "
                 "Run: python Scripts/setup_llm.py or set DEEPSEEK_API_KEY / ANTHROPIC_API_KEY. "
                 "Context was retrieved successfully but LLM synthesis is unavailable.]"
-            )
+            ), {"source": "unavailable", "note": "No API key configured"}
 
         if self.provider == "deepseek":
             return self._call_deepseek(system_prompt, user_prompt)
         return self._call_anthropic(system_prompt, user_prompt)
 
-    def _call_anthropic(self, system_prompt: str, user_prompt: str) -> str:
+    def _call_anthropic(self, system_prompt: str, user_prompt: str) -> tuple[str, dict]:
         payload = {
-            "model": self.model,
-            "max_tokens": self.max_tokens,
-            "temperature": self.temperature,
-            "system": system_prompt,
+            "model": self.model, "max_tokens": self.max_tokens,
+            "temperature": self.temperature, "system": system_prompt,
             "messages": [{"role": "user", "content": user_prompt}],
         }
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         url = f"{self.base_url}/v1/messages"
-        headers = {
-            "x-api-key": self.api_key,
-            "anthropic-version": "2023-06-01",
-            "Content-Type": "application/json",
-        }
-        last_error = None
+        headers = {"x-api-key": self.api_key, "anthropic-version": "2023-06-01", "Content-Type": "application/json"}
         for attempt in range(3):
             req = urllib.request.Request(url, data=body, method="POST", headers=headers)
             try:
                 with urllib.request.urlopen(req, timeout=120) as resp:
                     raw = json.loads(resp.read().decode("utf-8", errors="replace"))
-                text = ""
-                for block in raw.get("content", []):
-                    if isinstance(block, dict) and block.get("type") == "text":
-                        text += block.get("text", "")
-                return text
+                text = "".join(b.get("text","") for b in raw.get("content",[]) if isinstance(b,dict) and b.get("type")=="text")
+                usage_raw = raw.get("usage", {})
+                usage = {
+                    "source": "provider_reported",
+                    "prompt_tokens": usage_raw.get("input_tokens"),
+                    "completion_tokens": usage_raw.get("output_tokens"),
+                    "total_tokens": (usage_raw.get("input_tokens", 0) or 0) + (usage_raw.get("output_tokens", 0) or 0),
+                }
+                return text, usage
             except urllib.error.HTTPError as exc:
-                last_error = RuntimeError(f"HTTP {exc.code}: {exc.read().decode('utf-8', errors='replace')[:300]}")
                 if exc.code in (401, 403): break
-            except Exception as exc:
-                last_error = exc
+            except Exception: pass
             if attempt < 2: time.sleep(2.0 * (2**attempt))
-        return f"[Agent Error: API call failed — {last_error}]"
+        return f"[Agent Error: API call failed]", {"source": "unavailable", "note": "API call failed after retries"}
 
-    def _call_deepseek(self, system_prompt: str, user_prompt: str) -> str:
+    def _call_deepseek(self, system_prompt: str, user_prompt: str) -> tuple[str, dict]:
         payload = {
             "model": self.model,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-            "temperature": self.temperature,
-            "max_tokens": self.max_tokens,
-            "stream": False,
+            "messages": [{"role":"system","content":system_prompt},{"role":"user","content":user_prompt}],
+            "temperature": self.temperature, "max_tokens": self.max_tokens, "stream": False,
         }
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         url = f"{self.base_url}/v1/chat/completions"
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-        }
-        last_error = None
+        headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
         for attempt in range(3):
             req = urllib.request.Request(url, data=body, method="POST", headers=headers)
             try:
                 with urllib.request.urlopen(req, timeout=120) as resp:
                     raw = json.loads(resp.read().decode("utf-8", errors="replace"))
-                return raw["choices"][0]["message"]["content"]
+                text = raw["choices"][0]["message"]["content"]
+                usage_raw = raw.get("usage", {})
+                usage = {
+                    "source": "provider_reported",
+                    "prompt_tokens": usage_raw.get("prompt_tokens"),
+                    "completion_tokens": usage_raw.get("completion_tokens"),
+                    "total_tokens": usage_raw.get("total_tokens"),
+                }
+                return text, usage
             except urllib.error.HTTPError as exc:
-                last_error = RuntimeError(f"HTTP {exc.code}: {exc.read().decode('utf-8', errors='replace')[:300]}")
                 if exc.code in (401, 403): break
-            except Exception as exc:
-                last_error = exc
+            except Exception: pass
             if attempt < 2: time.sleep(2.0 * (2**attempt))
-        return f"[Agent Error: API call failed — {last_error}]"
+        return f"[Agent Error: API call failed]", {"source": "unavailable", "note": "API call failed after retries"}
+
+    def _estimate_cost(self, usage: dict) -> dict:
+        """Estimate cost from pricing config."""
+        pricing_path = self.root / "Config" / "llm_pricing.yaml"
+        pricing = {}
+        if pricing_path.exists():
+            try:
+                import yaml
+                pricing = yaml.safe_load(pricing_path.read_text(encoding="utf-8")) or {}
+            except Exception: pass
+
+        provider_pricing = pricing.get(self.provider, {}).get(self.model, {})
+        input_price = provider_pricing.get("input_per_1m_tokens_usd")
+        output_price = provider_pricing.get("output_per_1m_tokens_usd")
+        prompt_tokens = usage.get("prompt_tokens") or 0
+        completion_tokens = usage.get("completion_tokens") or 0
+
+        result = {"estimated_input_cost_usd": None, "estimated_output_cost_usd": None, "estimated_total_cost_usd": None}
+        if input_price is not None and prompt_tokens:
+            result["estimated_input_cost_usd"] = round(prompt_tokens / 1_000_000 * input_price, 6)
+        if output_price is not None and completion_tokens:
+            result["estimated_output_cost_usd"] = round(completion_tokens / 1_000_000 * output_price, 6)
+        if result["estimated_input_cost_usd"] is not None and result["estimated_output_cost_usd"] is not None:
+            result["estimated_total_cost_usd"] = round(result["estimated_input_cost_usd"] + result["estimated_output_cost_usd"], 6)
+        elif result["estimated_input_cost_usd"] is not None:
+            result["estimated_total_cost_usd"] = result["estimated_input_cost_usd"]
+        elif result["estimated_output_cost_usd"] is not None:
+            result["estimated_total_cost_usd"] = result["estimated_output_cost_usd"]
+        return result
 
     def _parse_citations(
         self, answer: str, context: ContextPack

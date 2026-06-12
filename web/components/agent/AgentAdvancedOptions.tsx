@@ -87,6 +87,7 @@ export function AgentAdvancedOptions({
             <div className="flex items-center gap-1.5 text-xs">
               <span className="text-muted-foreground">top_k:</span>
               <input type="number" value={topK} onChange={(e) => setTopK(Math.max(1, Math.min(50, +e.target.value || 10)))} className="w-14 rounded border px-1.5 py-0.5 text-xs bg-background" min={1} max={50} />
+              <span className="text-[9px] text-muted-foreground/50">higher = more tokens</span>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-1.5 text-xs">

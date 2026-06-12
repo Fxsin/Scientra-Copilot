@@ -1,0 +1,19 @@
+# LLM Pricing (USD per 1M tokens)
+# Update these values from provider pricing pages.
+# These are estimates only. Actual costs may vary.
+
+deepseek:
+  deepseek-chat:
+    input_per_1m_tokens_usd: 0.27
+    output_per_1m_tokens_usd: 1.10
+  deepseek-reasoner:
+    input_per_1m_tokens_usd: 0.55
+    output_per_1m_tokens_usd: 2.19
+
+anthropic:
+  claude-sonnet-4-6:
+    input_per_1m_tokens_usd: null
+    output_per_1m_tokens_usd: null
+  claude-haiku-4-5:
+    input_per_1m_tokens_usd: 0.80
+    output_per_1m_tokens_usd: 4.00

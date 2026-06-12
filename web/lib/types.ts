@@ -633,6 +633,20 @@ export interface AgentContextPack {
   papers: Record<string, unknown>;
 }
 
+export interface TokenUsage {
+  provider: string;
+  model: string;
+  prompt_tokens: number | null;
+  completion_tokens: number | null;
+  total_tokens: number | null;
+  estimated_input_cost_usd: number | null;
+  estimated_output_cost_usd: number | null;
+  estimated_total_cost_usd: number | null;
+  currency: string;
+  source: string;
+  note?: string | null;
+}
+
 export interface AgentAskResponse {
   question: string;
   answer: string;
@@ -643,6 +657,7 @@ export interface AgentAskResponse {
   elapsed_ms: number;
   intent: string;
   context: AgentContextPack | null;
+  token_usage?: TokenUsage | null;
 }
 
 export type AgentAnswerMode = "auto" | "llm" | "evidence_only";
