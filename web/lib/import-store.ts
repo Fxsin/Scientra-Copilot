@@ -5,34 +5,33 @@ import { create } from "zustand";
 import type { ImportItem, ImportStatus } from "./import-types";
 import { jobToItem } from "./import-types";
 import {
-  uploadPdfs,
   getImportJobs,
   runImportJob,
   retryImportJob,
   runAllImportJobs,
 } from "./api";
 
-/* ── Store ── */
+/* ── Store ──
+ *
+ * This store is a compatibility shim for the legacy import workflow.
+ * The new P0 Web Import Center uses direct API calls in the import page
+ * (createUploadSession, uploadFilesBatch, generateImportPlan, etc.)
+ * and does NOT use this store.
+ *
+ * loadJobs is a no-op when the legacy /import/jobs endpoint is unavailable.
+ */
 
 interface ImportStore {
   items: ImportItem[];
   loaded: boolean;
   polling: boolean;
-  /** Fetch jobs from API */
   loadJobs: () => Promise<void>;
-  /** Upload files to API, refresh list on success */
   uploadFiles: (files: File[]) => Promise<void>;
-  /** Remove an item locally */
   removeItem: (id: string) => void;
-  /** Trigger workflow for a single job */
   runJob: (importId: string) => Promise<void>;
-  /** Retry a failed job */
   retryJob: (importId: string) => Promise<void>;
-  /** Run all queued/failed jobs */
   runAll: () => Promise<void>;
-  /** Start polling for status updates */
   startPolling: () => void;
-  /** Stop polling */
   stopPolling: () => void;
 }
 
@@ -54,52 +53,19 @@ export const useImportStore = create<ImportStore>((set, get) => ({
     try {
       const data = await getImportJobs();
       set({
-        items: data.jobs.map(jobToItem),
+        items: (data.jobs || []).map(jobToItem),
         loaded: true,
       });
     } catch {
-      // API may not be running — keep current items, mark as attempted
+      // Legacy /import/jobs endpoint unavailable — mark as loaded (empty)
       set({ loaded: true });
     }
   },
 
-  uploadFiles: async (files) => {
-    // Show optimistic "uploading" entries
-    const now = new Date().toISOString();
-    const optimistic: ImportItem[] = files.map((f, i) => ({
-      id: `optimistic-${Date.now()}-${i}`,
-      filename: f.name,
-      sizeBytes: f.size,
-      status: "uploading" as ImportStatus,
-      progress: 0,
-      currentStep: "Uploading",
-      createdAt: now,
-      completedAt: null,
-      error: null,
-    }));
-    set((s) => ({ items: [...optimistic, ...s.items] }));
-
-    try {
-      await uploadPdfs(files);
-      // Replace optimistic entries with real ones, refresh from API
-      await get().loadJobs();
-      // Also remove any optimistic entries that the API didn't return
-      set((s) => ({
-        items: s.items.filter((i) => !i.id.startsWith("optimistic-")),
-      }));
-      // Load again to get final state
-      await get().loadJobs();
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Upload failed";
-      // Mark optimistic entries as failed
-      set((s) => ({
-        items: s.items.map((i) =>
-          i.id.startsWith("optimistic-") && i.status === "uploading"
-            ? { ...i, status: "failed" as ImportStatus, error: msg }
-            : i,
-        ),
-      }));
-    }
+  uploadFiles: async (_files) => {
+    // Legacy upload is deprecated. Use the new Web Import Center API instead:
+    // createUploadSession() → uploadFilesMultipart() or uploadFilesBatch()
+    // This function is a no-op to prevent errors from the old endpoint.
   },
 
   removeItem: (id) => {
@@ -107,21 +73,33 @@ export const useImportStore = create<ImportStore>((set, get) => ({
   },
 
   runJob: async (importId) => {
-    await runImportJob(importId);
-    await get().loadJobs();
-    get().startPolling();
+    try {
+      await runImportJob(importId);
+      await get().loadJobs();
+      get().startPolling();
+    } catch {
+      // Legacy endpoint may not exist
+    }
   },
 
   retryJob: async (importId) => {
-    await retryImportJob(importId);
-    await get().loadJobs();
-    get().startPolling();
+    try {
+      await retryImportJob(importId);
+      await get().loadJobs();
+      get().startPolling();
+    } catch {
+      // Legacy endpoint may not exist
+    }
   },
 
   runAll: async () => {
-    await runAllImportJobs();
-    await get().loadJobs();
-    get().startPolling();
+    try {
+      await runAllImportJobs();
+      await get().loadJobs();
+      get().startPolling();
+    } catch {
+      // Legacy endpoint may not exist
+    }
   },
 
   startPolling: () => {
@@ -132,11 +110,9 @@ export const useImportStore = create<ImportStore>((set, get) => ({
     _pollTimer = setInterval(async () => {
       await get().loadJobs();
       const { items } = get();
-      // Stop polling when all jobs are terminal
       const allTerminal = items.every(
         (i) => i.status === "completed" || i.status === "failed",
       );
-      // Or if presence of a summary job with pending_agent → keep polling
       if (allTerminal) {
         get().stopPolling();
       }

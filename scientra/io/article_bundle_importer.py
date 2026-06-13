@@ -169,7 +169,8 @@ class ArticleBundleImporter:
             entry["paper_id"] = paper_id
 
             if dry_run:
-                entry["would_copy_main"] = str(target_paper / Path(rec.detected_main_pdf or "").name)
+                would_copy = target_paper / Path(rec.detected_main_pdf or "").name
+                entry["would_copy_main"] = str(would_copy.relative_to(self.root)).replace("\\", "/")
                 entry["would_copy_suppl_count"] = len(rec.tabular_supplementary_files) + len(rec.supplementary_pdfs)
                 entry["status"] = "dry_run_planned"
                 results.append(entry)

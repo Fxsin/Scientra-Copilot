@@ -15,6 +15,12 @@ paths:
   inbox.loose_supplementary_review_needed: "00_Inbox/loose_supplementary/review_needed"
   inbox.loose_supplementary_failed: "00_Inbox/loose_supplementary/failed"
 
+  # ── 00_Inbox: Web upload staging ──
+  inbox.web_uploads_staging: "00_Inbox/web_uploads/staging"
+  inbox.web_uploads_planned: "00_Inbox/web_uploads/planned"
+  inbox.web_uploads_imported: "00_Inbox/web_uploads/imported"
+  inbox.web_uploads_failed: "00_Inbox/web_uploads/failed"
+
   # ── 01_Sources: Original files ──
   sources.papers: "01_Sources/papers"
   sources.supplementary: "01_Sources/supplementary"

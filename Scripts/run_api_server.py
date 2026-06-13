@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -30,7 +31,10 @@ def main() -> int:
     from scientra.server import create_app
 
     app = create_app(args.root.resolve())
-    uvicorn.run(app, host=args.host, port=args.port, reload=args.reload)
+    # In dev mode, enable hot-reload so code changes are picked up automatically.
+    # Set SCIENTRA_RELOAD=0 to disable, or pass --no-reload.
+    use_reload = args.reload or os.environ.get("SCIENTRA_RELOAD", "1") != "0"
+    uvicorn.run(app, host=args.host, port=args.port, reload=use_reload)
     return 0
 
 

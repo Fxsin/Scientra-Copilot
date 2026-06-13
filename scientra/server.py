@@ -2872,14 +2872,323 @@ def create_app(root: Path | None = None) -> FastAPI:
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
-    # ── Phase 2H: /assets/* — Assets Viewer ──
+    # ── Legacy compatibility: /import/jobs, /import/upload ──
+    # These endpoints existed in pre-P0 versions and are kept as no-op shims
+    # so that stale frontend bundles don't produce 404 errors.
 
-    @api.get("/assets/summary")
-    def assets_summary_endpoint():
+    @api.get("/import/jobs")
+    def legacy_import_jobs_endpoint():
+        """Legacy endpoint — returns empty job list. Use /import/upload-session instead."""
+        return {"total": 0, "jobs": []}
+
+    @api.post("/import/upload")
+    async def legacy_import_upload_endpoint():
+        """Legacy endpoint — redirects to new upload session workflow."""
+        raise HTTPException(
+            status_code=410,
+            detail="This endpoint has been replaced. Use POST /import/upload-session to create a session, then POST /import/upload-session/{id}/files to upload."
+        )
+
+    @api.post("/import/jobs/{import_id}/run")
+    def legacy_import_job_run_endpoint(import_id: str):
+        """Legacy endpoint — no-op."""
+        return {"import_id": import_id, "status": "deprecated", "message": "Use the new Import Center at /import"}
+
+    @api.post("/import/jobs/{import_id}/retry")
+    def legacy_import_job_retry_endpoint(import_id: str):
+        """Legacy endpoint — no-op."""
+        return {"import_id": import_id, "status": "deprecated", "message": "Use the new Import Center at /import"}
+
+    @api.post("/import/jobs/run-all")
+    def legacy_import_jobs_run_all_endpoint():
+        """Legacy endpoint — no-op."""
+        return {"status": "deprecated", "message": "Use the new Import Center at /import"}
+
+    # ── Phase 2I: /import/upload-session/* — Web Import Center ──
+
+    @api.post("/import/upload-session")
+    def create_upload_session_endpoint():
+        """Create a new web upload session. Returns session_id and staging path."""
         try:
-            from scientra.io.assets_viewer import AssetsViewer
-            viewer = AssetsViewer()
-            return viewer.get_summary()
+            from scientra.io.web_import import create_session
+            return create_session(root)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/import/upload-session/{session_id}")
+    def get_upload_session_endpoint(session_id: str):
+        """Get upload session details including file list."""
+        try:
+            from scientra.io.web_import import WebImportSession
+            session = WebImportSession(root)
+            result = session.get_session(session_id)
+            if "error" in result:
+                raise HTTPException(status_code=404, detail=result["error"])
+            return result
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    # NOTE: Real multipart file upload requires direct Starlette request access.
+    # It is registered as a top-level route below (after create_app returns)
+    # because FastAPI's dependency resolution interacts with __future__.annotations.
+    # For programmatic use, see /import/upload-session/{id}/upload (base64) and
+    # /import/upload-session/{id}/upload-batch (base64 batch).
+
+    @api.post("/import/upload-session/{session_id}/upload")
+    async def upload_single_file_base64_endpoint(session_id: str, body: dict[str, Any]):
+        """Upload a file to a session as base64-encoded content.
+
+        Body (JSON):
+        {
+            "filename": "paper.pdf",
+            "content_base64": "<base64-encoded-file-content>",
+            "relative_path": "folder/paper.pdf"  // optional, sub-path for folder uploads
+        }
+        """
+        import base64
+
+        try:
+            filename = str(body.get("filename", ""))
+            content_b64 = str(body.get("content_base64", ""))
+            relative_path = str(body.get("relative_path", filename))
+
+            if not filename:
+                raise HTTPException(status_code=400, detail="filename is required")
+            if not content_b64:
+                raise HTTPException(status_code=400, detail="content_base64 is required")
+
+            try:
+                content = base64.b64decode(content_b64)
+            except Exception:
+                raise HTTPException(status_code=400, detail="Invalid base64 content")
+
+            from scientra.io.web_import import WebImportSession
+            session = WebImportSession(root)
+            result = session.add_files(session_id, [(filename, content, relative_path)])
+
+            if "error" in result:
+                raise HTTPException(status_code=400, detail=result["error"])
+            return result
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.post("/import/upload-session/{session_id}/upload-batch")
+    async def upload_files_batch_endpoint(session_id: str, body: dict[str, Any]):
+        """Upload multiple files to a session as base64-encoded content.
+
+        Body (JSON):
+        {
+            "files": [
+                {"filename": "paper.pdf", "content_base64": "...", "relative_path": "paper.pdf"},
+                {"filename": "Table_S1.xlsx", "content_base64": "...", "relative_path": "Table_S1.xlsx"}
+            ]
+        }
+        """
+        import base64
+
+        try:
+            files_data = body.get("files", [])
+            if not isinstance(files_data, list) or not files_data:
+                raise HTTPException(status_code=400, detail="files must be a non-empty array")
+
+            file_items: list[tuple[str, bytes, str]] = []
+            for f in files_data:
+                filename = str(f.get("filename", ""))
+                content_b64 = str(f.get("content_base64", ""))
+                relative_path = str(f.get("relative_path", filename))
+
+                if not filename or not content_b64:
+                    raise HTTPException(status_code=400, detail="Each file must have filename and content_base64")
+
+                try:
+                    content = base64.b64decode(content_b64)
+                except Exception:
+                    raise HTTPException(status_code=400, detail=f"Invalid base64 for: {filename}")
+
+                file_items.append((filename, content, relative_path))
+
+            from scientra.io.web_import import WebImportSession
+            session = WebImportSession(root)
+            result = session.add_files(session_id, file_items)
+
+            if "error" in result:
+                raise HTTPException(status_code=400, detail=result["error"])
+            return result
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.post("/import/upload-session/{session_id}/plan")
+    def generate_import_plan_endpoint(session_id: str):
+        """Generate an import plan for the session."""
+        try:
+            from scientra.io.web_import import WebImportSession
+            session = WebImportSession(root)
+            result = session.generate_plan(session_id)
+            if "error" in result:
+                raise HTTPException(status_code=400, detail=result["error"])
+            return result
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.patch("/import/upload-session/{session_id}/plan")
+    def update_import_plan_endpoint(session_id: str, body: dict[str, Any]):
+        """Update import plan with manual selections."""
+        try:
+            from scientra.io.web_import import WebImportSession
+            session = WebImportSession(root)
+            result = session.update_plan(session_id, body)
+            if "error" in result:
+                raise HTTPException(status_code=400, detail=result["error"])
+            return result
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.post("/import/upload-session/{session_id}/confirm")
+    def confirm_import_endpoint(session_id: str):
+        """Execute the import plan: copy files from staging to inbox."""
+        try:
+            from scientra.io.web_import import WebImportSession
+            session = WebImportSession(root)
+            result = session.confirm_import(session_id)
+            if result.get("status") == "error":
+                raise HTTPException(status_code=400, detail=result.get("error"))
+            return result
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/import/upload-sessions")
+    def list_upload_sessions_endpoint():
+        """List all active web upload sessions."""
+        try:
+            from scientra.io.web_import import list_sessions
+            sessions = list_sessions(root)
+            return {"sessions": sessions, "total": len(sessions)}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    # ── Phase 2J: /import/status — Import Status Overview ──
+
+    @api.get("/import/status")
+    def import_status_endpoint():
+        """Get comprehensive import status overview across all inbox directories."""
+        try:
+            from scientra.io.storage_layout import StorageLayout
+            sl = StorageLayout(root)
+            sl.load()
+
+            def _scan_dir(key: str) -> dict[str, Any]:
+                d = sl.get_path(key)
+                items: list[dict[str, Any]] = []
+                if d.exists():
+                    for entry in sorted(d.iterdir()):
+                        if entry.name.startswith("."):
+                            continue
+                        rel = str(entry.relative_to(sl.root)).replace("\\", "/")
+                        if entry.is_dir():
+                            files = list(entry.iterdir())
+                            item = {
+                                "name": entry.name,
+                                "relative_path": rel,
+                                "type": "directory",
+                                "file_count": len([f for f in files if f.is_file()]),
+                                "dir_count": len([f for f in files if f.is_dir()]),
+                            }
+                            # Detect PDF/spreadsheet count
+                            item["pdf_count"] = len([f for f in files if f.is_file() and f.suffix.lower() == ".pdf"])
+                            item["spreadsheet_count"] = len([f for f in files if f.is_file() and f.suffix.lower() in (".xlsx", ".xls", ".csv", ".tsv")])
+                            items.append(item)
+                        elif entry.is_file():
+                            items.append({
+                                "name": entry.name,
+                                "relative_path": rel,
+                                "type": "file",
+                                "size": entry.stat().st_size,
+                            })
+                return {"items": items, "count": len(items), "path_key": key}
+
+            ab_new = _scan_dir("inbox.article_bundles_new")
+            ab_processing = _scan_dir("inbox.article_bundles_processing")
+            ab_processed = _scan_dir("inbox.article_bundles_processed")
+            ab_failed = _scan_dir("inbox.article_bundles_failed")
+            sp_new = _scan_dir("inbox.single_papers_new")
+            sp_processed = _scan_dir("inbox.single_papers_processed")
+            sp_failed = _scan_dir("inbox.single_papers_failed")
+            ls_new = _scan_dir("inbox.loose_supplementary_new")
+            ls_review = _scan_dir("inbox.loose_supplementary_review_needed")
+            ls_failed = _scan_dir("inbox.loose_supplementary_failed")
+            wu_staging = _scan_dir("inbox.web_uploads_staging")
+            wu_imported = _scan_dir("inbox.web_uploads_imported")
+            wu_failed = _scan_dir("inbox.web_uploads_failed")
+
+            return {
+                "article_bundles": {
+                    "new": ab_new, "processing": ab_processing,
+                    "processed": ab_processed, "failed": ab_failed,
+                },
+                "single_papers": {
+                    "new": sp_new, "processed": sp_processed, "failed": sp_failed,
+                },
+                "loose_supplementary": {
+                    "new": ls_new, "review_needed": ls_review, "failed": ls_failed,
+                },
+                "web_uploads": {
+                    "staging": wu_staging, "imported": wu_imported, "failed": wu_failed,
+                },
+                "summary": {
+                    "article_bundles_new": ab_new["count"],
+                    "article_bundles_processed": ab_processed["count"],
+                    "article_bundles_failed": ab_failed["count"],
+                    "single_papers_new": sp_new["count"],
+                    "loose_supplementary_new": ls_new["count"],
+                    "loose_supplementary_review_needed": ls_review["count"],
+                    "web_uploads_staging": wu_staging["count"],
+                    "web_uploads_failed": wu_failed["count"],
+                    "total_pending": (ab_new["count"] + sp_new["count"] +
+                                      ls_new["count"] + wu_staging["count"]),
+                    "total_attention_needed": (ab_failed["count"] + ls_review["count"] +
+                                               wu_failed["count"]),
+                },
+                "generated_at": datetime.now(timezone.utc).isoformat(),
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    # ── Phase 2K: /import/process/dry-run ──
+
+    @api.post("/import/process/dry-run")
+    def import_process_dry_run_endpoint():
+        """Dry-run article bundle processing. Returns plan without executing file ops."""
+        try:
+            from scientra.io.article_bundle_importer import ArticleBundleImporter
+            importer = ArticleBundleImporter(root)
+            result = importer.process(archive_mode="copy", dry_run=True)
+            # Ensure all paths are relative
+            for r in result.get("results", []):
+                for k in ("would_copy_main",):
+                    if k in r and r[k]:
+                        r[k] = str(r[k]).replace("\\", "/")
+            return {
+                **result,
+                "dry_run": True,
+                "note": "This is a dry-run. No files were copied or modified. Use --process to execute.",
+                "next_commands": [
+                    "python Scripts/process_article_bundles.py --scan",
+                    "python Scripts/process_article_bundles.py --process --dry-run",
+                    "python Scripts/process_article_bundles.py --process --archive-mode copy",
+                ],
+            }
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
@@ -2995,6 +3304,61 @@ def main() -> None:
 app: FastAPI | None = None
 if FastAPI is not None:
     app = create_app()
+
+    # ── Register top-level multipart upload route ──
+    # This must be registered at the app level (not inside create_app)
+    # because __future__ annotations (PEP 563) interacts poorly with
+    # FastAPI's dependency resolution inside nested functions.
+    #
+    # The route uses File(...) default metadata so FastAPI can resolve
+    # UploadFile parameters even with stringified annotations.
+    try:
+        from fastapi import UploadFile, File as FastAPIFile, Form as FastAPIForm
+
+        @app.post("/import/upload-session/{session_id}/files")
+        async def upload_files_multipart(
+            session_id: str,
+            files: list[UploadFile] = FastAPIFile(default=[]),
+            relative_paths: str | None = FastAPIForm(default=None),
+        ):
+            """Upload files via multipart form-data.
+
+            Accepts: multipart/form-data with one or more 'files' parts.
+            Optional: 'relative_paths' form field (JSON array of relative paths
+                      matching each file's folder context, e.g. from webkitRelativePath).
+
+            Each file part name should be 'files' (repeated for multiple files).
+            """
+            import json as _json
+
+            # Parse relative paths if provided
+            rpaths: list[str] = []
+            if relative_paths:
+                try:
+                    rpaths = _json.loads(relative_paths)
+                except Exception:
+                    rpaths = []
+
+            file_items: list[tuple[str, bytes, str]] = []
+            for i, f in enumerate(files):
+                content = await f.read()
+                filename = f.filename or "unnamed"
+                # Use provided relative_path, or fall back to filename
+                rel_path = rpaths[i] if i < len(rpaths) else filename
+                file_items.append((filename, content, rel_path))
+
+            if not file_items:
+                raise HTTPException(status_code=400, detail="No files provided")
+
+            from scientra.io.web_import import WebImportSession
+            session = WebImportSession(_resolve_root())
+            result = session.add_files(session_id, file_items)
+
+            if "error" in result:
+                raise HTTPException(status_code=400, detail=result["error"])
+            return result
+    except Exception:
+        pass  # Multipart route not critical — base64 endpoints available
 
 
 if __name__ == "__main__":

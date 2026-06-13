@@ -160,7 +160,7 @@ async function fetchJson<T>(
     });
   } catch (err: unknown) {
     const msg = err instanceof TypeError ? err.message : String(err);
-    console.error("[api] network_error", { url, error: msg });
+    console.error(`[api] NETWORK ERROR — ${url} — ${msg}`);
     throw new ApiError({
       kind: "network_error",
       message: `Cannot reach Scientra Copilot API at ${API_BASE_URL}.\nIs the server running? Run: python Scripts/run_api_server.py\n\nFrontend API Base URL: ${API_BASE_URL}`,
@@ -177,12 +177,11 @@ async function fetchJson<T>(
     } catch {
       // ignore
     }
-    console.error("[api] http_error", {
-      url,
-      status: res.status,
-      statusText: res.statusText,
-      body: body?.slice(0, 500),
-    });
+    // Always include status and url as separate args so they display even if object is empty
+    console.error(
+      `[api] HTTP ${res.status} ${res.statusText} — ${url}`,
+      body?.slice(0, 300) || "(empty body)",
+    );
     throw new ApiError({
       kind: "http_error",
       message: `API returned ${res.status} ${res.statusText}\nURL: ${url}\nFrontend API Base URL: ${API_BASE_URL}`,
@@ -628,4 +627,281 @@ export async function queryAssets(
   }
 
   return res.json() as Promise<QueryAssetsResponse>;
+}
+
+/* ── Phase 2I: Web Import Center API ── */
+
+import type {
+  SessionCreateResponse,
+  UploadSession,
+  UploadResult,
+  ImportPlan,
+  PlanUpdateRequest,
+  ConfirmImportResult,
+  SessionListResponse,
+  BatchUploadRequest,
+} from "./import-types";
+
+/** Create a new upload session */
+export async function createUploadSession(): Promise<SessionCreateResponse> {
+  return postJson<SessionCreateResponse>("/import/upload-session");
+}
+
+/** Get upload session details */
+export async function getUploadSession(
+  sessionId: string,
+): Promise<UploadSession> {
+  return fetchJson<UploadSession>(
+    `/import/upload-session/${encodeURIComponent(sessionId)}`,
+  ).then((r) => r.data);
+}
+
+/** Upload files as base64 batch */
+export async function uploadFilesBatch(
+  sessionId: string,
+  files: { filename: string; content_base64: string; relative_path?: string }[],
+): Promise<UploadResult> {
+  const body: BatchUploadRequest = { files };
+  return postJson<UploadResult>(
+    `/import/upload-session/${encodeURIComponent(sessionId)}/upload-batch`,
+    body,
+  );
+}
+
+/** Upload files via multipart form data */
+export async function uploadFilesMultipart(
+  sessionId: string,
+  files: File[],
+): Promise<UploadResult> {
+  const form = new FormData();
+  for (const f of files) {
+    form.append("files", f);
+  }
+
+  const url = `${API_BASE_URL}/import/upload-session/${encodeURIComponent(sessionId)}/files`;
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      body: form,
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof TypeError ? err.message : String(err);
+    throw new ApiError({
+      kind: "network_error",
+      message: `Cannot reach API at ${API_BASE_URL}.\n${msg}`,
+      status: 0,
+      url,
+    });
+  }
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => null);
+    throw new ApiError({
+      kind: "http_error",
+      message: `Upload failed: ${res.status} ${res.statusText}\n${text ?? ""}`,
+      status: res.status,
+      url,
+      responseText: text,
+    });
+  }
+
+  return res.json() as Promise<UploadResult>;
+}
+
+/** Generate import plan */
+export async function generateImportPlan(
+  sessionId: string,
+): Promise<ImportPlan> {
+  return postJson<ImportPlan>(
+    `/import/upload-session/${encodeURIComponent(sessionId)}/plan`,
+  );
+}
+
+/** Update import plan with manual selections */
+export async function updateImportPlan(
+  sessionId: string,
+  updates: PlanUpdateRequest,
+): Promise<ImportPlan> {
+  return patchJson<ImportPlan>(
+    `/import/upload-session/${encodeURIComponent(sessionId)}/plan`,
+    updates,
+  );
+}
+
+/** Confirm and execute import */
+export async function confirmImport(
+  sessionId: string,
+): Promise<ConfirmImportResult> {
+  return postJson<ConfirmImportResult>(
+    `/import/upload-session/${encodeURIComponent(sessionId)}/confirm`,
+  );
+}
+
+/** List all upload sessions */
+export async function listUploadSessions(): Promise<SessionListResponse> {
+  return fetchJson<SessionListResponse>("/import/upload-sessions").then(
+    (r) => r.data,
+  );
+}
+
+/* ── Import Status Overview ── */
+
+export interface ImportStatusResponse {
+  article_bundles: {
+    new: DirectoryScan;
+    processing: DirectoryScan;
+    processed: DirectoryScan;
+    failed: DirectoryScan;
+  };
+  single_papers: {
+    new: DirectoryScan;
+    processed: DirectoryScan;
+    failed: DirectoryScan;
+  };
+  loose_supplementary: {
+    new: DirectoryScan;
+    review_needed: DirectoryScan;
+    failed: DirectoryScan;
+  };
+  web_uploads: {
+    staging: DirectoryScan;
+    imported: DirectoryScan;
+    failed: DirectoryScan;
+  };
+  summary: ImportStatusSummary;
+  generated_at: string;
+}
+
+export interface DirectoryScan {
+  items: ScanItem[];
+  count: number;
+  path_key: string;
+}
+
+export interface ScanItem {
+  name: string;
+  relative_path: string;
+  type: "directory" | "file";
+  file_count?: number;
+  dir_count?: number;
+  pdf_count?: number;
+  spreadsheet_count?: number;
+  size?: number;
+}
+
+export interface ImportStatusSummary {
+  article_bundles_new: number;
+  article_bundles_processed: number;
+  article_bundles_failed: number;
+  single_papers_new: number;
+  loose_supplementary_new: number;
+  loose_supplementary_review_needed: number;
+  web_uploads_staging: number;
+  web_uploads_failed: number;
+  total_pending: number;
+  total_attention_needed: number;
+}
+
+/** Fetch comprehensive import status overview */
+export async function getImportStatus(): Promise<ImportStatusResponse> {
+  return fetchJson<ImportStatusResponse>("/import/status").then((r) => r.data);
+}
+
+/* ── Dry-run processing ── */
+
+export interface DryRunResult {
+  total_bundles: number;
+  processed: number;
+  failed: number;
+  dry_run: boolean;
+  note: string;
+  next_commands: string[];
+  results: {
+    bundle_id: string;
+    bundle_name: string;
+    status: string;
+    action: string;
+    would_copy_main?: string;
+    would_copy_suppl_count?: number;
+  }[];
+}
+
+/** Dry-run article bundle processing */
+export async function dryRunProcess(): Promise<DryRunResult> {
+  return postJson<DryRunResult>("/import/process/dry-run");
+}
+
+/* ── Low-level helpers ── */
+
+async function postJson<T>(
+  path: string,
+  body?: unknown,
+): Promise<T> {
+  const url = `${API_BASE_URL}${path}`;
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof TypeError ? err.message : String(err);
+    throw new ApiError({
+      kind: "network_error",
+      message: `Cannot reach API at ${API_BASE_URL}.\n${msg}`,
+      status: 0,
+      url,
+    });
+  }
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => null);
+    throw new ApiError({
+      kind: "http_error",
+      message: `API error (${res.status}): ${text ?? res.statusText}`,
+      status: res.status,
+      url,
+      responseText: text,
+    });
+  }
+
+  return res.json() as Promise<T>;
+}
+
+async function patchJson<T>(
+  path: string,
+  body?: unknown,
+): Promise<T> {
+  const url = `${API_BASE_URL}${path}`;
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof TypeError ? err.message : String(err);
+    throw new ApiError({
+      kind: "network_error",
+      message: `Cannot reach API at ${API_BASE_URL}.\n${msg}`,
+      status: 0,
+      url,
+    });
+  }
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => null);
+    throw new ApiError({
+      kind: "http_error",
+      message: `API error (${res.status}): ${text ?? res.statusText}`,
+      status: res.status,
+      url,
+      responseText: text,
+    });
+  }
+
+  return res.json() as Promise<T>;
 }

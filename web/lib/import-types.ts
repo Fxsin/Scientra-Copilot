@@ -1,4 +1,6 @@
-/* ── Import Status ── */
+/* ── Web Import Types — Upload Session, Plan, Confirm ── */
+
+/* ── Legacy Import Status (used by file-status-badge, import-history-table, import-store) ── */
 
 export type ImportStatus =
   | "waiting"
@@ -39,41 +41,18 @@ export const WORKFLOW_STEPS = [
   { key: "completed" as const, label: "Complete" },
 ];
 
-/* ── Import Item ── */
-
 export interface ImportItem {
   id: string;
   filename: string;
   sizeBytes: number;
   status: ImportStatus;
-  progress: number;          // 0–100
-  currentStep: string;       // human-readable step name
-  createdAt: string;         // ISO timestamp
+  progress: number;
+  currentStep: string;
+  createdAt: string;
   completedAt: string | null;
   error: string | null;
 }
 
-/* ── Format helpers ── */
-
-export function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-}
-
-export function formatTime(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleString("en-US", {
-    month: "short",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-/* ── API response types ── */
-
-/** Shape returned by POST /import/upload and GET /import/jobs */
 export interface ImportJobResponse {
   import_id: string;
   filename: string;
@@ -96,7 +75,6 @@ export interface ListJobsResponse {
   jobs: ImportJobResponse[];
 }
 
-/** Convert API job → ImportItem for the store */
 export function jobToItem(job: ImportJobResponse): ImportItem {
   return {
     id: job.import_id,
@@ -109,4 +87,213 @@ export function jobToItem(job: ImportJobResponse): ImportItem {
     completedAt: job.status === "completed" ? job.updated_at : null,
     error: job.error_message,
   };
+}
+
+/* ── New Web Import Center Types ── */
+
+export type ImportSessionStatus =
+  | "created"
+  | "uploading"
+  | "planned"
+  | "confirmed"
+  | "imported"
+  | "failed";
+
+export type ImportType =
+  | "article_bundle"
+  | "single_paper"
+  | "loose_supplementary"
+  | "unsupported";
+
+export type ImportConfidence = "high" | "medium" | "low";
+
+/* ── Session ── */
+
+export interface UploadSession {
+  upload_session_id: string;
+  staging_path: string;
+  status: ImportSessionStatus;
+  created_at: string;
+  file_count: number;
+  total_size: number;
+  detected_pdfs: number;
+  detected_tables: number;
+  detected_supplementary_pdfs: number;
+  unsupported_files: number;
+  files: UploadedFile[];
+}
+
+export interface UploadedFile {
+  filename: string;
+  relative_path: string;
+  size: number;
+  extension: string;
+  sha256?: string;
+  status: "uploaded" | "unsupported" | "rejected";
+}
+
+export interface SessionCreateResponse {
+  upload_session_id: string;
+  staging_path: string;
+  created_at: string;
+}
+
+/* ── Upload ── */
+
+export interface UploadResult {
+  upload_session_id: string;
+  uploaded: number;
+  rejected: number;
+  uploaded_files: UploadedFile[];
+  rejected_files: { filename: string; relative_path: string; reason: string }[];
+  total_files: number;
+}
+
+export interface BatchUploadRequest {
+  files: {
+    filename: string;
+    content_base64: string;
+    relative_path?: string;
+  }[];
+}
+
+/* ── Import Plan ── */
+
+export interface MainPdfDetection {
+  filename: string;
+  relative_path: string;
+  detection_reason: string;
+  confidence: ImportConfidence;
+}
+
+export interface SupplementaryFileEntry {
+  filename: string;
+  relative_path: string;
+  file_type: "spreadsheet" | "supplementary_pdf" | "document" | "archive";
+  binding_method: string;
+  match_confidence: ImportConfidence;
+  entity_index_eligible: boolean;
+  note?: string;
+}
+
+export interface UnsupportedFileEntry {
+  filename: string;
+  relative_path: string;
+  extension: string;
+  reason: string;
+}
+
+export interface MainPdfCandidate {
+  filename: string;
+  relative_path: string;
+  score: number;
+  reason: string;
+}
+
+export interface ImportPlan {
+  upload_session_id: string;
+  detected_import_type: ImportType;
+  proposed_article_folder: string | null;
+  main_pdf: MainPdfDetection | null;
+  supplementary_files: SupplementaryFileEntry[];
+  unsupported_files: UnsupportedFileEntry[];
+  warnings: string[];
+  errors: string[];
+  requires_manual_review: boolean;
+  suggested_next_action: string;
+  main_pdf_candidates?: MainPdfCandidate[];
+  message?: string;
+}
+
+/* ── Plan Update ── */
+
+export interface PlanUpdateRequest {
+  import_type?: ImportType;
+  article_folder_name?: string;
+  main_pdf_relative_path?: string;
+  supplementary_relative_paths?: string[];
+}
+
+/* ── Confirm Result ── */
+
+export interface ConfirmImportResult {
+  status: "imported" | "error";
+  import_type?: ImportType;
+  article_bundle_path?: string;
+  target_path?: string;
+  files_copied: number;
+  failed_files: { filename: string; error: string }[];
+  processing_started?: boolean;
+  processing_result?: {
+    main_pdf: string | null;
+    supplementary_count: number;
+    warnings: string[];
+  };
+  next_steps: string[];
+  error?: string;
+}
+
+/* ── Dashboard summary ── */
+
+export interface SessionSummary {
+  upload_session_id: string;
+  status: string;
+  file_count: number;
+  created_at: string;
+}
+
+export interface SessionListResponse {
+  sessions: SessionSummary[];
+  total: number;
+}
+
+/* ── Format helpers ── */
+
+export function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+export function formatTime(iso: string | null | undefined): string {
+  if (!iso) return "N/A";
+  const d = new Date(iso);
+  return d.toLocaleString("en-US", {
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+export function importTypeLabel(t: ImportType): string {
+  const labels: Record<ImportType, string> = {
+    article_bundle: "Article Bundle",
+    single_paper: "Single Paper",
+    loose_supplementary: "Loose Supplementary",
+    unsupported: "Unsupported",
+  };
+  return labels[t] || t;
+}
+
+export function confidenceColor(c: ImportConfidence): string {
+  const colors: Record<ImportConfidence, string> = {
+    high: "bg-emerald-100 text-emerald-700",
+    medium: "bg-amber-100 text-amber-700",
+    low: "bg-red-100 text-red-700",
+  };
+  return colors[c] || "bg-slate-100 text-slate-600";
+}
+
+export function fileTypeIcon(ext: string): string {
+  const icons: Record<string, string> = {
+    ".pdf": "📄",
+    ".xlsx": "📊",
+    ".xls": "📊",
+    ".csv": "📊",
+    ".tsv": "📊",
+    ".docx": "📝",
+    ".zip": "📦",
+  };
+  return icons[ext] || "📎";
 }

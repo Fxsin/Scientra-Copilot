@@ -3,7 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node scripts/dev-launcher.js",
+    "next:dev": "next dev",
+    "dev:web-only": "node scripts/dev-launcher.js --web-only",
+    "dev:api-only": "node scripts/dev-launcher.js --api-only",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
