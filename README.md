@@ -303,6 +303,8 @@ print(r["answer"])
 |---|---|---|
 | [User Manual v2.0](Scientra_Copilot_User_Manual_v2_bilingual.docx) | Word | English + 中文 |
 | [User Manual v2.0 (Markdown)](docs/manual/Scientra_Copilot_User_Manual_v2_bilingual.md) | Markdown | English + 中文 |
+| [File Placement Guide / 文件存放指引](docs/manual/Scientra_Copilot_文件存放指引_v1.md) | Markdown | English + 中文 |
+| [File Placement Guide / 文件存放指引 (DOCX)](docs/manual/Scientra_Copilot_文件存放指引_v1.docx) | Word | English + 中文 |
 | [Storage Layout Config](Config/storage_layout.yaml) | YAML | — |
 | [Article Bundle Import Guide](docs/article_bundle_import_v1.md) | Markdown | English |
 
@@ -466,6 +468,8 @@ python Scripts/setup_llm.py        # DeepSeek 或 Anthropic
 |---|---|---|
 | [用户手册 v2.0](Scientra_Copilot_User_Manual_v2_bilingual.docx) | Word | English + 中文 |
 | [用户手册 v2.0 (Markdown)](docs/manual/Scientra_Copilot_User_Manual_v2_bilingual.md) | Markdown | English + 中文 |
+| [文件存放指引](docs/manual/Scientra_Copilot_文件存放指引_v1.md) | Markdown | English + 中文 |
+| [文件存放指引 (DOCX)](docs/manual/Scientra_Copilot_文件存放指引_v1.docx) | Word | English + 中文 |
 | [Storage Layout 配置](Config/storage_layout.yaml) | YAML | — |
 
 ## 7. 路线图
