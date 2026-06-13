@@ -120,9 +120,23 @@ class SupplementaryEntityIndexer:
 
     def __init__(self, root: str | Path) -> None:
         self.root = Path(root).resolve()
-        self.suppl_links_dir = self.root / "06_PDF_DataAssets" / "08_supplementary_links"
-        self.output_dir = self.root / "06_PDF_DataAssets" / "09_supplementary_entities"
+        # Phase v3: prefer new paths, fallback to legacy
+        self.suppl_links_dir = self._resolve_dir(
+            "03_Assets/supplementary_assets/links",
+            "06_PDF_DataAssets/08_supplementary_links")
+        self.output_dir = self._resolve_dir(
+            "04_Corpus/data/gene_evidence",
+            "06_PDF_DataAssets/09_supplementary_entities")
         self.output_dir.mkdir(parents=True, exist_ok=True)
+
+    def _resolve_dir(self, new_rel: str, legacy_rel: str) -> Path:
+        new = self.root / new_rel
+        if new.exists():
+            return new
+        legacy = self.root / legacy_rel
+        if legacy.exists():
+            return legacy
+        return new  # default to new for future writes
 
     def index_all(self) -> dict[str, Any]:
         """Index entities from all papers with high-confidence supplementary links."""

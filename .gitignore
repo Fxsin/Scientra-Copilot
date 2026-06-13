@@ -37,11 +37,39 @@ logs/
 *.db
 *.sqlite3
 
-# LanceDB
-*.lance/
+# ── Storage Layout v3 — User data and generated assets ──
+# Block everything in data directories EXCEPT .gitkeep (for structure visibility)
 
-# User data directories (literature and generated output)
-00_Inbox/
+00_Inbox/**/*
+00_Supplementary/**/*
+01_Sources/**/*
+02_Parse/**/*
+03_Assets/**/*
+04_Corpus/**/*
+05_Knowledge/**/*
+06_Index/**/*
+07_Agents/**/*
+08_Projects/**/*
+09_Exports/**/*
+10_System/**/*
+reports/**/*
+
+# BUT allow .gitkeep files so directory structure is visible on GitHub
+!00_Inbox/**/.gitkeep
+!00_Supplementary/**/.gitkeep
+!01_Sources/**/.gitkeep
+!02_Parse/**/.gitkeep
+!03_Assets/**/.gitkeep
+!04_Corpus/**/.gitkeep
+!05_Knowledge/**/.gitkeep
+!06_Index/**/.gitkeep
+!07_Agents/**/.gitkeep
+!08_Projects/**/.gitkeep
+!09_Exports/**/.gitkeep
+!10_System/**/.gitkeep
+!reports/**/.gitkeep
+
+# ── Legacy layout (archived, pre-v3) ──
 01_PDF/
 02_Metadata/
 03_Evidence/
@@ -49,11 +77,16 @@ logs/
 04_VectorDB/
 05_Index/
 06_PDF_DataAssets/
-07_Workflows/
-reports/
 
-# LLM config (contains API key — NEVER commit)
+# ── LLM config (contains API key — NEVER commit) ──
 Config/llm_config.yaml
 
-# Build artifacts
+# ── Generated documents ──
+~$*.docx
+
+# ── Workflow runtime state ──
+07_Workflows/reports/
+07_Workflows/workflow_state.json
+
+# ── Build artifacts ──
 *.tsbuildinfo

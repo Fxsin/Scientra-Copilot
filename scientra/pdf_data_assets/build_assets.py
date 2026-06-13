@@ -1218,16 +1218,16 @@ def main() -> int:
         epilog="""
 Examples:
   # Phase 0: Build
-  python -m scientra.pdf_data_assets.build_assets --paper-id "Bacillus_thuringiensis_toxins_an_overview_be8f9a28904d"
+  python -m scientra.pdf_data_assets.build_assets --paper-id "example_paper_id_here"
   python -m scientra.pdf_data_assets.build_assets --all
   python -m scientra.pdf_data_assets.build_assets --all --force
   python -m scientra.pdf_data_assets.build_assets --status
 
   # Phase 0.5: Quality
-  python -m scientra.pdf_data_assets.build_assets --quality-check --paper-id "Bacillus_thuringiensis..."
+  python -m scientra.pdf_data_assets.build_assets --quality-check --paper-id "example_paper_id..."
   python -m scientra.pdf_data_assets.build_assets --quality-check
   python -m scientra.pdf_data_assets.build_assets --export-samples
-  python -m scientra.pdf_data_assets.build_assets --export-samples --paper-id "Bacillus_thuringiensis..."
+  python -m scientra.pdf_data_assets.build_assets --export-samples --paper-id "example_paper_id..."
   python -m scientra.pdf_data_assets.build_assets --quality-report
         """,
     )

@@ -1,0 +1,66 @@
+# Storage Migration Map v3 — old → new path mappings
+# All paths relative to project root. Copy-only by default.
+
+migration_version: "1.0"
+layout_version: "3.0"
+mode: copy  # copy | move (copy is default safe mode)
+
+mappings:
+  # ── Supplementary files ──
+  - source: "00_Supplementary/inbox"
+    target: "00_Inbox/loose_supplementary/new"
+    description: "Supplementary files awaiting review"
+  - source: "00_Supplementary/unmatched"
+    target: "00_Inbox/loose_supplementary/review_needed"
+    description: "Unmatched supplementary files"
+  - source: "00_Supplementary/matched"
+    target: "01_Sources/supplementary"
+    description: "Matched supplementary files"
+
+  # ── Source PDFs ──
+  - source: "01_PDF"
+    target: "01_Sources/papers"
+    description: "Original paper PDFs"
+
+  # ── Parsed text ──
+  - source: "03_Summary/raw_text"
+    target: "02_Parse/text"
+    description: "Raw parsed text from PDFs"
+
+  # ── Evidence ──
+  - source: "03_Summary"
+    target: "04_Corpus/reasoning/evidence"
+    description: "Summaries and evidence"
+  - source: "03_Evidence"
+    target: "04_Corpus/reasoning/evidence"
+    description: "Evidence extraction output"
+
+  # ── Assets ──
+  - source: "06_PDF_DataAssets/02_figures"
+    target: "03_Assets/figure_assets"
+    description: "Figure assets"
+  - source: "06_PDF_DataAssets/03_tables"
+    target: "03_Assets/table_assets"
+    description: "Table assets"
+  - source: "06_PDF_DataAssets/08_supplementary_links"
+    target: "03_Assets/supplementary_assets/links"
+    description: "Supplementary table links"
+  - source: "06_PDF_DataAssets/09_supplementary_entities"
+    target: "04_Corpus/data/gene_evidence"
+    description: "Supplementary entity records"
+  - source: "06_PDF_DataAssets/10_entity_comparisons"
+    target: "04_Corpus/data/cross_study"
+    description: "Cross-paper entity comparisons"
+  - source: "06_PDF_DataAssets/09_agent_chunks"
+    target: "03_Assets/paper_assets/agent_chunks"
+    description: "Agent-ready knowledge chunks"
+
+  # ── Vector DB ──
+  - source: "04_VectorDB"
+    target: "06_Index/vector/lancedb"
+    description: "LanceDB vector store"
+
+  # ── Index / Knowledge maps ──
+  - source: "05_Index"
+    target: "05_Knowledge/maps"
+    description: "Research map, hotspots, gaps, network"

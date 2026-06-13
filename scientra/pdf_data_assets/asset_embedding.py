@@ -99,7 +99,19 @@ class AssetEmbeddingEngine:
         self.source_dir = self.root / emb_config.get("source_dir", "06_PDF_DataAssets/09_agent_chunks")
         self.source_file = emb_config.get("source_file", "agent_chunks.quality.jsonl")
         self.vector_ready_only = emb_config.get("vector_ready_only", True)
-        self.lancedb_dir = self.root / emb_config.get("lancedb_dir", "04_VectorDB")
+        candidates = [
+            self.root / "06_Index/vector",
+            self.root / "04_VectorDB",
+        ]
+        archives = sorted((self.root / "10_System/legacy_archive").glob("storage_v1_legacy_*/04_VectorDB"))
+        candidates += archives[::-1]
+        default_ldb = candidates[0]
+        for cand in candidates:
+            ldb_sub = cand / "lancedb"
+            if ldb_sub.exists() and any(ldb_sub.iterdir()):
+                default_ldb = cand
+                break
+        self.lancedb_dir = self.root / emb_config.get("lancedb_dir", str(default_ldb.relative_to(self.root)))
         self.table_name = emb_config.get("table_name", DEFAULT_TABLE_NAME)
         self.batch_size = emb_config.get("batch_size", DEFAULT_BATCH_SIZE)
         self.overwrite_existing = emb_config.get("overwrite_existing", False)

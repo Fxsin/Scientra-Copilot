@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 try:
@@ -277,7 +278,7 @@ def query_supplementary_entities(
     """
     try:
         from scientra.pdf_data_assets.supplementary_entity_indexer import SupplementaryEntityIndexer
-        indexer = SupplementaryEntityIndexer()
+        indexer = SupplementaryEntityIndexer(Path(__file__).resolve().parent.parent)
         matches = indexer.search_entities(
             query, entity_type=entity_type, paper_id=paper_id, top_k=min(top_k, 100)
         )
@@ -302,7 +303,7 @@ def query_supplementary_entity_comparison(
     """
     try:
         from scientra.pdf_data_assets.supplementary_entity_comparator import SupplementaryEntityComparator
-        comparator = SupplementaryEntityComparator()
+        comparator = SupplementaryEntityComparator(Path(__file__).resolve().parent.parent)
         result = comparator.compare(query, entity_type=entity_type, top_k=min(top_k, 100))
         if paper_id:
             result["records"] = [r for r in result["records"] if r.get("paper_id") == paper_id]

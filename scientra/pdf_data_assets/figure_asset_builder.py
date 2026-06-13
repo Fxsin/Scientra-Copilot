@@ -43,7 +43,9 @@ class FigureAssetBuilder:
 
     def __init__(self, root: str | Path) -> None:
         self.root = Path(root).resolve()
-        self.output_dir = self.root / "06_PDF_DataAssets" / "02_figures"
+        new_p = self.root / "03_Assets/figure_assets"
+        legacy_p = self.root / "06_PDF_DataAssets/02_figures"
+        self.output_dir = new_p if new_p.exists() else legacy_p if legacy_p.exists() else new_p
         self.extractor = FigureExtractor(root)
         self.linker = FigureLinker(root)
 

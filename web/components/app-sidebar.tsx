@@ -12,6 +12,8 @@ import {
   Settings,
   FlaskConical,
   MessageCircle,
+  PackageOpen,
+  FolderTree,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -26,6 +28,8 @@ const PRIMARY_NAV_ITEMS = [
 ] as const;
 
 const SECONDARY_NAV_ITEMS = [
+  { href: "/import", label: "Import", icon: PackageOpen },
+  { href: "/assets", label: "Assets", icon: FolderTree },
   { href: "/library", label: "Library", icon: Library },
   { href: "/settings", label: "Settings", icon: Settings },
 ] as const;
@@ -124,7 +128,7 @@ export function AppSidebar() {
       {/* Footer */}
       <div className="border-t border-sidebar-border px-4 py-3">
         <p className="text-[10px] text-sidebar-foreground/40">
-          Scientra Copilot v0.2.0
+          Scientra Copilot v1.5
         </p>
       </div>
     </aside>

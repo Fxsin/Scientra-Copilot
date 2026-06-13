@@ -390,7 +390,7 @@ features:
 python -m scientra.pdf_data_assets.build_assets --status
 
 # Build assets for one paper
-python -m scientra.pdf_data_assets.build_assets --paper-id "Bacillus_thuringiensis_toxins_an_overview_be8f9a28904d"
+python -m scientra.pdf_data_assets.build_assets --paper-id "example_paper_id_here"
 
 # Build assets for all papers
 python -m scientra.pdf_data_assets.build_assets --all

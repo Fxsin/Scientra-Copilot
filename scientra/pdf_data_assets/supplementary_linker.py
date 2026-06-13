@@ -71,7 +71,11 @@ class SupplementaryLinker:
     def __init__(self, root: str | Path) -> None:
         self.root = Path(root).resolve()
         self.raw_text_dir = self.root / "03_Summary" / "raw_text"
-        self.suppl_dir = self.root / "06_PDF_DataAssets" / "08_supplementary_links"
+        self.suppl_dir = self.root / "03_Assets/supplementary_assets/links"
+        if not self.suppl_dir.exists():
+            legacy = self.root / "06_PDF_DataAssets/08_supplementary_links"
+            if legacy.exists():
+                self.suppl_dir = legacy
         self._file_inventory: list[dict[str, Any]] | None = None
 
     def find_all_references(self, paper_id: str) -> list[dict[str, Any]]:

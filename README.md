@@ -1,263 +1,253 @@
-# Scientra Copilot
-
 <p align="center">
-  <h3 align="center">From Literature to Discovery</h3>
-  <p align="center">AI-Powered Research Discovery Platform</p>
+  <img src="https://img.shields.io/badge/python-3.11+-blue?style=flat-square" alt="Python">
+  <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License">
+  <img src="https://img.shields.io/badge/version-v1.5-blue?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/status-active%20development-orange?style=flat-square" alt="Status">
 </p>
 
-<p align="center">
-  <img src="https://img.shields.io/badge/python-3.11+-blue.svg">
-  <img src="https://img.shields.io/badge/license-MIT-green.svg">
-  <img src="https://img.shields.io/badge/version-v1.4-blue.svg">
-  <img src="https://img.shields.io/badge/status-active%20development-orange.svg">
-</p>
+<h1 align="center">Scientra Copilot</h1>
+<p align="center"><b>Local-first, evidence-oriented research discovery — from PDF collection to AI-queryable scientific memory.</b></p>
 
 ---
 
-## What is Scientra Copilot?
+## Table of Contents
 
-Scientra Copilot transforms scientific literature into structured, searchable, machine-readable knowledge. It automatically processes PDFs, extracts evidence, builds semantic indexes, and provides an **AI-powered chat interface** that answers research questions grounded in your literature with traceable citations.
-
-> **Move from collecting papers to understanding knowledge and discovering ideas.**
-
----
-
-## Core Capabilities
-
-### 💬 Literature Chat (V1.0-alpha → V1.4)
-- **7 intent-specific query types**: claim, research gap, method, result, supplementary entity, entity comparison, hybrid
-- **Evidence Packet Builder** — structured Ref packets with evidence roles, method categories, gap signals
-- **Academic citation format** — "Author et al. (Year) [Ref:N]" in all LLM answers
-- **Boilerplate/disclaimer filter** — excludes publisher notes, copyright, data availability from answers
-- **Domain-agnostic** — 88 generic scientific signals, no hardcoded research fields
-- Dual-source retrieval: `pdf_asset_chunks` (2,718 rows) + `evidence_chunks` (1,267 rows)
-- Three answer modes: **Auto**, **LLM synthesis**, **Evidence-only**
-- Multi-provider LLM: **DeepSeek** + **Anthropic Claude**
-- Paper-specific chat on every paper detail page
-- Token usage & cost transparency (inline panel)
-- Anti-hallucination: zero fabricated DOIs, zero `[object Object]`, zero disclaimers in answers
-- 28-case evaluation framework: 100% pass rate
-
-### 📊 PDF Data Assetization (Phase 0–2G)
-- **11 chunk types**: section, method, result, claim, figure, table, supplementary_table, supplementary_entity, entity
-- **10 asset types**: sections, methods, results, entities, claims, evidence links, figures, tables, supplementary links, agent chunks
-- **Entity extraction**: 16 types (protein, gene, species, receptor, pathway, etc.)
-- **Quality filtering**: entity noise removal (26%), chunk quality scoring
-- **Figure extraction**: 44 figures across 30 papers, with caption extraction and rule-based type classification
-- **Figure interpretation** (AI-powered, text-only): structured evidence type, strength, claims from captions
-
-### 📋 Table + Supplementary Data Pipeline (Phase 2A–2G)
-
-#### Table Caption & Reference Extraction (Phase 2A)
-- 70 table assets across 56 papers (84.3% caption rate)
-- Rule-based table type classification (12 types: toxicity, expression, binding, omics, etc.)
-- Table caption quality scoring (high/medium/low/none)
-- `/query/assets` supports `chunk_type=table`
-
-#### Simple Table Structure Extraction (Phase 2B)
-- Multi-strategy text-based table parsing (markdown, tab-delimited, whitespace-aligned, inline-flat)
-- Column count and row detection
-- Complexity classification (simple/complex/unavailable)
-- Complex tables correctly skipped (41/70 complex_structure_skipped)
-
-#### Supplementary Table Linking (Phase 2C)
-- 90 supplementary references identified across 56 papers
-- 10 reference detection patterns (Supplementary Table S1, Table S1, Tables S1-S3, Supplementary Data, etc.)
-- Strict quality guard (Phase 2C-B): raw_text and PDFs never matched as supplementary data
-- `/query/assets` supports `chunk_type=supplementary_table`
-
-#### Manual Supplementary File Import (Phase 2D)
-- User-drop directory: `00_Supplementary/inbox/`
-- Auto-scan xlsx/csv/tsv/txt with lightweight preview (20 rows)
-- 5-tier matching strategy with confidence gating (Phase 2D-B):
-  - `manual_paper_id_label` → high confidence, auto-matched
-  - `manual_label_only` → **candidate_only** (not auto-matched)
-- `candidate_only` content_status for ambiguous matches
-- XLSX sheet detection and preview
-
-#### Supplementary Entity Index (Phase 2E)
-- Column classification rules (gene, protein, compound, treatment, sample, phenotype, statistical_value)
-- Entity extraction from high-confidence supplementary files only
-- Deduplication by (file, sheet, row, column, entity) key (Phase 2E-B)
-- 77 raw candidates → 7 deduplicated gene records
-- `/query/supplementary-entities` exact + substring search
-- SDK: `query_supplementary_entities()`
-
-#### Entity Query Intent + Chat (Phase 2F)
-- `supplementary_entity_query` intent detection (7/7 eval, 0 false positives)
-- Deterministic entity lookup (<100ms, no LLM)
-- Optional conservative LLM interpretation (Phase 2F-B): strict prompt guardrails
-- Live smoke test verified (DeepSeek deepseek-chat, Phase 2F-C)
-- Forbidden phrase detection and auto-sanitization
-
-#### Cross-Paper Entity Comparison (Phase 2G)
-- Cross-paper entity aggregation across all indexed supplementary data
-- Direction summary (upregulated/downregulated/unknown) from FC/log2FC/Expression
-- `supplementary_entity_comparison_query` intent detection
-- Optional LLM conservative comparison summary (Phase 2G-B)
-- Single-record/papers limitation explicitly stated
-- `/query/supplementary-entity-comparison` endpoint
-
-### 📄 Literature Processing
-- PDF ingestion → GROBID parsing → metadata extraction → AI summarization
-- Incremental processing with resume-from-failure
-- Automatic tagging and knowledge extraction
-
-### 🔬 Evidence Extraction V2.3
-- **Key results**, **Core findings**, **Methods**, **Discussion points**
-- Result-discussion linking with confidence scoring
-- 1,267 evidence chunks embedded in LanceDB with BGE-M3
-
-### 🗺️ Research Map V3
-- 14 generic research facets, hierarchical subtopics
-- Topic Evolution with evidence-rich phase cards
-- Facet View and Topic View toggle
-
-### 🔍 Semantic Search
-- `/query/assets` — search quality-filtered asset chunks (11 chunk types)
-- `/query/evidence` — search evidence chunks
-- `/query/supplementary-entities` — search indexed supplementary entities
-- `/query/supplementary-entity-comparison` — cross-paper entity comparison
-- Filter by chunk type: section, method, result, claim, figure, table, supplementary_table, supplementary_entity
-
-### 🔥 Hotspots · 🕳️ Research Gaps · 🕸️ Knowledge Network · 📊 Report
-- Trending topics, hot papers, emerging facets
-- Auto-detected research gaps from facet distribution
-- 123 nodes × 330 edges network graph
-- Auto-generated library intelligence report
+1. [What is Scientra Copilot?](#1-what-is-scientra-copilot)
+2. [Why Scientra Copilot?](#2-why-scientra-copilot)
+3. [How It Works](#3-how-it-works)
+4. [Features](#4-features)
+5. [Quick Start](#5-quick-start)
+6. [Importing Your Literature](#6-importing-your-literature)
+7. [Storage Layout v3](#7-storage-layout-v3)
+8. [API Reference](#8-api-reference)
+9. [Web Interface](#9-web-interface)
+10. [Documentation](#10-documentation)
+11. [Roadmap](#11-roadmap)
+12. [Data Policy](#12-data-policy)
+13. [Contributing](#13-contributing)
+14. [License](#14-license)
 
 ---
 
-## Quick Start
+## 1. What is Scientra Copilot?
 
-### 1. Install & Run
+**Scientra Copilot** transforms scientific literature (PDFs, supplementary Excel/CSV files, figures, tables) into **structured, searchable, AI-queryable knowledge** — all running locally on your machine.
+
+Unlike reference managers that treat papers as opaque files, Scientra Copilot **reads and understands** your literature:
+
+- **PDF → structured assets**: sections, methods, results, claims, figures, tables, entities — all with source traceability
+- **Supplementary files → entity index**: gene lists, expression tables, bioassay results become searchable by gene/protein/compound name
+- **Cross-paper comparison**: ask "where does MAP2K4 appear across papers?" and get aggregated results with direction detection
+- **Evidence-grounded AI chat**: ask research questions and get answers with `[Ref:N]` citations traceable to source chunks
+
+> Scientra Copilot is **not a cloud service**. All data stays on your machine. No internet required for core functionality. LLM integration is optional.
+
+---
+
+## 2. Why Scientra Copilot?
+
+| Problem with traditional tools | Scientra Copilot's approach |
+|---|---|
+| PDFs are stored but their content is opaque | PDFs are parsed into structured, searchable assets |
+| Supplementary files are ignored | Excel/CSV/TSV files are linked to papers and indexed by entity |
+| Figures, tables, claims, methods are disconnected | All assets carry cross-references and provenance |
+| Keyword search only | Semantic + evidence-oriented retrieval |
+| No AI-assisted reasoning on your literature | LLM chat with `[Ref:N]` citations, grounded in your data |
+| Data scattered across folders | Storage Layout v3 — 10 clean directory groups |
+
+---
+
+## 3. How It Works
+
+```text
+ PDF + Supplementary Files
+        │
+        ▼
+    GROBID Parsing ──► Metadata Extraction ──► AI Summarization
+        │
+        ▼
+    Evidence Extraction (methods, results, claims, gaps)
+        │
+        ▼
+    PDF Data Assetization (sections, figures, tables, entities, chunks)
+        │
+        ▼
+    Supplementary Pipeline (linking, preview, entity index, comparison)
+        │
+        ▼
+    BGE-M3 Embeddings ──► LanceDB (3 tables, 4,234 rows)
+        │
+        ▼
+    Query Layer (assets, evidence, entities, comparison, agent)
+        │
+        ▼
+    Web Interface (Chat, Library, Research Map, Hotspots, Gaps, Network, Report)
+```
+
+---
+
+## 4. Features
+
+### 🔬 Literature Chat
+
+7 intent-aware query types, 3 answer modes. LLM answers with `[Ref:N]` citations traceable to source chunks. Token usage transparency.
+
+| Query Type | Example |
+|---|---|
+| `claim_query` | "Which claims need stronger evidence?" |
+| `research_gap_query` | "What research gaps can be inferred?" |
+| `method_query` | "What bioassay methods are commonly used?" |
+| `result_query` | "Which results are most frequently reported?" |
+| `supplementary_entity_query` | "Is MAP2K4 present in supplementary tables?" |
+| `supplementary_entity_comparison_query` | "Compare MAP2K4 across supplementary data." |
+| `hybrid_search` | General literature questions |
+
+**Answer modes:** Auto (LLM if configured), LLM synthesis, Evidence-only (deterministic, no API call, <100ms).
+
+### 📊 PDF Data Assetization
+
+10 asset types extracted: sections, methods, results, entities, claims, evidence links, figures, tables, supplementary links, agent chunks. 11 chunk types in LanceDB. Quality filtering, entity noise removal.
+
+### 📋 Supplementary Data Pipeline
+
+- **Article Bundle Import**: one folder per paper — main PDF auto-detected, supplementary files auto-classified
+- **Table caption extraction**: 70 tables across 56 papers (84.3% caption rate)
+- **Supplementary entity index**: gene, protein, compound extraction from supplementary tables
+- **Cross-paper entity comparison**: direction detection (upregulated/downregulated), value aggregation
+- **Conservative LLM interpretation**: optional, strict guardrails, source_link_count warnings
+- **Matching confidence gating**: label-only matches → `candidate_only` (not auto-matched); folder-explicit → high confidence
+
+### 🗂️ Storage Layout v3
+
+```text
+00_Inbox/      Import staging (article bundles, single papers, loose supplementary)
+01_Sources/    Original files (papers, supplementary, datasets)
+02_Parse/      Parsed intermediates (text, figures, tables)
+03_Assets/     Structured, searchable assets
+04_Corpus/     Long-term corpora (writing, reasoning, data, review)
+05_Knowledge/  Knowledge graph, research maps, memory
+06_Index/      Search indexes — LanceDB at vector/lancedb/
+07_Agents/     Agent workspaces and evaluations
+08_Projects/   User project workspaces
+09_Exports/    Export outputs
+10_System/     Config, logs, migrations, backups, legacy archive
+```
+
+### 🌐 Web Interface
+
+13 pages across Analysis and Data categories. See [Web Interface](#9-web-interface) for full list.
+
+### 🔒 Local-first & Traceable
+
+- All data stored locally. No cloud dependency.
+- File manifests track provenance (SHA256, import source, binding method, confidence)
+- Legacy archive preserves old data — nothing auto-deleted
+- All reports use relative paths only
+
+---
+
+## 5. Quick Start
+
+**Requirements:** Python 3.11+, Node.js 18+, Docker (for GROBID)
 
 ```bash
-# Requirements: Python 3.11+, Docker (for GROBID), Node.js 18+
+# Clone the repository
+git clone <repo-url>
+cd Scientra_Copilot
 
-# Start everything (API + Web)
+# One-command start (backend + frontend)
 python Scripts/dev_restart.py
 
 # Or start components separately:
-python -m scientra.server          # API on http://127.0.0.1:8710
-cd web && npm run dev              # Web on http://127.0.0.1:3000
+python -m scientra.server          # API → http://127.0.0.1:8710
+cd web && npm run dev              # Web → http://127.0.0.1:3000
+
+# Optional: configure LLM for AI chat
+python Scripts/setup_llm.py        # DeepSeek or Anthropic
 ```
 
-### 2. Import Literature
+Open **http://127.0.0.1:3000/chat** and start asking questions about your literature.
+
+---
+
+## 6. Importing Your Literature
+
+### Recommended: Article Bundle Import
+
+One folder per paper. Main PDF + supplementary files together.
+
+```
+00_Inbox/article_bundles/new/
+└── Example_Paper/
+    ├── main.pdf                    # Main paper (auto-detected)
+    ├── Table_S1.xlsx               # Supplementary table
+    ├── Table_S2.csv                # Supplementary data
+    ├── Source_Data.xlsx            # Source data
+    └── Supplementary_Information.pdf
+```
 
 ```bash
-# Place PDFs in 00_Inbox/
+python Scripts/process_article_bundles.py --scan
+python Scripts/process_article_bundles.py --process --archive-mode copy
+```
+
+**How main PDF detection works:**
+1. Filename contains `main`/`paper`/`article`/`manuscript` → priority
+2. Filename contains `supplementary`/`supporting`/`appendix` → **demoted**
+3. Only one PDF → auto-selected
+4. Multiple PDFs, no keyword match → largest file selected (with warning)
+5. No PDF → `failed_no_main_pdf`
+
+**How supplementary binding works:**
+- All non-main-PDF files in the folder are linked to that paper via **folder_explicit binding**
+- Match confidence = **high** — no filename guessing needed
+- **loose supplementary** (files without a parent article folder) require manual confirmation and will NOT enter entity index automatically
+
+### Legacy: Single PDF import (still supported)
+
+```bash
+# Place PDFs in 00_Inbox/single_papers/new/
 python workflow.py run
 ```
 
-### 3. Set Up LLM for Chat (Recommended)
-
-```bash
-# Interactive setup — choose DeepSeek or Anthropic
-python Scripts/setup_llm.py
-
-# Or set environment variable:
-# PowerShell:  $env:DEEPSEEK_API_KEY = "sk-..."
-# Linux/macOS: export DEEPSEEK_API_KEY="sk-..."
-```
-
-The key is stored in `Config/llm_config.yaml` (gitignored, never committed).
-
-### 4. Build Supplementary Data Assets (Optional)
-
-```bash
-# Import manually downloaded supplementary files
-python -m scientra.pdf_data_assets.build_assets --import-supplementary
-
-# Build supplementary links
-python -m scientra.pdf_data_assets.build_assets --supplementary --all --force
-
-# Index supplementary entities
-python -m scientra.pdf_data_assets.build_assets --supplementary-entities --all --force
-
-# Quality check + re-embedding
-python -m scientra.pdf_data_assets.build_assets --quality-check
-python -m scientra.pdf_data_assets.asset_embedding --all --force
-```
-
-### 5. Open Chat
-
-```
-http://127.0.0.1:3000/chat
-```
-
-Select **Answer Mode: Auto** and ask questions about your literature.
-
 ---
 
-## Web Interface — 11 Pages
+## 7. Storage Layout v3
 
-| Page | Description |
-|---|---|
-| `/chat` | **AI Chat** — ask questions, get cited answers |
-| `/research-map` | Facet-first hierarchical topic explorer |
-| `/research-map/topic/{id}` | Topic detail with evidence, evolution |
-| `/library` | Paginated paper library with search/filter |
-| `/paper/{id}` | Paper metadata, summary, evidence, **Ask this paper** |
-| `/evidence` | Standalone evidence chunk search |
-| `/hotspots` | Trending topics, hot papers, emerging facets |
-| `/research-gaps` | Auto-detected evidence gaps |
-| `/knowledge-network` | Paper-facet-method-finding network |
-| `/report` | Auto-generated library intelligence report |
-| `/topic-explorer` | Browse topics by research facet |
+Scientra Copilot uses a clean 10-group directory structure designed for long-term scientific knowledge building.
 
----
-
-## Chat Query Types
-
-The Literature Agent automatically detects your query intent:
-
-| Intent | Example Questions | Output |
+| Directory | Purpose | User Modifiable? |
 |---|---|---|
-| `claim_query` | "Which claims need stronger evidence?" | Claim → Evidence → Missing → Sources |
-| `research_gap_query` | "What research gaps can be inferred?" | Evidence-based + inferred gaps |
-| `method_query` | "What methods are commonly used for bioassay?" | Grouped by category |
-| `result_query` | "Which results are most frequently reported?" | Result + evidence strength |
-| `supplementary_entity_query` | "Is MAP2K4 present in supplementary tables?" | Entity values + source |
-| `supplementary_entity_comparison_query` | "Compare MAP2K4 across supplementary data." | Cross-paper aggregation |
-| `hybrid_search` | General literature questions | Mixed retrieval |
+| `00_Inbox/` | Import staging — article bundles, single papers, loose supplementary | ✅ Drop files here |
+| `01_Sources/` | Original files with manifests | ❌ Managed by system |
+| `02_Parse/` | Parsed text, figures, tables | ❌ Managed by system |
+| `03_Assets/` | Structured assets (JSON) | ❌ Managed by system |
+| `04_Corpus/` | Long-term corpora (writing, reasoning, data) | ❌ Managed by system |
+| `05_Knowledge/` | Knowledge graph, maps, memory | ❌ Managed by system |
+| `06_Index/` | Search indexes (LanceDB at `vector/lancedb/`) | ❌ Managed by system |
+| `07_Agents/` | Agent workspaces | 🔧 For developers |
+| `08_Projects/` | User project workspaces | ✅ User workspace |
+| `09_Exports/` | Export outputs | ✅ Safe to read |
+| `10_System/` | Config, logs, migrations, backups, legacy archive | ⚠️ Read-only |
 
-### Chat Advanced Options
+**LanceDB primary path:** `06_Index/vector/lancedb/` — 3 tables (evidence_chunks, literature_vectors, pdf_asset_chunks), 4,234 rows.
 
-- **Answer Mode**: Auto / LLM synthesis / Evidence-only
-- **Chunk Types**: section, method, result, claim, figure, table, supplementary, sup_entity
-- **top_k**: Number of chunks to retrieve (1-50)
-- **Paper filter**: Limit to a specific paper
+**Legacy archive:** Old directories (01_PDF, 03_Evidence, 04_VectorDB, etc.) are preserved at `10_System/legacy_archive/`. They can be deleted after confirming all systems work.
 
 ---
 
-## Supplementary Data Features (Phase 2)
+## 8. API Reference
 
-### Manual File Import
+| Endpoint | Method | Description |
+|---|---|---|
+| `/v1/agent/ask` | POST | Literature Agent — AI-powered Q&A with citations |
+| `/query/assets` | POST | Search asset chunks (11 types, filterable) |
+| `/query/evidence` | POST | Search evidence chunks |
+| `/query/supplementary-entities` | POST | Search indexed supplementary entities |
+| `/query/supplementary-entity-comparison` | POST | Cross-paper entity comparison |
+| `/health` | GET | API and LanceDB status |
 
-Place downloaded supplementary data files in `00_Supplementary/inbox/`:
-
-```bash
-00_Supplementary/inbox/
-├── {paper_id}__Table_S1.xlsx      # High-confidence match
-├── {paper_id}__Supplementary_Data_1.csv
-└── {label_only}__Table_S2.csv     # candidate_only (rename needed)
-```
-
-```bash
-python -m scientra.pdf_data_assets.build_assets --import-supplementary
-```
-
-### Entity Query Examples
-
-```
-Chat: "Is MAP2K4 present in supplementary tables?"
-Chat: "What are the FC and p-value for CASP3?"
-Chat: "What does TRAF4 show in supplementary data?" (use LLM for interpretation)
-Chat: "Compare MAP2K4 across supplementary data."
-```
-
-### SDK Usage
+**SDK usage:**
 
 ```python
 from scientra.sdk import (
@@ -267,257 +257,237 @@ from scientra.sdk import (
     ask_literature,
 )
 
+# Search assets
+r = query_assets("protein expression", top_k=10, chunk_types=["method"])
+print(r["count"])  # number of results
+
 # Search supplementary entities
-results = query_supplementary_entities("MAP2K4", entity_type="gene")
+r = query_supplementary_entities("MAP2K4", entity_type="gene")
+for match in r["matches"]:
+    print(match["entity_text"], match["value_columns"])
 
-# Compare across papers
-comparison = query_supplementary_entity_comparison("MAP2K4")
+# Cross-paper comparison
+r = query_supplementary_entity_comparison("MAP2K4")
+print(r["total_matches"], r["direction_summary"])
 
-# Ask with entity intent
-answer = ask_literature("What does CASP3 show in supplementary data?", use_llm=False)
+# AI-powered Q&A
+r = ask_literature("What does MAP2K4 show in supplementary data?", use_llm=False)
+print(r["answer"])
 ```
 
 ---
 
-## API Endpoints
+## 9. Web Interface
 
-| Endpoint | Description |
-|---|---|
-| `GET /health` | API + LanceDB status |
-| `GET /papers` | Paginated paper list |
-| `GET /paper/{id}/metadata` | Paper metadata |
-| `GET /paper/{id}/summary` | AI-generated summary |
-| `GET /paper/{id}/evidence` | Structured evidence |
-| `POST /query/evidence` | Semantic evidence chunk search |
-| `POST /query/assets` | Search quality-filtered asset chunks |
-| `POST /query/supplementary-entities` | Search indexed supplementary entities |
-| `POST /query/supplementary-entity-comparison` | Cross-paper entity comparison |
-| `POST /v1/agent/ask` | Literature Agent — AI-powered Q&A |
-| `GET /research-map` | Facet-first hierarchical topics |
-| `GET /hotspots` | Trending topics, hot papers |
-| `GET /research-gaps` | Auto-detected research gaps |
-| `GET /knowledge-network` | Paper-facet-method-finding network |
-| `GET /report` | Library intelligence report |
+| Page | Description | Status |
+|---|---|---|
+| `/chat` | AI literature chat — 7 query types, cited answers | ✅ |
+| `/library` | Paginated paper library with search and filter | ✅ |
+| `/paper/{id}` | Paper detail: metadata, summary, evidence, "Ask this paper" | ✅ |
+| `/evidence` | Evidence chunk search with type filter | ✅ |
+| `/research-map` | Facet-first hierarchical topic explorer | ✅ |
+| `/hotspots` | Trending topics, hot papers, emerging facets | ✅ |
+| `/research-gaps` | Auto-detected evidence gaps | ✅ |
+| `/knowledge-network` | Paper-facet-method-finding network graph | ✅ |
+| `/report` | Auto-generated library intelligence report | ✅ |
+| `/topic-explorer` | Browse topics by research facet | ✅ |
+| `/import` | Import dashboard — article bundles, supplementary status | 🔨 Planned |
+| `/assets` | Assets viewer — browse figures, tables, entities | 🔨 Planned |
+| `/settings` | Application settings | ✅ |
 
 ---
 
-## Architecture
+## 10. Documentation
 
-```text
-PDF Papers
-    ↓
-GROBID Parsing → Metadata → Tags → AI Summarization
-    ↓
-Evidence Extraction V2.3
-    ↓
-┌─────────────────────────────────────────────────┐
-│  PDF Data Assetization Layer                     │
-│  sections · methods · results · entities         │
-│  claims · evidence links · agent chunks           │
-│  figures · figure interpretations                │
-│  tables · table captions · table structures      │
-│  supplementary links · supplementary previews    │
-│  supplementary entities · entity comparisons     │
-│  quality checks · noise filtering                │
-└─────────────────────────────────────────────────┘
-    ↓
-BGE-M3 Embeddings → LanceDB
-├── evidence_chunks (1,267 rows)
-├── literature_vectors (319 rows)
-└── pdf_asset_chunks (2,718 rows, 11 chunk types)
-    ↓
-┌─────────────────────────────────────────────────┐
-│  Query Layer                                    │
-│  /query/assets · /query/evidence                │
-│  /query/supplementary-entities                  │
-│  /query/supplementary-entity-comparison         │
-│  /v1/agent/ask (Literature Agent)               │
-└─────────────────────────────────────────────────┘
-    ↓
-┌─────────────────────────────────────────────────┐
-│  Literature Agent V1.4                          │
-│  7 intents → Dual-Source Retrieval              │
-│  → DeepSeek/Claude → Cited Answer               │
-│  Conservative entity interpretation (Phase 2F)  │
-│  Cross-paper comparison summary (Phase 2G)      │
-│  Anti-hallucination guardrails                  │
-│  28-case evaluation (100% pass)                 │
-└─────────────────────────────────────────────────┘
-    ↓
-Web Frontend (11 pages, all real data)
-Chat · Research Map · Paper Detail · Evidence · Hotspots · Gaps · Network · Report
-```
+| Document | Format | Language |
+|---|---|---|
+| [User Manual v2.0](Scientra_Copilot_User_Manual_v2_bilingual.docx) | Word | English + 中文 |
+| [User Manual v2.0 (Markdown)](docs/manual/Scientra_Copilot_User_Manual_v2_bilingual.md) | Markdown | English + 中文 |
+| [Storage Layout Config](Config/storage_layout.yaml) | YAML | — |
+| [Article Bundle Import Guide](docs/article_bundle_import_v1.md) | Markdown | English |
 
 ---
 
-## Project Structure
+## 11. Roadmap
 
-```text
-Scientra_Copilot/
-├── 00_Inbox/                  # PDF import directory
-├── 00_Supplementary/          # Manual supplementary file import
-│   ├── inbox/                 # Drop downloaded xlsx/csv/tsv here
-│   ├── matched/               # Matched files (optional)
-│   ├── unmatched/             # Unmatched files (optional)
-│   └── registry/              # Import reports and file index
-├── 01_PDF/                    # Processed PDFs
-├── 02_Metadata/               # Extracted metadata (YAML)
-├── 03_Evidence/               # Evidence extraction output
-├── 03_Summary/                # AI-generated summaries + raw text
-├── 04_VectorDB/               # LanceDB vector store
-├── 05_Index/                  # Research map + hotspots cache
-├── 06_PDF_DataAssets/         # Structured data assets (gitignored)
-│   ├── 00_registry/           # Asset registry and reports
-│   ├── 02_figures/            # Figure assets
-│   ├── 03_tables/             # Table assets
-│   ├── 08_supplementary_links/# Supplementary link records
-│   ├── 09_supplementary_entities/ # Entity index records
-│   ├── 09_agent_chunks/       # Agent-ready knowledge chunks
-│   └── 10_entity_comparisons/ # Cross-paper comparison results
-├── Config/                    # Configuration files
-│   ├── llm_config.yaml        # LLM API key (gitignored)
-│   └── pdf_data_assets.yaml
-├── Scripts/                   # Setup, tests, verification
-│   ├── setup_llm.py           # First-time LLM setup
-│   ├── dev_restart.py         # One-command startup
-│   ├── test_table_extraction.py
-│   ├── test_supplementary_linking.py
-│   ├── test_supplementary_entity_index.py
-│   ├── test_supplementary_entity_query_agent.py
-│   ├── test_supplementary_entity_comparison.py
-│   └── test_query_assets_api.py
-├── docs/                      # Documentation
-├── scientra/                  # Backend Python modules
-│   ├── agent/                 # Literature Agent
-│   │   ├── literature_agent.py
-│   │   ├── entity_query_parser.py
-│   │   └── context_builder.py
-│   └── pdf_data_assets/       # Data assetization
-│       ├── table_extractor.py
-│       ├── table_linker.py
-│       ├── table_asset_builder.py
-│       ├── table_structure_extractor.py
-│       ├── supplementary_linker.py
-│       ├── supplementary_preview.py
-│       ├── supplementary_importer.py
-│       ├── supplementary_entity_indexer.py
-│       ├── supplementary_entity_comparator.py
-│       └── figure_asset_builder.py
-├── web/                       # Next.js frontend
-│   ├── app/chat/              # Chat page
-│   ├── app/paper/             # Paper detail (with Ask this paper)
-│   └── components/agent/      # Shared agent UI components
-├── workflow.py                # Main processing workflow
-└── README.md
-```
+**Short-term (v1.6)**
+- Import Dashboard and Assets Viewer web pages
+- Manual Binding UI for loose supplementary files
+
+**Mid-term (v1.7–1.8)**
+- Corpus builders: expression, introduction, discussion, method, claim, gap
+- Dataset / Gene Evidence expansion
+- Cross-study entity comparison enhancements
+
+**Long-term (v2.0+)**
+- Knowledge Graph (nodes, edges, snapshots)
+- Scientific Memory (field, project, topic)
+- Scientific Reasoning Engine
+- Experimental Design Agent
+- AI Reviewer Agent
 
 ---
 
-## Backend Modules
+## 12. Data Policy
 
-| Module | Description |
-|---|---|
-| `scientra/agent/` | **Literature Agent V1.4** — 7 intents, context builder, entity parser, eval framework |
-| `scientra/pdf_data_assets/` | **PDF Data Assetization Phase 0–2G** — tables, figures, supplementary, entities, comparison |
-| `scientra/evidence_extraction.py` | Evidence Extraction V2.3 |
-| `scientra/embedding.py` | BGE-M3 embedder + embedding engine |
-| `scientra/research_map_builder.py` | Research Map cache builder |
-| `scientra/server.py` | FastAPI server (42+ routes) |
+- **No automatic deletion**: all file operations default to `copy` mode. `move` requires explicit `--archive-mode move`.
+- **Legacy archive**: old directories preserved at `10_System/legacy_archive/`. Safe to delete after verification.
+- **API keys**: stored in `Config/llm_config.yaml` (gitignored). Never committed.
+- **Relative paths only**: all reports, manifests, and API responses use relative paths.
+- **LanceDB**: stored at `06_Index/vector/lancedb/`. Backups at `10_System/backups/`.
+- **User data**: papers, supplementary files, and generated data should NOT be committed to git.
 
 ---
 
-## Testing
+## 13. Contributing
+
+This project is under active development. Contributions are welcome.
 
 ```bash
-# Agent evaluation
-python -m scientra.agent.eval.regression_runner --use-llm false --case-type all
-
-# Table extraction tests
-python Scripts/test_table_extraction.py
-
-# Supplementary linking tests (33 cases)
-python Scripts/test_supplementary_linking.py
-
-# Entity index tests (53 cases)
+# Run tests
+python Scripts/test_storage_layout_v3.py
+python Scripts/test_query_assets_api.py
 python Scripts/test_supplementary_entity_index.py
 
-# Entity query agent tests (22 cases)
-python Scripts/test_supplementary_entity_query_agent.py
-
-# Entity comparison tests (31 cases)
-python Scripts/test_supplementary_entity_comparison.py
-
-# API tests
-python Scripts/test_query_assets_api.py
-python Scripts/test_agent_api.py
-
-# Web tests
-cd web
-npm run build                     # TypeScript + Next.js
+# Build web frontend
+cd web && npm run build
 ```
 
 ---
 
-## LanceDB Chunk Distribution
+## 14. License
 
-| Chunk Type | Count |
+MIT License — see [LICENSE](LICENSE) file.
+
+---
+
+<p align="center"><b>Scientra Copilot</b> — From Literature to Discovery.</p>
+
+---
+
+# 中文版本
+
+## 1. 项目简介
+
+**Scientra Copilot** 是一个本地优先、证据导向的科研文献发现平台。它将科学论文（PDF）、补充文件（Excel/CSV/TSV）、图表和表格转化为**结构化、可检索、可供 AI 查询的知识**——全部运行在你的本地机器上。
+
+核心能力：
+
+- **PDF → 结构化资产**：章节、方法、结果、论断、图表、表格、实体——全部带溯源
+- **补充文件 → 实体索引**：基因列表、表达表格、生测结果可按基因/蛋白质/化合物名搜索
+- **跨论文比较**：问"MAP2K4 在哪些论文的补充数据中出现？"得到聚合结果
+- **证据驱动的 AI 对话**：文献问答带 `[Ref:N]` 引用，可追溯到源片段
+
+> Scientra Copilot **不是云服务**。所有数据在你的电脑上。LLM 集成是可选的。
+
+## 2. 为什么需要 Scientra Copilot？
+
+| 传统工具的问题 | Scientra Copilot 的做法 |
 |---|---|
-| result | 1,155 |
-| claim | 715 |
-| method | 350 |
-| section | 220 |
-| supplementary_table | 87 |
-| supplementary_entity | 7 |
-| table | 70 |
-| figure | 44 |
-| **Total** | **2,718** |
+| PDF 只是存储，内容不透明 | PDF 被解析为结构化、可检索的资产 |
+| 补充文件被忽略 | Excel/CSV/TSV 与论文关联并按实体索引 |
+| 图表、表格、论断、方法相互孤立 | 所有资产带有交叉引用和溯源 |
+| 只有关键词搜索 | 语义 + 证据导向检索 |
+| 不能在自有文献上做 AI 辅助推理 | LLM 对话带 `[Ref:N]` 引用，基于你的数据 |
+| 数据分散在各处 | Storage Layout v3——10 组清晰目录 |
 
----
+## 3. 工作流程
 
-## Roadmap
+```text
+ PDF + 补充文件
+        │
+        ▼
+    GROBID 解析 ──► 元数据提取 ──► AI 摘要
+        │
+        ▼
+    证据提取（方法、结果、论断、空白）
+        │
+        ▼
+    PDF 数据资产化（章节、图表、表格、实体、片段）
+        │
+        ▼
+    补充数据流水线（关联、预览、实体索引、比较）
+        │
+        ▼
+    BGE-M3 嵌入 ──► LanceDB（3 表，4,234 行）
+        │
+        ▼
+    查询层（资产、证据、实体、比较、智能体）
+        │
+        ▼
+    Web 界面（对话、文库、研究地图、热点、空白、网络、报告）
+```
 
-### Completed ✅
-- PDF Processing Pipeline
-- Evidence Extraction V2.3
-- Research Map V3 (facet-first hierarchical)
-- Evidence Search + Hotspots + Research Gaps + Knowledge Network
-- Library Intelligence Report
-- **PDF Data Assetization** (sections, methods, results, entities, claims, chunks)
-- **Quality filtering + entity noise removal**
-- **Agent embedding** (pdf_asset_chunks in LanceDB)
-- **Literature Agent V1** (chat, dual-source retrieval, citations)
-- **Agent evaluation framework** (28 cases, 100% pass)
-- **Web Chat** (/chat + paper detail Ask this paper)
-- **Chat UX polish** (error handling, readability, answer modes, token panel)
-- **Four-intent evidence packet engine** (claim, gap, method, result)
-- **Academic citation answers** (structured, cited, boilerplate-filtered)
-- **Figure + Caption Extraction** (44 figures, 66% caption rate)
-- **Multi-provider LLM** (DeepSeek + Anthropic, config file)
-- **First-time user setup** (`Scripts/setup_llm.py`)
-- **Phase 2A: Table Caption + Reference Extraction** (70 tables, 84.3% caption rate)
-- **Phase 2B: Simple Table Structure Extraction** (multi-strategy parsing)
-- **Phase 2C: Supplementary Table Linking** (90 references, quality guard)
-- **Phase 2D: Manual Supplementary File Import** (inbox, preview, matching)
-- **Phase 2E: Supplementary Entity Index** (column classification, dedup, search)
-- **Phase 2F: Entity Query Intent + Chat Integration** (7 intents, LLM interpretation)
-- **Phase 2G: Cross-Paper Entity Comparison** (aggregation, direction summary, LLM summary)
-- Mock Data Decommission (all pages use real data)
-- **v1.4** — stable release
+## 4. 功能概览
 
-### Upcoming
-- Supplementary Import UX / Assets Viewer (Phase 2H)
-- Multi-project/library support
-- Zotero integration
+### 🔬 文献对话
 
----
+7 种意图识别，3 种回答模式。LLM 回答带 `[Ref:N]` 引用。Token 用量透明显示。
 
-## License
+**3 种回答模式：** Auto（自动判断）、LLM synthesis（LLM 综合）、Evidence-only（纯证据，无 API 调用，<100ms）。
+
+### 📊 PDF 数据资产化
+
+10 种资产类型，11 种 LanceDB 片段类型。质量过滤，实体去噪。
+
+### 📋 补充数据流水线
+
+- **Article Bundle Import**：一篇文章一个文件夹——正文自动识别，补充文件自动分类
+- **表格标题提取**：56 篇论文 70 张表格（84.3% 标题率）
+- **补充实体索引**：从补充表格提取基因、蛋白质、化合物
+- **跨论文实体比较**：方向检测（上调/下调），数值聚合
+- **保守 LLM 解释**：可选，带严格安全限制
+- **匹配置信度控制**：仅标签匹配 → `candidate_only`；文件夹绑定 → high confidence
+
+## 5. 快速开始
+
+**环境：** Python 3.11+, Node.js 18+, Docker（用于 GROBID）
+
+```bash
+git clone <repo-url>
+cd Scientra_Copilot
+
+# 一键启动
+python Scripts/dev_restart.py
+
+# 或分别启动：
+python -m scientra.server          # API → http://127.0.0.1:8710
+cd web && npm run dev              # Web → http://127.0.0.1:3000
+
+# 配置 LLM（可选）
+python Scripts/setup_llm.py        # DeepSeek 或 Anthropic
+```
+
+打开 **http://127.0.0.1:3000/chat** 开始对话。
+
+## 6. 文档
+
+| 文档 | 格式 | 语言 |
+|---|---|---|
+| [用户手册 v2.0](Scientra_Copilot_User_Manual_v2_bilingual.docx) | Word | English + 中文 |
+| [用户手册 v2.0 (Markdown)](docs/manual/Scientra_Copilot_User_Manual_v2_bilingual.md) | Markdown | English + 中文 |
+| [Storage Layout 配置](Config/storage_layout.yaml) | YAML | — |
+
+## 7. 路线图
+
+**近期（v1.6）**：导入仪表盘、资产查看器、手动绑定界面
+
+**中期（v1.7–1.8）**：语料构建器、基因证据扩展、跨研究比较增强
+
+**远期（v2.0+）**：知识图谱、科学记忆、推理引擎、实验设计助手、AI 审稿助手
+
+## 8. 数据安全
+
+- **不自动删除**：所有文件操作默认 `copy` 模式
+- **旧数据归档**：旧目录保留在 `10_System/legacy_archive/`
+- **API key**：保存在 `Config/llm_config.yaml`（已 gitignore）
+- **仅使用相对路径**：所有报告和清单使用相对路径
+- **LanceDB**：`06_Index/vector/lancedb/`，备份在 `10_System/backups/`
+
+## 9. 许可证
 
 MIT License
 
 ---
 
-<p align="center">
-<b>Scientra Copilot</b><br>
-From Literature to Discovery.
-</p>
+<p align="center"><b>Scientra Copilot</b> — From Literature to Discovery.</p>

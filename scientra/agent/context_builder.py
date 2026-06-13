@@ -54,7 +54,28 @@ class ContextBuilder:
 
     def __init__(self, root: str | Path | None = None) -> None:
         self.root = Path(root).resolve() if root else _get_project_root()
-        self.lancedb_dir = self.root / "04_VectorDB" / "lancedb"
+        # Priority: v3 index (promoted) > archive > legacy
+        archives = sorted((self.root / "10_System/legacy_archive").glob(
+            "storage_v1_legacy_*/04_VectorDB/lancedb"))
+        candidates = [
+            self.root / "06_Index/vector/lancedb",  # v3 promoted (priority 1)
+        ] + archives[::-1] + [
+            self.root / "04_VectorDB/lancedb",       # legacy (last resort)
+        ]
+        self.lancedb_dir = candidates[0]
+        for cand in candidates:
+            if not cand.exists():
+                continue
+            # Check if this has actual LanceDB tables (not just auto-created)
+            import lancedb as _ldb
+            try:
+                db_tmp = _ldb.connect(str(cand))
+                tbls = db_tmp.table_names()
+                if len(tbls) >= 1:  # Must have at least 1 table
+                    self.lancedb_dir = cand
+                    break
+            except Exception:
+                continue
         self._embedder = None
 
     @property

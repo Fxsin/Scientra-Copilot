@@ -94,7 +94,9 @@ class TableAssetBuilder:
 
     def __init__(self, root: str | Path) -> None:
         self.root = Path(root).resolve()
-        self.output_dir = self.root / "06_PDF_DataAssets" / "03_tables"
+        new_p = self.root / "03_Assets/table_assets"
+        legacy_p = self.root / "06_PDF_DataAssets/03_tables"
+        self.output_dir = new_p if new_p.exists() else legacy_p if legacy_p.exists() else new_p
         self.extractor = TableExtractor(root)
         self.linker = TableLinker(root)
         self.structure_extractor = TableStructureExtractor(root)

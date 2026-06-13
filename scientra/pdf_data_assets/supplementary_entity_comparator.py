@@ -21,9 +21,16 @@ class SupplementaryEntityComparator:
 
     def __init__(self, root: str | Path) -> None:
         self.root = Path(root).resolve()
-        self.entities_dir = self.root / "06_PDF_DataAssets" / "09_supplementary_entities"
-        self.output_dir = self.root / "06_PDF_DataAssets" / "10_entity_comparisons"
+        self.entities_dir = self._d(self.root, "04_Corpus/data/gene_evidence",
+                                    "06_PDF_DataAssets/09_supplementary_entities")
+        self.output_dir = self._d(self.root, "04_Corpus/data/cross_study",
+                                   "06_PDF_DataAssets/10_entity_comparisons")
         self.output_dir.mkdir(parents=True, exist_ok=True)
+
+    @staticmethod
+    def _d(base: Path, new_rel: str, legacy_rel: str) -> Path:
+        new = base / new_rel
+        return new if new.exists() else base / legacy_rel if (base / legacy_rel).exists() else new
 
     def compare(
         self, query: str, entity_type: str | None = None, top_k: int = 50

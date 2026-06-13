@@ -185,7 +185,7 @@ test("preview_columns is empty for candidate_only",
 
 # Test 16: Paper-ID+label file -> matched (high/medium conf)
 print("\n[16] 2D-B: Paper-ID+label file -> matched")
-pid_with_file = "Toxicity_of_Cry-_and_Vip3Aa-Class_Proteins_and_Their_Interactions_against_Spodoptera_frugiperda_Lepidoptera_Noctuidae_5896a4f758ba"
+pid_with_file = "example_paper_title_and_interactions_against_target_species_000000000000"
 refs_pid = [{"supplement_label": "Table S1", "supplement_number": "S1",
              "referenced_as": "Table S1", "reference_sentences": ["test"]}]
 result_pid = linker2.match_files(pid_with_file, refs_pid)

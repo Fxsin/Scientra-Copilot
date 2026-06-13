@@ -47,6 +47,11 @@ def _lancedb_info(root: Path) -> tuple[str, dict[str, int]]:
     try:
         import lancedb
         db_dir = root / "04_VectorDB" / "lancedb"
+        if not db_dir.exists():
+            db_dir = root / "06_Index/vector/lancedb/lancedb"
+        if not db_dir.exists():
+            archives = sorted((root / "10_System/legacy_archive").glob("storage_v1_legacy_*/04_VectorDB/lancedb"))
+            db_dir = archives[-1] if archives else db_dir
         if not db_dir.exists() or not any(db_dir.iterdir()):
             return "no database directory", {}
         db = lancedb.connect(str(db_dir))
@@ -254,7 +259,7 @@ def _load_evidence_summary(root: Path, paper_id: str) -> dict[str, Any] | None:
     for d in evidence_root.iterdir():
         if not d.is_dir():
             continue
-        # Evidence dir names end with underscore + hash (e.g. "..._d624774ea348")
+        # Evidence dir names end with underscore + hash (e.g. "..._abc123def456")
         parts = d.name.rsplit("_", 1)
         if len(parts) != 2:
             continue
@@ -2837,6 +2842,64 @@ def create_app(root: Path | None = None) -> FastAPI:
             raise HTTPException(status_code=500, detail=f"Comparison failed: {e}")
 
         return result
+
+    # ── Phase 2H: /import/* — Import Dashboard ──
+
+    @api.get("/import/bundles")
+    def import_bundles_endpoint():
+        try:
+            from scientra.io.import_dashboard import ImportDashboard
+            db = ImportDashboard()
+            return db.list_bundles()
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/import/bundles/{bundle_id}")
+    def import_bundle_detail_endpoint(bundle_id: str):
+        try:
+            from scientra.io.import_dashboard import ImportDashboard
+            db = ImportDashboard()
+            return db.get_bundle_detail(bundle_id)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/import/loose-supplementary")
+    def import_loose_suppl_endpoint():
+        try:
+            from scientra.io.import_dashboard import ImportDashboard
+            db = ImportDashboard()
+            return db.list_loose_supplementary()
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    # ── Phase 2H: /assets/* — Assets Viewer ──
+
+    @api.get("/assets/summary")
+    def assets_summary_endpoint():
+        try:
+            from scientra.io.assets_viewer import AssetsViewer
+            viewer = AssetsViewer()
+            return viewer.get_summary()
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/assets/by-paper/{paper_id}")
+    def assets_by_paper_endpoint(paper_id: str):
+        try:
+            from scientra.io.assets_viewer import AssetsViewer
+            viewer = AssetsViewer()
+            return viewer.get_by_paper(paper_id)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/assets/search")
+    def assets_search_endpoint(query: str = "", type: str = "", paper_id: str = "", limit: int = 20):
+        try:
+            from scientra.io.assets_viewer import AssetsViewer
+            viewer = AssetsViewer()
+            return viewer.search(query=query, asset_type=type, paper_id=paper_id, limit=min(limit, 50))
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
     # ── /v1/agent/ask (enhanced) ──
 

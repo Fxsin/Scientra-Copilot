@@ -1,0 +1,127 @@
+# Scientra Storage Layout v3 — Template
+# Copy to storage_layout.yaml for customization
+layout_version: "3.0"
+
+paths:
+  # ── 00_Inbox: User import staging ──
+  inbox.article_bundles_new: "00_Inbox/article_bundles/new"
+  inbox.article_bundles_processing: "00_Inbox/article_bundles/processing"
+  inbox.article_bundles_processed: "00_Inbox/article_bundles/processed"
+  inbox.article_bundles_failed: "00_Inbox/article_bundles/failed"
+  inbox.single_papers_new: "00_Inbox/single_papers/new"
+  inbox.single_papers_processed: "00_Inbox/single_papers/processed"
+  inbox.single_papers_failed: "00_Inbox/single_papers/failed"
+  inbox.loose_supplementary_new: "00_Inbox/loose_supplementary/new"
+  inbox.loose_supplementary_review_needed: "00_Inbox/loose_supplementary/review_needed"
+  inbox.loose_supplementary_failed: "00_Inbox/loose_supplementary/failed"
+
+  # ── 01_Sources: Original files ──
+  sources.papers: "01_Sources/papers"
+  sources.supplementary: "01_Sources/supplementary"
+  sources.datasets: "01_Sources/datasets"
+
+  # ── 02_Parse: Parsed intermediates ──
+  parse.text: "02_Parse/text"
+  parse.figures: "02_Parse/figures"
+  parse.tables: "02_Parse/tables"
+  parse.supplementary: "02_Parse/supplementary"
+
+  # ── 03_Assets: Structured assets ──
+  assets.paper_assets: "03_Assets/paper_assets"
+  assets.figure_assets: "03_Assets/figure_assets"
+  assets.table_assets: "03_Assets/table_assets"
+  assets.supplementary_assets: "03_Assets/supplementary_assets"
+  assets.dataset_assets: "03_Assets/dataset_assets"
+  assets.entity_assets: "03_Assets/entity_assets"
+  assets.registry: "03_Assets/asset_registry"
+
+  # ── 04_Corpus: Long-term corpora ──
+  corpus.writing: "04_Corpus/writing"
+  corpus.writing.expression: "04_Corpus/writing/expression"
+  corpus.writing.introduction: "04_Corpus/writing/introduction"
+  corpus.writing.discussion: "04_Corpus/writing/discussion"
+  corpus.writing.citation_pattern: "04_Corpus/writing/citation_pattern"
+  corpus.writing.result_description: "04_Corpus/writing/result_description"
+  corpus.writing.figure_legend: "04_Corpus/writing/figure_legend"
+  corpus.writing.abstract: "04_Corpus/writing/abstract"
+  corpus.writing.limitation: "04_Corpus/writing/limitation"
+  corpus.writing.terminology: "04_Corpus/writing/terminology"
+
+  corpus.reasoning: "04_Corpus/reasoning"
+  corpus.reasoning.claims: "04_Corpus/reasoning/claims"
+  corpus.reasoning.gaps: "04_Corpus/reasoning/gaps"
+  corpus.reasoning.hypotheses: "04_Corpus/reasoning/hypotheses"
+  corpus.reasoning.methods: "04_Corpus/reasoning/methods"
+  corpus.reasoning.evidence: "04_Corpus/reasoning/evidence"
+  corpus.reasoning.contradictions: "04_Corpus/reasoning/contradictions"
+
+  corpus.data: "04_Corpus/data"
+  corpus.data.supplementary: "04_Corpus/data/supplementary"
+  corpus.data.datasets: "04_Corpus/data/datasets"
+  corpus.data.gene_evidence: "04_Corpus/data/gene_evidence"
+  corpus.data.omics: "04_Corpus/data/omics"
+  corpus.data.cross_study: "04_Corpus/data/cross_study"
+
+  corpus.review: "04_Corpus/review"
+  corpus.review.reviewer_comments: "04_Corpus/review/reviewer_comments"
+  corpus.review.author_responses: "04_Corpus/review/author_responses"
+  corpus.review.review_patterns: "04_Corpus/review/review_patterns"
+
+  # ── 05_Knowledge: Graphs, maps, memory ──
+  knowledge.graph: "05_Knowledge/graph"
+  knowledge.graph.nodes: "05_Knowledge/graph/nodes"
+  knowledge.graph.edges: "05_Knowledge/graph/edges"
+  knowledge.graph.snapshots: "05_Knowledge/graph/snapshots"
+  knowledge.maps: "05_Knowledge/maps"
+  knowledge.maps.research_map: "05_Knowledge/maps/research_map"
+  knowledge.maps.hotspots: "05_Knowledge/maps/hotspots"
+  knowledge.maps.research_gaps: "05_Knowledge/maps/research_gaps"
+  knowledge.maps.knowledge_network: "05_Knowledge/maps/knowledge_network"
+  knowledge.memory: "05_Knowledge/memory"
+  knowledge.reasoning_chains: "05_Knowledge/reasoning_chains"
+
+  # ── 06_Index: Search indexes ──
+  index.vector: "06_Index/vector"
+  index.vector.lancedb: "06_Index/vector/lancedb"
+  index.vector.embedding_reports: "06_Index/vector/embedding_reports"
+  index.keyword: "06_Index/keyword"
+  index.entity: "06_Index/entity"
+  index.citation: "06_Index/citation"
+  index.paper: "06_Index/paper"
+  index.asset: "06_Index/asset"
+
+  # ── 07_Agents ──
+  agents.chat: "07_Agents/chat"
+  agents.writing_agent: "07_Agents/writing_agent"
+  agents.reviewer_agent: "07_Agents/reviewer_agent"
+  agents.reasoning_agent: "07_Agents/reasoning_agent"
+  agents.experimental_design_agent: "07_Agents/experimental_design_agent"
+  agents.figure_understanding_agent: "07_Agents/figure_understanding_agent"
+  agents.evals: "07_Agents/evals"
+
+  # ── 08_Projects ──
+  projects.root: "08_Projects"
+
+  # ── 09_Exports ──
+  exports.root: "09_Exports"
+
+  # ── 10_System ──
+  system.config: "10_System/config"
+  system.logs: "10_System/logs"
+  system.cache: "10_System/cache"
+  system.temp: "10_System/temp"
+  system.migrations: "10_System/migrations"
+  system.backups: "10_System/backups"
+  system.registry: "10_System/registry"
+
+# ── Legacy path mapping for backward compatibility ──
+legacy_paths:
+  old_inbox: "00_Inbox"
+  old_supplementary: "00_Supplementary"
+  old_pdf: "01_PDF"
+  old_metadata: "02_Metadata"
+  old_evidence: "03_Evidence"
+  old_summary: "03_Summary"
+  old_vector_db: "04_VectorDB"
+  old_index: "05_Index"
+  old_pdf_data_assets: "06_PDF_DataAssets"
