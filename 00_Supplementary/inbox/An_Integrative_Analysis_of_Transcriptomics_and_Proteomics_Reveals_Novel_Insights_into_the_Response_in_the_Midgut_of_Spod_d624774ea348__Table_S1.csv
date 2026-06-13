@@ -1,0 +1,8 @@
+﻿Gene,FC,p-value,log2FC,Expression
+MAP2K4,2.5,0.001,1.32,Upregulated
+MAP3K7,3.1,0.0005,1.63,Upregulated
+CASP3,-1.8,0.02,-0.85,Downregulated
+CASP7,-1.5,0.03,-0.58,Downregulated
+JUN,2.1,0.005,1.07,Upregulated
+HtrA2,1.9,0.01,0.93,Upregulated
+TRAF4,2.3,0.003,1.20,Upregulated

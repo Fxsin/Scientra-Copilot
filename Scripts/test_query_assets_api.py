@@ -91,8 +91,44 @@ test("does not crash", True)  # if we got here, it didn't crash
 test("returns results (vector DB always finds nearest)", r["count"] >= 0, f"count={r['count']}")
 print(f"    -> {r['count']} results (LanceDB always returns nearest neighbors)")
 
-# Test 8: invalid chunk_type -> rejected
-print("\n[8] invalid chunk_type -> rejected")
+# Test 8: table-only query (Phase 2A)
+print("\n[8] table-only query")
+r = call_api({"query": "LC50 table", "top_k": 5, "chunk_types": ["table"]})
+table_count = sum(1 for c in r["results"] if c["chunk_type"] == "table")
+print(f"    -> {r['count']} results, {table_count} table chunks")
+
+# Test 9: expression table query
+print("\n[9] expression table query")
+r = call_api({"query": "expression table", "top_k": 5, "chunk_types": ["table"]})
+test("returns results without crash", r["count"] >= 0, f"count={r['count']}")
+print(f"    -> {r['count']} results")
+
+# Test 10: binding affinity table query
+print("\n[10] binding affinity table query")
+r = call_api({"query": "binding affinity table", "top_k": 5, "chunk_types": ["table"]})
+test("returns results without crash", r["count"] >= 0, f"count={r['count']}")
+print(f"    -> {r['count']} results")
+
+# Test 11: LC50 table columns query
+print("\n[11] 'LC50 table columns' query")
+r = call_api({"query": "LC50 table columns", "top_k": 5, "chunk_types": ["table"]})
+test("returns results without crash", r["count"] >= 0)
+print(f"    -> {r['count']} results")
+
+# Test 12: expression table rows query
+print("\n[12] 'expression table rows' query")
+r = call_api({"query": "expression table rows", "top_k": 5, "chunk_types": ["table"]})
+test("returns results without crash", r["count"] >= 0)
+print(f"    -> {r['count']} results")
+
+# Test 13: binding affinity table values query
+print("\n[13] 'binding affinity table values' query")
+r = call_api({"query": "binding affinity table values", "top_k": 5, "chunk_types": ["table"]})
+test("returns results without crash", r["count"] >= 0)
+print(f"    -> {r['count']} results")
+
+# Test 14: invalid chunk_type -> rejected (original test renumbered)
+print("\n[14] invalid chunk_type -> rejected")
 try:
     resp = client.post("/query/assets", json={"query": "test", "chunk_types": ["invalid_type"]})
     test("returns error (400/422)", resp.status_code in (400, 422), f"status={resp.status_code}")

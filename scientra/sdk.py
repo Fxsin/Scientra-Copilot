@@ -256,3 +256,59 @@ def ask_literature(
 
     return result
 
+
+# ── Phase 2E: Supplementary Entity Query ──
+
+def query_supplementary_entities(
+    query: str,
+    entity_type: str | None = None,
+    paper_id: str | None = None,
+    top_k: int = 20,
+) -> dict[str, Any]:
+    """Search indexed supplementary entities.
+
+    Args:
+        query: Entity name to search (gene, protein, compound, etc.)
+        entity_type: Filter by type (gene, protein, compound, treatment, sample, etc.)
+        paper_id: Optional paper filter
+        top_k: Max results
+
+    Returns dict with 'query', 'matches', 'total'.
+    """
+    try:
+        from scientra.pdf_data_assets.supplementary_entity_indexer import SupplementaryEntityIndexer
+        indexer = SupplementaryEntityIndexer()
+        matches = indexer.search_entities(
+            query, entity_type=entity_type, paper_id=paper_id, top_k=min(top_k, 100)
+        )
+    except ImportError:
+        return {"query": query, "matches": [], "total": 0}
+
+    return {"query": query, "matches": matches, "total": len(matches)}
+
+
+# ── Phase 2G-A: Cross-Paper Entity Comparison ──
+
+def query_supplementary_entity_comparison(
+    query: str,
+    entity_type: str | None = None,
+    paper_id: str | None = None,
+    top_k: int = 50,
+) -> dict[str, Any]:
+    """Compare an entity across all indexed supplementary data.
+
+    Returns aggregated records with direction summary, value column summary,
+    and comparability warning. No statistical comparison, no LLM.
+    """
+    try:
+        from scientra.pdf_data_assets.supplementary_entity_comparator import SupplementaryEntityComparator
+        comparator = SupplementaryEntityComparator()
+        result = comparator.compare(query, entity_type=entity_type, top_k=min(top_k, 100))
+        if paper_id:
+            result["records"] = [r for r in result["records"] if r.get("paper_id") == paper_id]
+            result["total_matches"] = len(result["records"])
+            result["unique_papers_count"] = len({r.get("paper_id") for r in result["records"]})
+    except ImportError:
+        return {"query_entity": query, "total_matches": 0, "records": [],
+                "comparability_warning": "Comparator not available."}
+    return result

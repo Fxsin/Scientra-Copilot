@@ -156,7 +156,15 @@ class LiteratureAgent:
         # 1. Detect intent
         intent = self._detect_intent(question)
 
-        # 2. Build context with intent-specific strategy
+        # 2. Phase 2G-A/B: Cross-paper entity comparison
+        if intent == "supplementary_entity_comparison_query":
+            return self._handle_entity_comparison_query(question, t0, return_context, use_llm)
+
+        # 3. Phase 2F-A/B: Supplementary entity query
+        if intent == "supplementary_entity_query":
+            return self._handle_supplementary_entity_query(question, t0, return_context, use_llm)
+
+        # 4. Build context with intent-specific strategy
         if intent == "claim_query":
             context = self._build_claim_context(question, top_k, include_evidence)
         elif intent == "research_gap_query":
@@ -397,10 +405,356 @@ class LiteratureAgent:
                                   "supported only indirectly", "need stronger",
                                   "lack sufficient", "which claims", "what claims"]):
             return "claim_query"
+        # Phase 2G-A: Cross-paper entity comparison query
+        if self._is_entity_comparison_query(question):
+            return "supplementary_entity_comparison_query"
+        # Phase 2F-A: Supplementary entity query
+        if self._is_supplementary_entity_query(question):
+            return "supplementary_entity_query"
         # Time-related
         if any(w in q for w in ["year", "recent", "latest", "new", "202"]):
             return "search_by_year"
         return "hybrid_search"
+
+    def _is_entity_comparison_query(self, question: str) -> bool:
+        """Check if question is a cross-paper entity comparison query (Phase 2G-A)."""
+        q_lower = question.lower()
+        comparison_words = ["compare", "across papers", "across supplementary",
+                           "all records", "all supplementary records",
+                           "consistent direction", "across imported",
+                           "show all", "which papers contain"]
+        has_comparison = any(w in q_lower for w in comparison_words)
+        if not has_comparison:
+            return False
+        try:
+            from scientra.agent.entity_query_parser import is_supplementary_entity_query
+            return is_supplementary_entity_query(question)
+        except ImportError:
+            return False
+
+    def _is_supplementary_entity_query(self, question: str) -> bool:
+        """Check if question is a supplementary entity query (Phase 2F-A)."""
+        try:
+            from scientra.agent.entity_query_parser import is_supplementary_entity_query
+            return is_supplementary_entity_query(question)
+        except ImportError:
+            return False
+
+    def _handle_entity_comparison_query(
+        self, question: str, t0: float, return_context: bool, use_llm: bool = False
+    ) -> AgentResponse:
+        """Handle cross-paper entity comparison query.
+
+        Phase 2G-A: Deterministic aggregation (no LLM).
+        Phase 2G-B: Optional conservative LLM summary when use_llm=true.
+        """
+        try:
+            from scientra.agent.entity_query_parser import parse_entity_query
+            from scientra.pdf_data_assets.supplementary_entity_comparator import SupplementaryEntityComparator
+            parsed = parse_entity_query(question)
+            entity_query = parsed.get("entity_query")
+            entity_type = parsed.get("entity_type")
+        except ImportError:
+            entity_query = None
+            entity_type = None
+
+        elapsed = (time.time() - t0) * 1000
+
+        if not entity_query:
+            return AgentResponse(
+                question=question, intent="supplementary_entity_comparison_query",
+                model="deterministic", elapsed_ms=round(elapsed, 1),
+                answer="No entity identified for comparison. Please specify a gene, protein, or compound.",
+                citations=[], context_used=0, papers_cited=0, raw_context=None,
+                token_usage={"source": "no_llm", "total_tokens": 0},
+            )
+
+        try:
+            comparator = SupplementaryEntityComparator(self.root)
+            result = comparator.compare(entity_query, entity_type=entity_type)
+        except Exception:
+            result = {"total_matches": 0, "records": []}
+
+        if result.get("total_matches", 0) == 0:
+            return AgentResponse(
+                question=question, intent="supplementary_entity_comparison_query",
+                model="deterministic", elapsed_ms=round(elapsed, 1),
+                answer=(
+                    f"No supplementary entity comparison records were found for **{entity_query}**.\n\n"
+                    f"Possible reasons:\n"
+                    f"- The entity is absent from imported supplementary files.\n"
+                    f"- Relevant supplementary files have not been manually imported.\n"
+                    f"- Files are candidate_only or file_missing.\n"
+                    f"- The entity appears under another identifier or synonym.\n"
+                ),
+                citations=[], context_used=0, papers_cited=0, raw_context=None,
+                token_usage={"source": "no_llm", "total_tokens": 0},
+            )
+
+        # Build deterministic answer
+        ds = result.get("direction_summary", {})
+        vcs = result.get("value_column_summary", {})
+        records = result.get("records", [])[:20]
+
+        answer_parts = [
+            "# Supplementary entity comparison",
+            "",
+            "## Query",
+            f"Entity: **{entity_query}**",
+        ]
+        if entity_type:
+            answer_parts.append(f"Entity type: {entity_type}")
+        answer_parts.extend([
+            "",
+            "## Summary",
+            f"* Total matched records: {result['total_matches']}",
+            f"* Unique papers: {result['unique_papers_count']}",
+            f"* Unique imported files: {result['unique_files_count']}",
+            f"* Unique sheets: {result['unique_sheets_count']}",
+            "",
+            "## Direction summary",
+            f"* Upregulated: {ds.get('upregulated_count', 0)}",
+            f"* Downregulated: {ds.get('downregulated_count', 0)}",
+            f"* Mixed: {ds.get('mixed_count', 0)}",
+            f"* Unknown: {ds.get('unknown_count', 0)}",
+        ])
+        if ds.get("notes"):
+            for n in ds["notes"]:
+                answer_parts.append(f"  * {n}")
+
+        if vcs.get("detected_columns"):
+            answer_parts.extend([
+                "",
+                "## Detected value columns",
+                f"  {', '.join(vcs['detected_columns'][:15])}",
+            ])
+
+        answer_parts.extend(["", "## Records", ""])
+        for i, rec in enumerate(records[:10]):
+            answer_parts.append(f"### Record {i + 1}")
+            answer_parts.append(f"* Paper: `{rec.get('paper_id', '?')[:60]}...`")
+            answer_parts.append(f"* Supplement: **{rec.get('supplement_label', '?')}**")
+            if rec.get("imported_file_name"):
+                answer_parts.append(f"* File: {rec['imported_file_name']}")
+            if rec.get("sheet_name"):
+                answer_parts.append(f"* Sheet: {rec['sheet_name']}")
+            if rec.get("row_index") is not None:
+                answer_parts.append(f"* Row: {rec['row_index']}")
+            vcs_rec = rec.get("value_columns", {})
+            if vcs_rec:
+                answer_parts.append("* Values:")
+                for k, v in vcs_rec.items():
+                    answer_parts.append(f"  * {k}: **{v}**")
+            slc = rec.get("source_link_count", 1)
+            linked = rec.get("linked_supplement_labels", [])
+            if linked:
+                answer_parts.append(f"* Linked references: {', '.join(linked[:6])}")
+            if slc > 1:
+                answer_parts.append(f"* Source link count: {slc}")
+            answer_parts.append("")
+
+        answer_parts.extend([
+            "## Comparability warning",
+            "",
+            result.get("comparability_warning", ""),
+        ])
+
+        answer = "\n".join(answer_parts)
+
+        # Phase 2G-B: Optional LLM conservative comparison summary
+        if use_llm and self.api_key and result["total_matches"] > 0:
+            try:
+                llm_answer, llm_usage = self._llm_summarize_entity_comparison(
+                    entity_query, entity_type, result
+                )
+                if llm_answer and not llm_answer.startswith("[Agent Error"):
+                    answer = llm_answer
+                    return AgentResponse(
+                        question=question, answer=answer, citations=[],
+                        context_used=len(records),
+                        papers_cited=result.get("unique_papers_count", 0),
+                        model=f"llm_comparison_summary ({self.model})",
+                        elapsed_ms=round((time.time() - t0) * 1000, 1),
+                        intent="supplementary_entity_comparison_query", raw_context=None,
+                        token_usage=llm_usage if isinstance(llm_usage, dict) else
+                            {"source": "llm", "model": self.model,
+                             "note": "Conservative cross-paper comparison summary."},
+                    )
+            except Exception:
+                pass
+
+        return AgentResponse(
+            question=question, answer=answer, citations=[],
+            context_used=len(records),
+            papers_cited=result.get("unique_papers_count", 0),
+            model="deterministic", elapsed_ms=round((time.time() - t0) * 1000, 1),
+            intent="supplementary_entity_comparison_query", raw_context=None,
+            token_usage={"source": "no_llm", "total_tokens": 0,
+                          "note": "Deterministic cross-paper entity comparison; no LLM call."},
+        )
+
+    def _handle_supplementary_entity_query(
+        self, question: str, t0: float, return_context: bool, use_llm: bool = False
+    ) -> AgentResponse:
+        """Handle supplementary entity query.
+
+        Phase 2F-A: Deterministic entity lookup (no LLM).
+        Phase 2F-B: Optional conservative LLM interpretation when use_llm=true
+        and entity data is available. Strict guardrails prevent overstatement.
+        """
+        try:
+            from scientra.agent.entity_query_parser import parse_entity_query
+            from scientra.pdf_data_assets.supplementary_entity_indexer import SupplementaryEntityIndexer
+            parsed = parse_entity_query(question)
+            entity_query = parsed.get("entity_query")
+            entity_type = parsed.get("entity_type")
+            requested_values = parsed.get("requested_values", [])
+        except ImportError:
+            entity_query = None
+            entity_type = None
+            requested_values = []
+
+        elapsed = (time.time() - t0) * 1000
+
+        if not entity_query:
+            return AgentResponse(
+                question=question,
+                answer=(
+                    "# Supplementary entity search result\n\n"
+                    "No specific entity (gene, protein, compound) was identified in your question.\n\n"
+                    "Please specify an entity to search, for example:\n"
+                    '- "Is MAP2K4 present in supplementary tables?"\n'
+                    '- "What supplementary data contains CASP3?"\n'
+                    '- "Find gene TRAF4 in supplementary files."\n'
+                ),
+                citations=[], context_used=0, papers_cited=0,
+                model="deterministic", elapsed_ms=round(elapsed, 1),
+                intent="supplementary_entity_query",
+                raw_context=None,
+                token_usage={"source": "no_llm", "total_tokens": 0, "note": "Deterministic entity search; no LLM call."},
+            )
+
+        # Search entities
+        try:
+            indexer = SupplementaryEntityIndexer(self.root)
+            matches = indexer.search_entities(
+                entity_query, entity_type=entity_type, top_k=20
+            )
+        except Exception as e:
+            matches = []
+
+        if not matches:
+            return AgentResponse(
+                question=question,
+                answer=(
+                    f"# Supplementary entity search result\n\n"
+                    f"No matched supplementary entity was found for **{entity_query}**"
+                    f"{f' (type: {entity_type})' if entity_type else ''}.\n\n"
+                    f"Possible reasons:\n\n"
+                    f"- The entity is absent from imported supplementary files.\n"
+                    f"- The relevant supplementary file has not been manually imported.\n"
+                    f"- The file exists but has not been high-confidence matched.\n"
+                    f"- The entity appears under a different identifier or synonym.\n"
+                ),
+                citations=[], context_used=0, papers_cited=0,
+                model="deterministic", elapsed_ms=round(elapsed, 1),
+                intent="supplementary_entity_query",
+                raw_context=None,
+                token_usage={"source": "no_llm", "total_tokens": 0, "note": "Deterministic entity search; no LLM call."},
+            )
+
+        # Build structured answer
+        answer_parts = [
+            "# Supplementary entity search result",
+            "",
+            "## Query",
+            "",
+            f"Entity: **{entity_query}**",
+        ]
+        if entity_type:
+            answer_parts.append(f"Entity type: {entity_type}")
+        answer_parts.append("")
+
+        answer_parts.append(f"## Matches found: {len(matches)}")
+        answer_parts.append("")
+
+        for i, m in enumerate(matches[:10]):
+            answer_parts.append(f"### Match {i + 1}")
+            answer_parts.append("")
+            if m.get("paper_id"):
+                answer_parts.append(f"* Paper: `{m['paper_id'][:60]}...`")
+            answer_parts.append(f"* Supplement: **{m.get('supplement_label', 'unknown')}**")
+            if m.get("imported_file_name"):
+                answer_parts.append(f"* File: {m['imported_file_name']}")
+            if m.get("sheet_name"):
+                answer_parts.append(f"* Sheet: {m['sheet_name']}")
+            if m.get("row_index") is not None:
+                answer_parts.append(f"* Row: {m['row_index']}")
+            if m.get("column_name"):
+                answer_parts.append(f"* Column: {m['column_name']}")
+
+            value_cols = m.get("value_columns", {})
+            if value_cols:
+                answer_parts.append("")
+                answer_parts.append("Values:")
+                for k, v in value_cols.items():
+                    answer_parts.append(f"  * {k}: **{v}**")
+
+            linked_labels = m.get("linked_supplement_labels", [])
+            slc = m.get("source_link_count", 1)
+            if linked_labels:
+                answer_parts.append("")
+                answer_parts.append(f"* Linked supplementary references: {', '.join(linked_labels[:10])}")
+            if slc > 1:
+                answer_parts.append(f"* Source link count: {slc}")
+            answer_parts.append("")
+
+        if any(m.get("source_link_count", 1) > 1 for m in matches):
+            answer_parts.append("## Interpretation caution")
+            answer_parts.append("")
+            answer_parts.append(
+                "Source link count indicates that the same imported data row "
+                "is linked to multiple supplementary references. "
+                "It should not be counted as independent evidence."
+            )
+            answer_parts.append("")
+
+        answer = "\n".join(answer_parts)
+
+        # Phase 2F-B: If use_llm=true and matches exist, add conservative LLM interpretation
+        if use_llm and matches and self.api_key:
+            try:
+                llm_answer, llm_usage = self._llm_interpret_supplementary_entity(
+                    entity_query, entity_type, matches, answer
+                )
+                if llm_answer and not llm_answer.startswith("[Agent Error"):
+                    answer = llm_answer
+                    return AgentResponse(
+                        question=question, answer=answer, citations=[],
+                        context_used=len(matches),
+                        papers_cited=len({m.get("paper_id", "") for m in matches}),
+                        model=f"llm_interpretation ({self.model})",
+                        elapsed_ms=round((time.time() - t0) * 1000, 1),
+                        intent="supplementary_entity_query",
+                        raw_context=None,
+                        token_usage=llm_usage if isinstance(llm_usage, dict) else
+                            {"source": "llm", "model": self.model, "note": "Conservative supplementary data interpretation."},
+                    )
+            except Exception:
+                pass  # Fall through to deterministic answer
+
+        return AgentResponse(
+            question=question,
+            answer=answer,
+            citations=[],
+            context_used=len(matches),
+            papers_cited=len({m.get("paper_id", "") for m in matches}),
+            model="deterministic",
+            elapsed_ms=round(elapsed, 1),
+            intent="supplementary_entity_query",
+            raw_context=None,
+            token_usage={"source": "no_llm", "total_tokens": 0, "note": "Deterministic entity search; no LLM call."},
+        )
 
     def _build_extractive_answer(self, question: str, intent: str, context, top_k: int) -> str:
         """Build a structured extractive answer based on intent type."""
@@ -655,6 +1009,311 @@ class LiteratureAgent:
             if paper_counts[pid] <= 3: limited.append(c)
         context.chunks = limited
         return context
+
+    def _llm_interpret_supplementary_entity(
+        self, entity_query: str | None, entity_type: str | None,
+        matches: list[dict], deterministic_answer: str
+    ) -> tuple[str | None, dict | None]:
+        """Generate conservative LLM interpretation of supplementary entity data.
+
+        Phase 2F-B: Strict guardrails — no causal inference, no invented mechanisms,
+        no treating source_link_count as independent evidence.
+        Only interprets the data row as-is.
+        Returns (answer_text, usage_dict) or (None, None) if not applicable.
+        """
+        if not matches or not self.api_key:
+            return None, None
+
+        # Build a minimal, safe prompt with only the data
+        match = matches[0]  # Use first/best match
+        value_cols = match.get("value_columns", {})
+        if not value_cols:
+            return None, None  # No numeric data to interpret
+
+        row_preview = match.get("row_preview", {})
+        linked_labels = match.get("linked_supplement_labels", [])
+        slc = match.get("source_link_count", 1)
+        ref_sentences = match.get("linked_reference_sentences", [])[:2]
+
+        # Build safe context string (no absolute paths, no full tables)
+        context_lines = [
+            f"Entity: {entity_query or 'unknown'}",
+            f"Entity type: {entity_type or 'unknown'}",
+            "",
+            "Found in:",
+            f"  Paper: {match.get('paper_id', 'unknown')[:80]}...",
+            f"  Supplement: {match.get('supplement_label', 'unknown')}",
+            f"  File: {match.get('imported_file_name', 'unknown')}",
+            f"  Sheet: {match.get('sheet_name') or 'N/A'}",
+            f"  Row: {match.get('row_index', '?')}",
+            f"  Column: {match.get('column_name', 'unknown')}",
+            "",
+            "Values reported in this row:",
+        ]
+        for k, v in value_cols.items():
+            context_lines.append(f"  {k}: {v}")
+
+        if row_preview:
+            context_lines.append("")
+            context_lines.append("Row context:")
+            for k, v in list(row_preview.items())[:8]:
+                context_lines.append(f"  {k}: {v}")
+
+        if linked_labels:
+            context_lines.append("")
+            context_lines.append(f"Linked supplementary references: {', '.join(linked_labels[:8])}")
+        if slc > 1:
+            context_lines.append(f"Source link count: {slc} (same data row linked to {slc} references, NOT independent evidence)")
+
+        if ref_sentences:
+            context_lines.append("")
+            context_lines.append("Reference context from paper:")
+            for rs in ref_sentences[:2]:
+                context_lines.append(f"  {rs[:300]}")
+
+        entity_context = "\n".join(context_lines)
+
+        system_prompt = (
+            "You are a conservative scientific data interpreter. "
+            "You must ONLY interpret the provided supplementary table row data. "
+            "Do NOT infer causal mechanisms. Do NOT invent gene functions, pathways, "
+            "species details, treatments, experimental designs, or conclusions not present in the data. "
+            "Do NOT treat source_link_count as independent evidence — it only means "
+            "the same data row is referenced by multiple supplementary table labels. "
+            "If the row only indicates an association or differential value, say so. "
+            "If context is insufficient to draw any conclusion, state that limitation clearly. "
+            "Use cautious language: \"appears\", \"is listed as\", \"is reported as\", "
+            "\"in this imported supplementary file\". "
+            "Never use words like \"proves\", \"drives\", \"causes\", \"key mechanism\", "
+            "\"definitive evidence\", or \"demonstrates\"."
+        )
+
+        user_prompt = (
+            "Interpret this supplementary data row conservatively.\n\n"
+            f"{entity_context}\n\n"
+            "Structure your response exactly as:\n\n"
+            "# Supplementary data interpretation\n\n"
+            "## Direct data summary\n"
+            "(2-3 sentences summarizing what this row shows, conservatively)\n\n"
+            "## Values reported\n"
+            "(list the key values: FC, p-value, etc., exactly as reported)\n\n"
+            "## Conservative interpretation\n"
+            "(what can be reasonably said based ONLY on this row, with caution)\n\n"
+            "## What this does not prove\n"
+            "* It does not by itself prove causality.\n"
+            "* It does not by itself identify a mechanism.\n"
+            "* Source link count reflects linked references to the same data row, not independent evidence.\n"
+            "(add any other specific limitations based on what IS and IS NOT in the data)\n\n"
+            "## Source\n"
+            "(cite the paper, supplement, file, row from the context above)"
+        )
+
+        try:
+            text, usage = self._call_claude(system_prompt, user_prompt)
+            if text and not text.startswith("[Agent Error"):
+                text = self._sanitize_interpretation(text, slc)
+            return text, usage
+        except Exception:
+            return None, None
+
+    def _llm_summarize_entity_comparison(
+        self, entity_query: str | None, entity_type: str | None,
+        result: dict
+    ) -> tuple[str | None, dict | None]:
+        """Generate conservative LLM cross-paper comparison summary.
+
+        Phase 2G-B: Strict guardrails. If only 1 record/paper, explicitly states
+        this is not a true cross-paper comparison.
+        """
+        if not self.api_key or not result.get("records"):
+            return None, None
+
+        total = result.get("total_matches", 0)
+        papers = result.get("unique_papers_count", 0)
+        is_single = (total < 2 or papers < 2)
+
+        # Build minimal safe context
+        parts = [
+            f"Entity: {entity_query or 'unknown'}",
+            f"Entity type: {entity_type or 'unknown'}",
+            f"Total records: {total}",
+            f"Unique papers: {papers}",
+            f"Unique files: {result.get('unique_files_count', 0)}",
+        ]
+        if is_single:
+            parts.append("NOTE: Only one record/paper available — not a true cross-paper comparison.")
+
+        ds = result.get("direction_summary", {})
+        parts.extend([
+            f"Direction: up={ds.get('upregulated_count',0)} down={ds.get('downregulated_count',0)}",
+        ])
+
+        parts.append("Records:")
+        for i, r in enumerate(result.get("records", [])[:10]):
+            vc = r.get("value_columns", {})
+            vals = ", ".join(f"{k}={v}" for k, v in list(vc.items())[:6])
+            parts.append(
+                f"  {i+1}. {r.get('supplement_label','?')} "
+                f"({r.get('imported_file_name','?')[:40]}): {vals} "
+                f"links={r.get('source_link_count',1)}"
+            )
+
+        parts.append(result.get("comparability_warning", ""))
+
+        context = "\n".join(parts)
+
+        system_prompt = (
+            "You are a conservative scientific data summarizer. "
+            "You must ONLY summarize the provided supplementary entity comparison records. "
+            "Do NOT infer causal mechanisms. Do NOT invent gene functions, pathways, species, "
+            "treatments, experimental designs, or conclusions. "
+            "Do NOT treat values from different papers as directly comparable. "
+            "Do NOT treat source_link_count as independent evidence. "
+            f"{'CRITICAL: Only one record/paper is available. Explicitly state this is not yet a true cross-paper comparison.' if is_single else ''} "
+            "Use cautious language only. Structure your response exactly as requested."
+        )
+
+        user_prompt = (
+            "Summarize these supplementary entity comparison records conservatively.\n\n"
+            f"{context}\n\n"
+            "Structure your response exactly as:\n\n"
+            "# Supplementary entity comparison summary\n\n"
+            "## Direct comparison summary\n"
+            "(2-3 sentences summarizing what was found)\n\n"
+            "## Records included\n"
+            "(list each record briefly)\n\n"
+            "## Direction summary\n"
+            "(what the direction data shows, conservatively)\n\n"
+            "## What can be said conservatively\n"
+            "(what can be reasonably stated based ONLY on these records)\n\n"
+            "## What cannot be concluded\n"
+            "* Do not infer causality.\n"
+            "* Do not infer mechanism.\n"
+            "* Do not treat source_link_count as independent evidence.\n"
+            "* Do not directly compare values across papers unless conditions are aligned.\n"
+            + (f"* Only {total} record(s) from {papers} paper(s) are available — "
+               f"this is not yet a true cross-paper comparison.\n" if is_single else "") +
+            "(add any other specific limitations)\n\n"
+            "## Source and comparability notes\n"
+            "(cite data sources from the context above)"
+        )
+
+        try:
+            text, usage = self._call_claude(system_prompt, user_prompt)
+            if text and not text.startswith("[Agent Error"):
+                text = self._sanitize_conservative_llm_answer(text, result, is_single)
+            return text, usage
+        except Exception:
+            return None, None
+
+    @staticmethod
+    def _sanitize_conservative_llm_answer(text: str, result: dict, is_single: bool) -> str:
+        """Post-process LLM comparison summary for safety (Phase 2G-B)."""
+        import re
+        if not text:
+            return text
+
+        FORBIDDEN = ["proves", "drives the mechanism", "key mechanism",
+                     "definitive evidence", "establishes mechanism",
+                     "confirms pathway", "demonstrates causality"]
+        text_lower = text.lower()
+        warnings = []
+        for phrase in FORBIDDEN:
+            if phrase.lower() in text_lower:
+                warnings.append(f"Forbidden phrase: '{phrase}'")
+
+        # Single-record check
+        if is_single and "not yet a true cross-paper comparison" not in text_lower:
+            warnings.append("Only one record/paper available — not a true cross-paper comparison.")
+            text += "\n\n> **Note**: Only one record/paper is available. This is not yet a true cross-paper comparison.\n"
+
+        # Missing "What cannot be concluded"
+        if "what cannot be concluded" not in text_lower:
+            text += (
+                "\n\n## What cannot be concluded\n\n"
+                "* Do not infer causality.\n"
+                "* Do not infer mechanism.\n"
+                "* Do not treat source_link_count as independent evidence.\n"
+                "* Do not directly compare values across papers unless conditions are aligned.\n"
+            )
+
+        # Source link count caution
+        has_slc = any(r.get("source_link_count", 1) > 1 for r in result.get("records", []))
+        if has_slc and "source link" not in text_lower:
+            text += "\n\n> **Source link count**: Multiple linked references point to the same data row, not independent evidence.\n"
+
+        # Absolute paths
+        text = re.sub(r'\b[A-Z]:\\[^\s,;)]*', '[path masked]', text)
+        text = re.sub(r'\b[A-Z]:/[^\s,;)]*', '[path masked]', text)
+
+        if warnings:
+            warning_block = "> **Safety warnings:**\n>\n"
+            for w in warnings:
+                warning_block += f"> - {w}\n"
+            text = warning_block + "\n" + text
+
+        return text
+
+    @staticmethod
+    def _sanitize_interpretation(text: str, source_link_count: int) -> str:
+        """Post-process LLM interpretation output for safety.
+
+        Phase 2F-C: Checks for forbidden phrases, missing sections,
+        absolute paths, and other safety issues.
+        """
+        if not text:
+            return text
+
+        # ── Forbidden causal phrases ──
+        FORBIDDEN = [
+            "proves", "drives the mechanism", "causes the disease",
+            "key mechanism", "definitive evidence", "establishes mechanism",
+            "confirms pathway", "demonstrates that", "conclusively shows",
+        ]
+        warnings: list[str] = []
+        text_lower = text.lower()
+        for phrase in FORBIDDEN:
+            if phrase.lower() in text_lower:
+                warnings.append(f"WARNING: Forbidden phrase detected: '{phrase}'. "
+                               "This interpretation may overstate the evidence.")
+
+        # ── Missing guardrail sections ──
+        if "what this does not prove" not in text_lower:
+            warnings.append("Missing 'What this does not prove' section.")
+            text += (
+                "\n\n## What this does not prove\n\n"
+                "* It does not by itself prove causality.\n"
+                "* It does not by itself identify a mechanism.\n"
+                "* Source link count reflects linked references to the same data row, "
+                "not independent evidence.\n"
+            )
+
+        # ── Missing source_link_count caution ──
+        if source_link_count > 1 and "source link" not in text_lower:
+            warnings.append("Missing source_link_count caution.")
+            text += (
+                f"\n\n> **Note on source link count**: The same data row is linked "
+                f"to {source_link_count} supplementary references. "
+                "It should not be counted as independent evidence.\n"
+            )
+
+        # ── Absolute path sanitization ──
+        import re
+        # Mask drive-letter paths
+        text = re.sub(r'\b[A-Z]:\\[^\s,;)]*', '[path masked]', text)
+        text = re.sub(r'\b[A-Z]:/[^\s,;)]*', '[path masked]', text)
+        # Mask long paths with project-like structure
+        text = re.sub(r'\b(?:/[^\s,;)]*){3,}', '[path masked]', text)
+
+        # ── Prepend warnings if any ──
+        if warnings:
+            warning_block = "> ⚠️ **Safety warnings from automated guard check:**\n>\n"
+            for w in warnings:
+                warning_block += f"> - {w}\n"
+            warning_block += ">\n"
+            text = warning_block + text
+
+        return text
 
     def _build_system_prompt(self, intent: str = "hybrid_search") -> str:
         base = (

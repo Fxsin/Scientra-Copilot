@@ -1467,7 +1467,7 @@ def _load_summary_text(root: Path, paper_id: str) -> str | None:
 
 # ── Phase 0.8: Request/Response models (module-level for FastAPI compatibility) ──
 
-VALID_CHUNK_TYPES = {"section", "method", "result", "claim", "figure"}
+VALID_CHUNK_TYPES = {"section", "method", "result", "claim", "figure", "table", "supplementary_table", "supplementary_entity"}
 
 class QueryAssetsRequest(BaseModel):
     query: str = Field(..., min_length=1, description="Search query text")
@@ -2789,6 +2789,54 @@ def create_app(root: Path | None = None) -> FastAPI:
             warnings=warnings,
             elapsed_ms=round(elapsed, 1),
         )
+
+    # ── Phase 2E: /query/supplementary-entities ──
+
+    @api.post("/query/supplementary-entities")
+    def query_supplementary_entities_endpoint(payload: dict = None):
+        if payload is None:
+            payload = {}
+        query = str(payload.get("query", "")).strip()
+        if not query:
+            raise HTTPException(status_code=422, detail="query is required")
+        entity_type = payload.get("entity_type")
+        paper_id = payload.get("paper_id")
+        top_k = min(int(payload.get("top_k", 20)), 100)
+
+        try:
+            from scientra.pdf_data_assets.supplementary_entity_indexer import SupplementaryEntityIndexer
+            indexer = SupplementaryEntityIndexer()
+            matches = indexer.search_entities(query, entity_type=entity_type, paper_id=paper_id, top_k=top_k)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Entity search failed: {e}")
+
+        return {"query": query, "matches": matches, "total": len(matches)}
+
+    # ── Phase 2G-A: /query/supplementary-entity-comparison ──
+
+    @api.post("/query/supplementary-entity-comparison")
+    def query_entity_comparison_endpoint(payload: dict = None):
+        if payload is None:
+            payload = {}
+        query = str(payload.get("query", "")).strip()
+        if not query:
+            raise HTTPException(status_code=422, detail="query is required")
+        entity_type = payload.get("entity_type")
+        paper_id = payload.get("paper_id")
+        top_k = min(int(payload.get("top_k", 50)), 100)
+
+        try:
+            from scientra.pdf_data_assets.supplementary_entity_comparator import SupplementaryEntityComparator
+            comparator = SupplementaryEntityComparator()
+            result = comparator.compare(query, entity_type=entity_type, top_k=top_k)
+            if paper_id:
+                result["records"] = [r for r in result["records"] if r.get("paper_id") == paper_id]
+                result["total_matches"] = len(result["records"])
+                result["unique_papers_count"] = len({r.get("paper_id") for r in result["records"]})
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Comparison failed: {e}")
+
+        return result
 
     # ── /v1/agent/ask (enhanced) ──
 

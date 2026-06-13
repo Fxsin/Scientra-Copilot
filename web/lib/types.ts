@@ -384,7 +384,8 @@ export interface EvidenceChunkItem {
 
 export type EvidenceChunkType =
   | "all" | "key_result" | "core_finding" | "discussion_point"
-  | "method" | "limitation" | "open_question" | "claim";
+  | "method" | "limitation" | "open_question" | "claim"
+  | "figure" | "table";
 
 export interface EvidenceQueryRequest {
   query: string;

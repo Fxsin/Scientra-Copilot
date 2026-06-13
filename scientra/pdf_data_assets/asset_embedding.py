@@ -383,7 +383,8 @@ class AssetEmbeddingEngine:
         self, chunk: dict[str, Any], vector: list[float], timestamp: str
     ) -> dict[str, Any]:
         """Build a LanceDB-compatible record from a chunk + vector."""
-        metadata = {
+        chunk_type = str(chunk.get("chunk_type", "unknown"))
+        metadata: dict[str, Any] = {
             "source_asset_ids": chunk.get("source_asset_ids", []),
             "linked_evidence_ids": chunk.get("linked_evidence_ids", []),
             "source_section": chunk.get("source_section", "unknown"),
@@ -395,6 +396,60 @@ class AssetEmbeddingEngine:
             "quality_notes": chunk.get("quality_notes", []),
             "chunk_created_at": chunk.get("created_at", ""),
         }
+
+        # Phase 2A + 2B: Preserve table-specific metadata
+        if chunk_type in ("table", "supplementary_table", "supplementary_entity"):
+            # Extract table metadata from source asset if available
+            table_meta: dict[str, Any] = {
+                "table_label": "",
+                "table_type": "unknown",
+                "caption_quality": "none",
+                "caption_source": "unknown",
+                "structure_status": "caption_only",
+                "structure_confidence": "none",
+                "structure_extraction_method": "unavailable",
+                "structured_columns": [],
+                "row_count": 0,
+                "first_rows_preview": [],
+                "reference_sentences": [],
+                "linked_result_assets": [],
+                "linked_claim_assets": [],
+            }
+            # Try to load from tables.json if available
+            src_ids = chunk.get("source_asset_ids", [])
+            if src_ids:
+                paper_id = chunk.get("paper_id", "")
+                if paper_id:
+                    tbl_path = self.root / "06_PDF_DataAssets" / "03_tables" / paper_id / "tables.json"
+                    if tbl_path.exists():
+                        try:
+                            tables_data = json.loads(tbl_path.read_text(encoding="utf-8"))
+                            for t in tables_data:
+                                if t.get("asset_id") in src_ids:
+                                    table_meta["table_label"] = t.get("table_label", "")
+                                    table_meta["table_type"] = t.get("table_type", "unknown")
+                                    table_meta["caption_quality"] = t.get("caption_quality", "none")
+                                    table_meta["caption_source"] = t.get("caption_source", "unknown")
+                                    table_meta["structure_status"] = t.get("structure_status", "caption_only")
+                                    table_meta["structure_confidence"] = t.get("structure_confidence", "none")
+                                    table_meta["structure_extraction_method"] = t.get("structure_extraction_method", "unavailable")
+                                    table_meta["structured_columns"] = t.get("structured_columns", [])[:15]
+                                    table_meta["row_count"] = len(t.get("structured_rows", []))
+                                    # Small preview of first rows for searchability
+                                    rows = t.get("structured_rows", [])
+                                    if rows:
+                                        preview = []
+                                        for r in rows[:3]:
+                                            vals = list(r.values())[:5]
+                                            preview.append(" | ".join(str(v)[:60] for v in vals if v))
+                                        table_meta["first_rows_preview"] = preview
+                                    table_meta["reference_sentences"] = t.get("reference_sentences", [])[:10]
+                                    table_meta["linked_result_assets"] = t.get("linked_result_assets", [])
+                                    table_meta["linked_claim_assets"] = t.get("linked_claim_assets", [])
+                                    break
+                        except Exception:
+                            pass
+            metadata["table"] = table_meta
 
         return {
             "chunk_id": str(chunk.get("chunk_id", "")),

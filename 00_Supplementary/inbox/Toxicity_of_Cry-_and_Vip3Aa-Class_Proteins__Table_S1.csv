@@ -1,0 +1,5 @@
+﻿Gene,FC,p-value,Description
+GeneA,2.5,0.001,Upregulated in treatment
+GeneB,-1.8,0.02,Downregulated
+GeneC,3.1,0.0005,Highly upregulated
+GeneD,1.2,0.15,Not significant

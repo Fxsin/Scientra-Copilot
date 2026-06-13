@@ -63,7 +63,7 @@ ENTITY_STOPWORDS: set[str] = {
 }
 
 # Chunk types that should have evidence traceability
-EVIDENCE_TRACEABLE_TYPES = {"method", "result", "claim", "figure"}
+EVIDENCE_TRACEABLE_TYPES = {"method", "result", "claim", "figure", "table", "supplementary_table", "supplementary_entity"}
 
 # ── Phase 0.9D: Method noise patterns ──
 
@@ -203,6 +203,54 @@ class ChunkQualityChecker:
                     score -= 25
                     notes.extend(noise_flags)
 
+            # Check 7c: table structure quality (Phase 2B)
+            if ctype == "table":
+                # Parse structure metadata from text or metadata
+                text_lower = text.lower()
+                has_struct = "simple_structure_extracted" in text_lower
+                is_complex = "complex_structure_skipped" in text_lower
+                is_caption_only = "caption_only" in text_lower
+                has_columns = "columns:" in text_lower
+                has_rows = "rows:" in text_lower
+
+                if has_struct and has_columns and has_rows:
+                    # Simple structure extracted — quality bonus
+                    score += 5
+                    notes.append("table_has_simple_structure")
+                elif is_complex:
+                    # Complex structure skipped — not a failure, just note
+                    notes.append("table_structure_complex_skipped")
+                elif is_caption_only:
+                    # Caption only — acceptable, structure score low
+                    notes.append("table_caption_only")
+
+            # Check 7d: supplementary_table quality (Phase 2C-B + 2D-B)
+            if ctype == "supplementary_table":
+                text_lower_suppl = text.lower()
+                is_file_missing = "file_missing" in text_lower_suppl
+                is_no_file = "no local supplementary" in text_lower_suppl
+                is_candidate = "candidate_only" in text_lower_suppl
+                is_ambiguous = "ambiguous" in text_lower_suppl
+                has_raw_text_match = "raw_text" in text_lower_suppl or "03_summary" in text_lower_suppl
+                has_preview = "simple_preview_extracted" in text_lower_suppl
+
+                if has_raw_text_match:
+                    # INVALID: raw_text matched as supplementary file → fail
+                    score -= 50
+                    notes.append("invalid_supplementary_match_raw_text")
+                elif has_preview:
+                    # High confidence match with preview
+                    score += 5
+                    notes.append("supplementary_preview_extracted")
+                elif is_candidate or is_ambiguous:
+                    # candidate_only: reference found, possible file but not auto-matched
+                    score -= 5
+                    notes.append("supplementary_candidate_only")
+                elif is_file_missing or is_no_file:
+                    # file_missing is acceptable but lower score
+                    score -= 10
+                    notes.append("supplementary_file_missing")
+
             # Check 8: source_section traceability
             source_section = chunk.get("source_section", "unknown")
             if source_section == "unknown":
@@ -233,6 +281,15 @@ class ChunkQualityChecker:
                 is_noise, _ = _detect_method_noise(text)
                 if is_noise:
                     vector_ready = False
+            # Phase 2C-B + 2D-B: supplementary_table guards
+            if vector_ready and ctype == "supplementary_table":
+                text_lower_vr = text.lower()
+                if "raw_text" in text_lower_vr or "03_summary" in text_lower_vr:
+                    if "no local supplementary" not in text_lower_vr:
+                        vector_ready = False
+                        notes.append("invalid_supplementary_raw_text_match")
+                # candidate_only and file_missing can still be vector_ready
+                # (they serve as reference reminders)
 
             if vector_ready:
                 vector_ready_count += 1

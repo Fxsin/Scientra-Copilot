@@ -92,7 +92,7 @@ export function AgentAdvancedOptions({
           </div>
           <div className="flex flex-wrap items-center gap-1.5 text-xs">
             <span className="text-muted-foreground">Types:</span>
-            {["section", "method", "result", "claim", "figure"].map((ct) => (
+            {["section", "method", "result", "claim", "figure", "table", "supplementary", "sup_entity"].map((ct) => (
               <button key={ct} onClick={() => toggleChunkType(ct)} className={cn("rounded-full border px-2 py-0.5 transition-colors", chunkTypes.includes(ct) ? "bg-primary/10 border-primary/30 text-primary" : "text-muted-foreground hover:text-foreground")}>{ct}</button>
             ))}
           </div>

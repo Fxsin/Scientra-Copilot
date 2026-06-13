@@ -1,0 +1,200 @@
+{
+  "version": "0.1.0",
+  "generated_at": "2026-06-13T06:22:24.468366+00:00",
+  "total_files": 3,
+  "files": [
+    {
+      "file_id": "suppl_file_An_Integrative_Analysis_of_Transcriptomi",
+      "file_name": "An_Integrative_Analysis_of_Transcriptomics_and_Proteomics_Reveals_Novel_Insights_into_the_Response_in_the_Midgut_of_Spod_d624774ea348__Table_S1.csv",
+      "relative_path": "00_Supplementary\\inbox\\An_Integrative_Analysis_of_Transcriptomics_and_Proteomics_Reveals_Novel_Insights_into_the_Response_in_the_Midgut_of_Spod_d624774ea348__Table_S1.csv",
+      "file_type": "csv",
+      "size_bytes": 275,
+      "possible_paper_id": "An_Integrative_Analysis_of_Transcriptomics_and_Proteomics_Reveals_Novel_Insights_into_the_Response_in_the_Midgut_of_Spod_d624774ea348",
+      "possible_supplement_label": "Table S1",
+      "sheet_names": [],
+      "preview_status": "previewed",
+      "row_count": 8,
+      "column_count": 5,
+      "columns_preview": [
+        "﻿Gene",
+        "FC",
+        "p-value",
+        "log2FC",
+        "Expression"
+      ],
+      "first_rows_preview": [
+        {
+          "﻿Gene": "﻿Gene",
+          "FC": "FC",
+          "p-value": "p-value",
+          "log2FC": "log2FC",
+          "Expression": "Expression"
+        },
+        {
+          "﻿Gene": "MAP2K4",
+          "FC": "2.5",
+          "p-value": "0.001",
+          "log2FC": "1.32",
+          "Expression": "Upregulated"
+        },
+        {
+          "﻿Gene": "MAP3K7",
+          "FC": "3.1",
+          "p-value": "0.0005",
+          "log2FC": "1.63",
+          "Expression": "Upregulated"
+        },
+        {
+          "﻿Gene": "CASP3",
+          "FC": "-1.8",
+          "p-value": "0.02",
+          "log2FC": "-0.85",
+          "Expression": "Downregulated"
+        },
+        {
+          "﻿Gene": "CASP7",
+          "FC": "-1.5",
+          "p-value": "0.03",
+          "log2FC": "-0.58",
+          "Expression": "Downregulated"
+        },
+        {
+          "﻿Gene": "JUN",
+          "FC": "2.1",
+          "p-value": "0.005",
+          "log2FC": "1.07",
+          "Expression": "Upregulated"
+        },
+        {
+          "﻿Gene": "HtrA2",
+          "FC": "1.9",
+          "p-value": "0.01",
+          "log2FC": "0.93",
+          "Expression": "Upregulated"
+        },
+        {
+          "﻿Gene": "TRAF4",
+          "FC": "2.3",
+          "p-value": "0.003",
+          "log2FC": "1.20",
+          "Expression": "Upregulated"
+        }
+      ],
+      "selected_sheet": null,
+      "notes": [
+        "CSV: 5 cols, 8 rows"
+      ]
+    },
+    {
+      "file_id": "suppl_file_Bacillus_thuringiensis__Supplementary_Da",
+      "file_name": "Bacillus_thuringiensis__Supplementary_Data_1.tsv",
+      "relative_path": "00_Supplementary\\inbox\\Bacillus_thuringiensis__Supplementary_Data_1.tsv",
+      "file_type": "tsv",
+      "size_bytes": 94,
+      "possible_paper_id": "Bacillus_thuringiensis",
+      "possible_supplement_label": "Supplementary Data 1",
+      "sheet_names": [],
+      "preview_status": "previewed",
+      "row_count": 4,
+      "column_count": 4,
+      "columns_preview": [
+        "﻿Name",
+        "LC50",
+        "Slope",
+        "Chi2"
+      ],
+      "first_rows_preview": [
+        {
+          "﻿Name": "﻿Name",
+          "LC50": "LC50",
+          "Slope": "Slope",
+          "Chi2": "Chi2"
+        },
+        {
+          "﻿Name": "Cry1Ab",
+          "LC50": "12.93",
+          "Slope": "1.85",
+          "Chi2": "5.43"
+        },
+        {
+          "﻿Name": "Cry1F",
+          "LC50": "22.07",
+          "Slope": "1.39",
+          "Chi2": "14.04"
+        },
+        {
+          "﻿Name": "Cry2Ab",
+          "LC50": "15.78",
+          "Slope": "1.48",
+          "Chi2": "6.04"
+        }
+      ],
+      "selected_sheet": null,
+      "notes": [
+        "TSV: 4 cols, 4 rows"
+      ]
+    },
+    {
+      "file_id": "suppl_file_Toxicity_of_Cry-_and_Vip3Aa-Class_Protei",
+      "file_name": "Toxicity_of_Cry-_and_Vip3Aa-Class_Proteins__Table_S1.csv",
+      "relative_path": "00_Supplementary\\inbox\\Toxicity_of_Cry-_and_Vip3Aa-Class_Proteins__Table_S1.csv",
+      "file_type": "csv",
+      "size_bytes": 170,
+      "possible_paper_id": "Toxicity_of_Cry-_and_Vip3Aa-Class_Proteins",
+      "possible_supplement_label": "Table S1",
+      "sheet_names": [],
+      "preview_status": "previewed",
+      "row_count": 5,
+      "column_count": 4,
+      "columns_preview": [
+        "﻿Gene",
+        "FC",
+        "p-value",
+        "Description"
+      ],
+      "first_rows_preview": [
+        {
+          "﻿Gene": "﻿Gene",
+          "FC": "FC",
+          "p-value": "p-value",
+          "Description": "Description"
+        },
+        {
+          "﻿Gene": "GeneA",
+          "FC": "2.5",
+          "p-value": "0.001",
+          "Description": "Upregulated in treatment"
+        },
+        {
+          "﻿Gene": "GeneB",
+          "FC": "-1.8",
+          "p-value": "0.02",
+          "Description": "Downregulated"
+        },
+        {
+          "﻿Gene": "GeneC",
+          "FC": "3.1",
+          "p-value": "0.0005",
+          "Description": "Highly upregulated"
+        },
+        {
+          "﻿Gene": "GeneD",
+          "FC": "1.2",
+          "p-value": "0.15",
+          "Description": "Not significant"
+        }
+      ],
+      "selected_sheet": null,
+      "notes": [
+        "CSV: 4 cols, 5 rows"
+      ]
+    }
+  ],
+  "file_types": {
+    "csv": 2,
+    "tsv": 1
+  },
+  "previewed": 3,
+  "large_file_preview_only": 0,
+  "file_unreadable": 0
+}

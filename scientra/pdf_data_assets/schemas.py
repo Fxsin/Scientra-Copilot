@@ -178,19 +178,161 @@ class FigureInterpretationAsset(BaseModel):
     source_text: str = Field(default="")
     created_at: str = Field(default_factory=lambda: __import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat())
 
-# ── Table Asset (Phase 2 — reserved) ──
+# ── Table Asset (Phase 2A) ──
+
+class TableStructureStatus(str, Enum):
+    caption_only = "caption_only"
+    structure_pending = "structure_pending"
+    simple_structure_extracted = "simple_structure_extracted"
+    complex_structure_skipped = "complex_structure_skipped"
+
 
 class TableAsset(PDFAssetBase):
-    """A table from the paper. Phase 2: populated; Phase 0: placeholder."""
+    """A table extracted from the paper with caption and reference links.
+
+    Phase 2A: Caption + Reference extraction. No complex table structure parsing.
+    Phase 2B: Simple table structure extraction from raw text.
+    """
     asset_type: AssetType = AssetType.table
-    table_label: str = Field(default="unknown", description="e.g. 'Table 1'")
-    caption_text: str = Field(default="")
-    headers: list[str] = Field(default_factory=list)
-    rows: list[list[str]] = Field(default_factory=list)
+    table_id: str = Field(default="unknown", description="Unique table identifier")
+    table_label: str = Field(default="unknown", description="e.g. 'Table 1', 'Supplementary Table S1'")
+    table_number: str = Field(default="unknown", description="e.g. '1', 'S1', '2A'")
+    caption: str = Field(default="", description="Full table caption text")
+    source_text: str = Field(default="", description="Caption text or reference-only source for traceability")
+    source_file: str = Field(default="unknown")
+    source_section: str = Field(default="unknown")
+    table_type: str = Field(default="unknown", description="Rule-based classification")
+    mentioned_in_sections: list[str] = Field(default_factory=list)
+    reference_sentences: list[str] = Field(default_factory=list)
+    linked_result_assets: list[str] = Field(default_factory=list)
+    linked_claim_assets: list[str] = Field(default_factory=list)
+    linked_evidence_ids: list[str] = Field(default_factory=list)
+    confidence: Confidence = Field(default=Confidence.unknown)
+    created_at: str = Field(
+        default_factory=lambda: __import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat()
+    )
+    extraction_method: str = Field(default="regex_heuristic")
+    caption_quality: str = Field(default="none", description="high / medium / low / none")
+    caption_source: str = Field(default="unknown", description="plain_text_caption / reference_only")
+    structure_status: str = Field(default="caption_only", description="caption_only / structure_pending / simple_structure_extracted / complex_structure_skipped")
+    # ── Phase 2B: Simple structure fields ──
+    structured_rows: list[dict[str, str]] = Field(default_factory=list, description="Parsed table rows as list of {col_name: value}")
+    structured_columns: list[str] = Field(default_factory=list, description="Column header names")
+    raw_table_text: str | None = Field(default=None, description="Raw table body text block, if available")
+    structure_confidence: str = Field(default="none", description="high / medium / low / none")
+    structure_extraction_method: str = Field(default="unavailable", description="raw_text_delimited / markdown_like / whitespace_aligned / skipped_complex / unavailable")
+    structure_notes: list[str] = Field(default_factory=list, description="Notes about structure extraction")
+
+
+# ── Supplementary Table Link (Phase 2C) ──
+
+class SupplementaryTableLink(BaseModel):
+    """A link between a supplementary table reference and its local/remote file.
+
+    Phase 2C: Identifies supplementary table/data references in raw text.
+    Attempts to match to local files. No OCR, no LLM, no complex parsing.
+    """
+    asset_id: str = Field(..., description="Unique: {paper_id}:suppl_table:{index}")
+    paper_id: str
+    asset_type: str = Field(default="supplementary_table_link")
+    supplement_label: str = Field(default="unknown", description="e.g. 'Table S1', 'Supplementary Data 1'")
+    supplement_number: str = Field(default="unknown", description="e.g. 'S1', '1'")
+    referenced_as: str = Field(default="", description="How the supplement is referenced in text")
+    reference_sentences: list[str] = Field(default_factory=list)
+    source_section: str = Field(default="unknown")
+    source_text: str = Field(default="", description="Original reference text for traceability")
+    linked_table_assets: list[str] = Field(default_factory=list)
+    linked_result_assets: list[str] = Field(default_factory=list)
+    linked_claim_assets: list[str] = Field(default_factory=list)
+    linked_evidence_ids: list[str] = Field(default_factory=list)
+    candidate_files: list[str] = Field(default_factory=list, description="Candidate local file paths (relative)")
+    matched_file: str | None = Field(default=None, description="Best matched file path (relative)")
+    file_type: str = Field(default="unknown", description="xlsx / csv / tsv / pdf / docx / zip / unknown")
+    match_confidence: str = Field(default="none", description="high / medium / low / none")
+    match_method: str = Field(default="no_match", description="exact_label_filename / paper_id_filename / title_keyword_filename / supplementary_index / manual_needed / no_match")
+    content_status: str = Field(default="link_only", description="link_only / file_found / file_missing / file_unreadable / simple_preview_extracted / complex_file_skipped")
+    preview_columns: list[str] = Field(default_factory=list)
+    preview_rows: list[dict[str, str]] = Field(default_factory=list)
     row_count: int = Field(default=0)
     column_count: int = Field(default=0)
-    linked_results: list[str] = Field(default_factory=list)
-    page_number: int | None = Field(default=None)
+    # ── Phase 2D: Manual import fields ──
+    imported_file_id: str | None = Field(default=None)
+    imported_file_name: str | None = Field(default=None)
+    imported_relative_path: str | None = Field(default=None, description="Relative path in 00_Supplementary/")
+    sheet_names: list[str] = Field(default_factory=list)
+    preview_status: str = Field(default="none", description="none / previewed / large_file_preview_only / file_unreadable")
+    selected_sheet: str | None = Field(default=None, description="Sheet used for preview if xlsx")
+    import_source: str = Field(default="none", description="none / manual_import")
+    confidence: str = Field(default="low")
+    created_at: str = Field(
+        default_factory=lambda: __import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat()
+    )
+    notes: list[str] = Field(default_factory=list)
+
+
+# ── Supplementary Entity Record (Phase 2E) ──
+
+class SupplementaryEntityRecord(BaseModel):
+    """A lightweight entity extracted from high-confidence supplementary files.
+
+    Phase 2E: Rule-based entity extraction from previewed supplementary data.
+    Only generated for simple_preview_extracted with high/medium confidence.
+    No LLM. No OCR. No external download.
+    """
+    entity_id: str = Field(..., description="Unique: {paper_id}:suppl_entity:{index}")
+    paper_id: str
+    source_asset_id: str = Field(default="")
+    supplement_label: str = Field(default="unknown")
+    imported_file_id: str | None = None
+    imported_file_name: str | None = None
+    sheet_name: str | None = None
+    entity_text: str = Field(..., description="The entity text as found in the column")
+    normalized_entity: str = Field(default="", description="Lowercase, stripped, normalized")
+    entity_type: str = Field(default="unknown", description="gene / protein / compound / treatment / sample / phenotype / statistical_value / unknown")
+    column_name: str = Field(default="")
+    row_index: int = Field(default=0)
+    row_preview: dict[str, str] = Field(default_factory=dict, description="Short row context (key columns only)")
+    matched_columns: list[str] = Field(default_factory=list, description="Columns that triggered entity detection")
+    value_columns: dict[str, str] = Field(default_factory=dict, description="Statistical/value columns in same row")
+    confidence: str = Field(default="medium", description="high / medium / low")
+    extraction_method: str = Field(default="column_header_rule")
+    # ── Phase 2E-B: Deduplication & source identity ──
+    linked_supplement_labels: list[str] = Field(default_factory=list, description="All supplement labels referencing this entity row")
+    linked_source_asset_ids: list[str] = Field(default_factory=list, description="All source_asset_ids merged into this record")
+    linked_reference_sentences: list[str] = Field(default_factory=list, description="Up to 5 reference sentences from merged links")
+    source_link_count: int = Field(default=1, description="Number of supplementary links merged")
+    dedup_key: str = Field(default="", description="{paper_id}::{file_id}::{sheet}::{row}::{col}::{norm_entity}")
+    created_at: str = Field(
+        default_factory=lambda: __import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat()
+    )
+
+
+# ── Supplementary Entity Comparison Record (Phase 2G-A) ──
+
+class SupplementaryEntityComparisonRecord(BaseModel):
+    """Cross-paper entity comparison result.
+
+    Phase 2G-A: Aggregates entity records across papers/files/sheets.
+    Location and summary only — no statistical comparison, no LLM, no mechanism inference.
+    """
+    query_entity: str
+    normalized_query: str = ""
+    entity_type: str = "unknown"
+    total_matches: int = 0
+    unique_papers_count: int = 0
+    unique_files_count: int = 0
+    unique_sheets_count: int = 0
+    records: list[dict] = Field(default_factory=list)
+    direction_summary: dict = Field(default_factory=dict)
+    value_column_summary: dict = Field(default_factory=dict)
+    comparability_warning: str = (
+        "Values from different papers or supplementary files may not be directly comparable "
+        "unless experimental conditions, units, normalization, and statistical methods are aligned. "
+        "Source link count reflects references linked to the same data row, not independent evidence."
+    )
+    created_at: str = Field(
+        default_factory=lambda: __import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat()
+    )
 
 
 # ── Entity Asset ──
