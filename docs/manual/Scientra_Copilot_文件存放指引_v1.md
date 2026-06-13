@@ -446,6 +446,54 @@ python Scripts/process_article_bundles.py --scan
 ```
 **Notes:** `08_Projects/` is your free workspace. You can organize project materials however you like. The software does not process these files — they are for your own reference.
 
+### Scenario 9: I already imported single PDFs — can I add supplementary files now?
+
+**If your PDFs are still in `00_Inbox/` (not yet processed):**
+
+Use the conversion script to automatically create article bundle folders:
+
+```bash
+# Step 1 — See what will be converted
+python Scripts/convert_single_to_bundle.py --scan --source inbox
+
+# Step 2 — Create bundle folders (moves PDFs into them as main.pdf)
+python Scripts/convert_single_to_bundle.py --convert --source inbox --mode move
+```
+
+Each PDF gets its own folder. Then add supplementary files and run:
+```bash
+python Scripts/process_article_bundles.py --scan
+python Scripts/process_article_bundles.py --process --archive-mode copy
+```
+
+**If your PDFs were already processed and are in `01_Sources/papers/`:**
+
+```bash
+# The script copies PDFs from sources (keeps originals safe)
+python Scripts/convert_single_to_bundle.py --scan --source sources
+python Scripts/convert_single_to_bundle.py --convert --source sources --mode copy
+```
+
+**How this works:**
+```text
+BEFORE (loose PDFs):
+00_Inbox/article_bundles/new/
+├── paper1.pdf
+├── paper2.pdf
+└── paper3.pdf
+
+AFTER (bundle folders):
+00_Inbox/article_bundles/new/
+├── paper1/
+│   └── main.pdf
+├── paper2/
+│   └── main.pdf
+└── paper3/
+    └── main.pdf
+```
+
+**Notes:** The conversion is tracked in a manifest at `10_System/registry/single_to_bundle_conversion_manifest.json`. Running the script again will skip already-converted PDFs (matched by SHA-256). For sources (already-processed papers), only `copy` mode is allowed — originals are never deleted.
+
 ## 13. Frequently Asked Questions
 
 
@@ -517,7 +565,13 @@ Rename the files so that the intended main PDF has a priority name (`main.pdf`, 
 
 The current implementation scans the immediate article folder for files. For best results, place all files directly in the article folder without creating nested subfolders. Deeply nested structures may not be fully processed.
 
+**Q18: I already imported papers as single PDFs. How do I add supplementary files now?**
+
+Use `Scripts/convert_single_to_bundle.py` to create article bundle folders from your existing PDFs. Run `--scan` first to preview, then `--convert` to create the folders. Once done, add your supplementary files to the new folders and process them with `process_article_bundles.py`. The conversion script is safe: it tracks conversions by SHA-256 and won't duplicate. For already-processed papers in `01_Sources/`, it uses copy mode — originals are never deleted.
+
 ## 14. Recommended Workflow (Step by Step)
+
+### Path A: Starting fresh (recommended)
 
 1. **Download** the main paper PDF and all supplementary files to your computer.
 2. **Create an article folder** under `00_Inbox/article_bundles/new/`. Use a recognizable name like `Author_Year_Journal`.
@@ -538,6 +592,21 @@ The current implementation scans the immediate article folder for files. For bes
    ```
 9. **Search** using Chat (`/chat`), Library (`/library`), or Evidence (`/evidence`) in the web interface.
 10. **Review** imported papers and supplementary data. The Import Dashboard (`/import`) and Assets Viewer (`/assets`) pages are currently **planned** for a future release and are not yet available.
+
+### Path B: I already imported single PDFs without bundle folders
+
+If you already placed PDFs directly in `00_Inbox/article_bundles/new/` (without subfolders), convert them first:
+
+1. **Scan** to see what will be converted:
+   ```bash
+   python Scripts/convert_single_to_bundle.py --scan --source inbox
+   ```
+2. **Convert** loose PDFs into bundle folders:
+   ```bash
+   python Scripts/convert_single_to_bundle.py --convert --source inbox
+   ```
+3. **Add** supplementary files into the newly created article folders.
+4. **Process** as in Path A steps 5–10 above.
 
 # 中文版本
 
@@ -971,6 +1040,54 @@ python Scripts/process_article_bundles.py --scan
 ```
 **注意事项：** `08_Projects/` 是你的自由工作区。可以按自己的方式组织项目资料。软件不会处理这些文件——它们仅供你自己参考。
 
+### 场景 9：我已经直接导入了单篇正文 PDF——现在还能加补充文件吗？
+
+**如果 PDF 还在 `00_Inbox/` 中（尚未处理）：**
+
+使用转换脚本自动创建文章文件夹：
+
+```bash
+# 第一步——查看将转换哪些文件
+python Scripts/convert_single_to_bundle.py --scan --source inbox
+
+# 第二步——创建文件夹（将 PDF 移入并重命名为 main.pdf）
+python Scripts/convert_single_to_bundle.py --convert --source inbox --mode move
+```
+
+每个 PDF 都会有自己的文件夹。然后添加补充文件并运行：
+```bash
+python Scripts/process_article_bundles.py --scan
+python Scripts/process_article_bundles.py --process --archive-mode copy
+```
+
+**如果 PDF 已经处理完毕，在 `01_Sources/papers/` 中：**
+
+```bash
+# 脚本从 sources 复制 PDF（保留原始文件不删除）
+python Scripts/convert_single_to_bundle.py --scan --source sources
+python Scripts/convert_single_to_bundle.py --convert --source sources --mode copy
+```
+
+**转换效果：**
+```text
+转换前（零散的 PDF）：
+00_Inbox/article_bundles/new/
+├── paper1.pdf
+├── paper2.pdf
+└── paper3.pdf
+
+转换后（文章文件夹）：
+00_Inbox/article_bundles/new/
+├── paper1/
+│   └── main.pdf
+├── paper2/
+│   └── main.pdf
+└── paper3/
+    └── main.pdf
+```
+
+**注意事项：** 转换记录保存在 `10_System/registry/single_to_bundle_conversion_manifest.json`。再次运行脚本会自动跳过已转换的 PDF（通过 SHA-256 匹配）。对于已处理过的论文（sources 模式），只允许 copy，原始文件不会被删除。
+
 ## 13. 常见问题（FAQ）
 
 
@@ -1042,7 +1159,13 @@ Excel/CSV/TSV 文件会被解析以提取结构化数据和实体。PDF 补充�
 
 当前实现扫描文章文件夹的直接文件。为获得最佳效果，请将所有文件直接放在文章文件夹中，不要创建嵌套子文件夹。深层嵌套结构可能无法完全处理。
 
+**Q18：我已经把论文作为单篇 PDF 导入了，怎么再加补充文件？**
+
+使用 `Scripts/convert_single_to_bundle.py` 从现有 PDF 创建文章文件夹。先运行 `--scan` 预览，再运行 `--convert` 创建文件夹。完成后将补充文件放入新文件夹，然后用 `process_article_bundles.py` 处理。转换脚本是安全的：通过 SHA-256 跟踪转换，不会重复处理。对于 `01_Sources/` 中已处理的论文，脚本使用 copy 模式——原始文件不会被删除。
+
 ## 14. 最后的推荐工作流（逐步操作）
+
+### 路径 A：从头开始（推荐）
 
 1. **下载** 正文 PDF 和所有补充文件到你的电脑。
 2. **创建文章文件夹** 在 `00_Inbox/article_bundles/new/` 下。使用可识别的名称，如 `Author_Year_Journal`。
@@ -1064,6 +1187,21 @@ Excel/CSV/TSV 文件会被解析以提取结构化数据和实体。PDF 补充�
 9. **查询** 使用 Web 界面的 Chat（`/chat`）、Library（`/library`）或 Evidence（`/evidence`）进行搜索。
 10. **查看** 导入的论文和补充数据。Import Dashboard（`/import`）和 Assets Viewer（`/assets`）页面目前处于**规划中**阶段，尚未完成。
 
+### 路径 B：我已经直接导入了单篇 PDF（没有用文件夹）
+
+如果你已经将 PDF 直接放在 `00_Inbox/article_bundles/new/` 中（没有子文件夹），请先转换：
+
+1. **扫描** 查看将转换哪些文件：
+   ```bash
+   python Scripts/convert_single_to_bundle.py --scan --source inbox
+   ```
+2. **转换** 零散 PDF 为文章文件夹：
+   ```bash
+   python Scripts/convert_single_to_bundle.py --convert --source inbox
+   ```
+3. **添加** 补充文件到新创建的文章文件夹中。
+4. **处理** 按路径 A 的第 5–10 步继续。
+
 ## 15. 文档生成方式 / Document Generation
 
 本指引由脚本 `Scripts/generate_file_placement_guide.py` 自动生成。
@@ -1071,8 +1209,8 @@ Excel/CSV/TSV 文件会被解析以提取结构化数据和实体。PDF 补充�
 版本：v1
 
 输出文件：
-- Markdown: `docs/manual/Scientra_Copilot_文件存放指引_v1.md`
-- DOCX: `docs/manual/Scientra_Copilot_文件存放指引_v1.docx`
+- Markdown: `docs/manual/Scientra_Copilot_文件存放指引_v1_20260613_213114.md`
+- DOCX: `docs/manual/Scientra_Copilot_文件存放指引_v1_20260613_213114.docx`
 
 不覆盖已有文件。如存在同名文件，自动添加时间戳。
 不暴露本地绝对路径。所有路径均为相对于项目根目录的相对路径。
