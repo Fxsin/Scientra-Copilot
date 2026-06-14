@@ -30,11 +30,22 @@ def main() -> int:
 
     from scientra.server import create_app
 
-    app = create_app(args.root.resolve())
     # In dev mode, enable hot-reload so code changes are picked up automatically.
-    # Set SCIENTRA_RELOAD=0 to disable, or pass --no-reload.
+    # Set SCIENTRA_RELOAD=0 to disable.
     use_reload = args.reload or os.environ.get("SCIENTRA_RELOAD", "1") != "0"
-    uvicorn.run(app, host=args.host, port=args.port, reload=use_reload)
+
+    if use_reload:
+        # uvicorn reload requires an import string, not an app object
+        uvicorn.run(
+            "scientra.server:app",
+            host=args.host,
+            port=args.port,
+            reload=True,
+            reload_dirs=[str(PROJECT_ROOT / "scientra"), str(PROJECT_ROOT / "Scripts")],
+        )
+    else:
+        app = create_app(args.root.resolve())
+        uvicorn.run(app, host=args.host, port=args.port, reload=False)
     return 0
 
 

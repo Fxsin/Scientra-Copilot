@@ -90,3 +90,6 @@ Config/llm_config.yaml
 
 # ── Build artifacts ──
 *.tsbuildinfo
+
+# ── External source dependencies (cloned repos) ──
+external/

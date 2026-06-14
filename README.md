@@ -22,10 +22,11 @@
 8. [API Reference](#8-api-reference)
 9. [Web Interface](#9-web-interface)
 10. [Documentation](#10-documentation)
-11. [Roadmap](#11-roadmap)
-12. [Data Policy](#12-data-policy)
-13. [Contributing](#13-contributing)
-14. [License](#14-license)
+11. [Quick Diagnostics & Setup](#11-quick-diagnostics--setup)
+12. [Roadmap](#12-roadmap)
+13. [Data Policy](#13-data-policy)
+14. [Contributing](#14-contributing)
+15. [License](#15-license)
 
 ---
 
@@ -62,11 +63,16 @@ Unlike reference managers that treat papers as opaque files, Scientra Copilot **
 ```text
  PDF + Supplementary Files
         │
-        ▼
-    GROBID Parsing ──► Metadata Extraction ──► AI Summarization
+        ├──► PyMuPDF Scan (page count, text layer, images, PDF type detection)
+        ├──► GROBID Parsing ──► Metadata Extraction
+        ├──► OpenDataLoader PDF ──► Markdown + Layout + Tables
+        ├──► Marker (optional) ──► High-quality Markdown fallback
         │
         ▼
-    Evidence Extraction (methods, results, claims, gaps)
+    Hybrid Merge ──► Final Markdown + Parse Manifest + Quality Report
+        │
+        ▼
+    AI Summarization ──► Evidence Extraction (methods, results, claims, gaps)
         │
         ▼
     PDF Data Assetization (sections, figures, tables, entities, chunks)
@@ -103,6 +109,24 @@ Unlike reference managers that treat papers as opaque files, Scientra Copilot **
 | `hybrid_search` | General literature questions |
 
 **Answer modes:** Auto (LLM if configured), LLM synthesis, Evidence-only (deterministic, no API call, <100ms).
+
+### 📄 Hybrid PDF Parser (NEW)
+
+Multi-engine PDF parsing with graceful degradation. Four parsers collaborate — none replaces another:
+
+| Parser | Role | Output |
+|--------|------|--------|
+| **PyMuPDF** | Scan + text + images | Scan report, raw text, extracted figures |
+| **GROBID** | Metadata + references | TEI XML, structured metadata JSON |
+| **OpenDataLoader PDF** | Markdown + layout + tables | `.md`, layout JSON (bbox), tables JSON |
+| **Marker** (optional) | High-quality markdown fallback | `.md` |
+
+- **Adapters auto-detect availability** — missing parsers are skipped, never crash
+- **Quality scoring** across 6 dimensions (metadata, markdown, layout, references, figures, tables)
+- **Hybrid merge** produces final markdown + parse manifest
+- **Enabled/disabled via config** — `hybrid_parser.enabled: false` by default (safe legacy mode)
+- **PDF type auto-detection**: normal, supplementary, scanned, table-heavy, image-heavy
+- See [docs/hybrid_parser_architecture.md](docs/hybrid_parser_architecture.md)
 
 ### 📊 PDF Data Assetization
 
@@ -155,7 +179,14 @@ Unlike reference managers that treat papers as opaque files, Scientra Copilot **
 git clone <repo-url>
 cd Scientra_Copilot
 
-# One-command start (backend + frontend)
+# 1. One-click system check & dependency setup
+python Scripts/setup.py              # Check all dependencies (Python, Docker, parsers, LLM...)
+python Scripts/setup.py --install    # Auto-install missing components (Java 11, pip packages...)
+
+# 2. Start GROBID (for PDF metadata extraction)
+python Scripts/setup_grobid.py       # First-time GROBID Docker setup
+
+# 3. One-command start (backend + frontend)
 python Scripts/dev_restart.py
 
 # Or start components separately:
@@ -164,6 +195,9 @@ cd web && npm run dev              # Web → http://127.0.0.1:3000
 
 # Optional: configure LLM for AI chat
 python Scripts/setup_llm.py        # DeepSeek or Anthropic
+
+# Optional: enable hybrid PDF parser (multi-engine: PyMuPDF + OpenDataLoader + GROBID)
+# Set hybrid_parser.enabled: true in Config/workflow_config.yaml
 ```
 
 Open **http://127.0.0.1:3000/chat** and start asking questions about your literature.
@@ -246,6 +280,14 @@ Scientra Copilot uses a clean 10-group directory structure designed for long-ter
 | `/query/supplementary-entities` | POST | Search indexed supplementary entities |
 | `/query/supplementary-entity-comparison` | POST | Cross-paper entity comparison |
 | `/health` | GET | API and LanceDB status |
+| `/import/status` | GET | Import overview + **parser_availability** |
+| `/paper/{id}/parse-report` | GET | Hybrid parse manifest + quality report |
+| `/papers` | GET | Paginated paper list with filters |
+| `/paper/{id}/metadata` | GET | Paper metadata |
+| `/paper/{id}/evidence` | GET | Evidence chunks for a paper |
+| `/research-map` | GET | Research topic clusters |
+| `/hotspots` | GET | Trending topics, hot papers |
+| `/research-gaps` | GET | Research gap analysis |
 
 **SDK usage:**
 
@@ -307,12 +349,41 @@ print(r["answer"])
 | [File Placement Guide / 文件存放指引 (DOCX)](docs/manual/Scientra_Copilot_文件存放指引_v1.docx) | Word | English + 中文 |
 | [Storage Layout Config](Config/storage_layout.yaml) | YAML | — |
 | [Article Bundle Import Guide](docs/article_bundle_import_v1.md) | Markdown | English |
+| [**Hybrid Parser Architecture**](docs/hybrid_parser_architecture.md) | Markdown | English |
+| [**One-Click Setup Script**](Scripts/setup.py) | Python | English |
 
 ---
 
-## 11. Roadmap
+## 11. Quick Diagnostics & Setup
+
+```bash
+# One-command check: sees EVERYTHING (Python, Docker, parsers, LLM, LanceDB, API...)
+python Scripts/setup.py
+
+# Filter by category
+python Scripts/setup.py --filter parsers    # Only parser-related checks
+python Scripts/setup.py --filter grobid     # Only GROBID checks
+python Scripts/setup.py --filter core       # Only core checks
+
+# Auto-install everything (with prompts)
+python Scripts/setup.py --install
+
+# Auto-install with no prompts (CI/CD)
+python Scripts/setup.py --install --yes
+
+# Machine-readable output
+python Scripts/setup.py --json
+```
+
+**To add a new check** in the future, add an entry to the `MODULES` list in `Scripts/setup.py` — no other file needs changes.
+
+---
+
+## 12. Roadmap
 
 **Short-term (v1.6)**
+- ✅ Hybrid PDF Parser (PyMuPDF + OpenDataLoader PDF + GROBID + Marker)
+- ✅ Parser Status Card on Paper Detail page
 - Import Dashboard and Assets Viewer web pages
 - Manual Binding UI for loose supplementary files
 
@@ -330,7 +401,7 @@ print(r["answer"])
 
 ---
 
-## 12. Data Policy
+## 13. Data Policy
 
 - **No automatic deletion**: all file operations default to `copy` mode. `move` requires explicit `--archive-mode move`.
 - **Legacy archive**: old directories preserved at `10_System/legacy_archive/`. Safe to delete after verification.
@@ -341,7 +412,7 @@ print(r["answer"])
 
 ---
 
-## 13. Contributing
+## 14. Contributing
 
 This project is under active development. Contributions are welcome.
 
@@ -357,7 +428,7 @@ cd web && npm run build
 
 ---
 
-## 14. License
+## 15. License
 
 MIT License — see [LICENSE](LICENSE) file.
 
@@ -398,11 +469,16 @@ MIT License — see [LICENSE](LICENSE) file.
 ```text
  PDF + 补充文件
         │
-        ▼
-    GROBID 解析 ──► 元数据提取 ──► AI 摘要
+        ├──► PyMuPDF 扫描（页数、文本层、图片、PDF 类型）
+        ├──► GROBID 解析 ──► 元数据提取
+        ├──► OpenDataLoader PDF ──► Markdown + 版面 + 表格
+        ├──► Marker（可选）──► 高质量 Markdown 备选
         │
         ▼
-    证据提取（方法、结果、论断、空白）
+    混合合并 ──► 最终 Markdown + 解析清单 + 质量报告
+        │
+        ▼
+    AI 摘要 ──► 证据提取（方法、结果、论断、空白）
         │
         ▼
     PDF 数据资产化（章节、图表、表格、实体、片段）
@@ -449,15 +525,25 @@ MIT License — see [LICENSE](LICENSE) file.
 git clone <repo-url>
 cd Scientra_Copilot
 
-# 一键启动
+# 1. 一键环境检查与依赖安装
+python Scripts/setup.py              # 全面检查（Python, Docker, parsers, LLM...）
+python Scripts/setup.py --install    # 自动安装缺失组件（Java 11, pip 包...）
+
+# 2. 启动 GROBID（PDF 元数据提取）
+python Scripts/setup_grobid.py       # 首次 GROBID Docker 配置
+
+# 3. 一键启动（后端 + 前端）
 python Scripts/dev_restart.py
 
 # 或分别启动：
 python -m scientra.server          # API → http://127.0.0.1:8710
 cd web && npm run dev              # Web → http://127.0.0.1:3000
 
-# 配置 LLM（可选）
+# 配置 LLM（可选）：AI 对话功能
 python Scripts/setup_llm.py        # DeepSeek 或 Anthropic
+
+# 启用混合 PDF 解析器（可选）：多引擎协作解析
+# 在 Config/workflow_config.yaml 中设置 hybrid_parser.enabled: true
 ```
 
 打开 **http://127.0.0.1:3000/chat** 开始对话。

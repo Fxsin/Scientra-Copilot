@@ -237,6 +237,28 @@ def check_pdf_count() -> dict[str, Any]:
     )
 
 
+def check_parsers() -> dict[str, Any]:
+    """Check hybrid parser availability (best-effort)."""
+    try:
+        from scientra.parsers.availability import check_parser_availability
+        avail = check_parser_availability()
+        d = avail.to_dict()
+        ready = [k.replace("_available", "") for k, v in d.items() if v and k != "hybrid_parser_enabled"]
+        enabled = d.get("hybrid_parser_enabled", False)
+        if ready:
+            msg = f"Available: {', '.join(ready)}"
+            if enabled:
+                msg += " [hybrid mode ON]"
+            else:
+                msg += " [hybrid mode OFF — set hybrid_parser.enabled: true in Config/workflow_config.yaml]"
+            return check("PDF parsers", "PASS", msg)
+        return check("PDF parsers", "WARN",
+                      "No hybrid parsers available. PyMuPDF recommended.",
+                      "Run: python Scripts/setup_parsers.py --install")
+    except Exception as e:
+        return check("PDF parsers", "INFO", f"Could not check: {e}")
+
+
 # ── Main ──
 
 
@@ -247,6 +269,7 @@ def run_all_checks(quick: bool = False) -> dict[str, Any]:
         check_disk_space(),
         check_docker(),
         check_grobid(),
+        check_parsers(),
         check_ports(),
         check_api_key(),
         check_directory_structure(),

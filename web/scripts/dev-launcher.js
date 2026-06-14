@@ -1,27 +1,33 @@
 /**
- * Scientra Copilot — Unified Dev Launcher
+ * Scientra Copilot — Unified Dev Launcher (v2)
  *
- * Starts the Python API server (port 8710) first, waits for it to be healthy,
- * then launches Next.js dev server. One Ctrl+C stops both.
+ * Auto-starts API (Python, port 8710) + Web (Next.js, port 3000).
+ * Kills stale processes on startup so you never get "port in use" or
+ * "old code" problems. One Ctrl+C stops both.
  *
  * Usage:
- *   node scripts/dev-launcher.js              # start both
- *   node scripts/dev-launcher.js --web-only   # only Next.js
- *   node scripts/dev-launcher.js --api-only   # only API server
+ *   npm run dev                          # start both (auto-clean)
+ *   node scripts/dev-launcher.js         # same
+ *   node scripts/dev-launcher.js --web-only
+ *   node scripts/dev-launcher.js --api-only
+ *   node scripts/dev-launcher.js --force # kill existing & restart
  */
 
-const { spawn } = require("child_process");
+const { spawn, execSync } = require("child_process");
 const http = require("http");
 const path = require("path");
+const net = require("net");
 
 const PROJECT_ROOT = path.resolve(__dirname, "..", "..");
 const API_PORT = process.env.SCIENTRA_API_PORT || "8710";
 const WEB_PORT = process.env.SCIENTRA_WEB_PORT || "3000";
 const API_URL = `http://127.0.0.1:${API_PORT}`;
+const WEB_URL = `http://localhost:${WEB_PORT}`;
 
 const args = process.argv.slice(2);
 const webOnly = args.includes("--web-only");
 const apiOnly = args.includes("--api-only");
+const force = args.includes("--force");
 
 let apiProcess = null;
 let webProcess = null;
@@ -31,53 +37,122 @@ function log(label, msg) {
   console.log(`\x1b[90m${ts}\x1b[0m \x1b[36m[${label}]\x1b[0m ${msg}`);
 }
 
-function checkApiHealth() {
+function warn(msg) {
+  console.log(`\x1b[33m  ⚠ ${msg}\x1b[0m`);
+}
+
+/* ── Port utilities ── */
+
+function isPortInUse(port) {
   return new Promise((resolve) => {
-    const req = http.get(`${API_URL}/health`, (res) => {
-      let body = "";
-      res.on("data", (d) => (body += d));
-      res.on("end", () => {
-        try {
-          const data = JSON.parse(body);
-          resolve(data.api_status === "ok");
-        } catch {
-          resolve(false);
-        }
-      });
-    });
-    req.on("error", () => resolve(false));
-    req.setTimeout(3000, () => {
-      req.destroy();
-      resolve(false);
-    });
+    const server = net.createServer();
+    server.once("error", () => resolve(true));
+    server.once("listening", () => { server.close(); resolve(false); });
+    server.listen(port, "127.0.0.1");
   });
 }
 
-async function waitForApi(maxWait = 30) {
-  const start = Date.now();
-  while (Date.now() - start < maxWait * 1000) {
-    if (await checkApiHealth()) return true;
-    await new Promise((r) => setTimeout(r, 1500));
+function findPidOnPort(port) {
+  try {
+    const out = execSync(`netstat -ano | findstr ":${port}" | findstr "LISTENING"`, {
+      encoding: "utf8", timeout: 5000, windowsHide: true,
+    });
+    const match = out.trim().split(/\s+/);
+    const pid = match[match.length - 1];
+    return pid ? parseInt(pid) : null;
+  } catch {
+    return null;
   }
-  return false;
 }
 
-function cleanup() {
+function killProcess(pid) {
+  try {
+    if (process.platform === "win32") {
+      execSync(`taskkill /PID ${pid} /F`, { timeout: 5000, windowsHide: true });
+    } else {
+      process.kill(pid, "SIGTERM");
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/* ── HTTP health checks ── */
+
+function httpGet(url) {
+  return new Promise((resolve) => {
+    const req = http.get(url, (res) => {
+      let body = "";
+      res.on("data", (d) => (body += d));
+      res.on("end", () => {
+        try { resolve({ ok: res.statusCode < 400, body: JSON.parse(body) }); }
+        catch { resolve({ ok: res.statusCode < 400 }); }
+      });
+    });
+    req.on("error", () => resolve({ ok: false }));
+    req.setTimeout(3000, () => { req.destroy(); resolve({ ok: false }); });
+  });
+}
+
+async function checkApiHealth() {
+  const r = await httpGet(`${API_URL}/health`);
+  return r.ok && r.body?.api_status === "ok";
+}
+
+async function cleanup() {
   log("launcher", "Shutting down...");
-  if (webProcess) {
-    webProcess.kill("SIGTERM");
-    webProcess = null;
-  }
-  if (apiProcess) {
-    apiProcess.kill("SIGTERM");
-    apiProcess = null;
-  }
+  if (webProcess) { webProcess.kill("SIGTERM"); webProcess = null; }
+  if (apiProcess) { apiProcess.kill("SIGTERM"); apiProcess = null; }
   process.exit(0);
 }
 
 process.on("SIGINT", cleanup);
 process.on("SIGTERM", cleanup);
-process.on("exit", cleanup);
+
+/* ── Auto-clean stale processes ── */
+
+async function ensurePortFree(port, label, healthCheck) {
+  const inUse = await isPortInUse(port);
+  if (!inUse) {
+    log(label, `Port ${port} is free`);
+    return true;
+  }
+
+  // Port is in use — check if it's a valid Scientra service
+  if (healthCheck) {
+    const healthy = await healthCheck();
+    if (healthy && !force) {
+      log(label, `Already running and healthy on port ${port} — reusing`);
+      return "reuse";
+    }
+  }
+
+  // Stale or non-Scientra process — kill it
+  const pid = findPidOnPort(port);
+  if (pid) {
+    log(label, `Killing stale process PID ${pid} on port ${port}...`);
+    const killed = killProcess(pid);
+    if (!killed) {
+      warn(`Could not kill PID ${pid}. Close it manually and re-run.`);
+      return false;
+    }
+    // Wait for port to free up
+    await new Promise((r) => setTimeout(r, 1500));
+    const stillInUse = await isPortInUse(port);
+    if (stillInUse) {
+      warn(`Port ${port} still occupied. Close the program manually.`);
+      return false;
+    }
+    log(label, `Port ${port} freed`);
+    return true;
+  }
+
+  warn(`Port ${port} is in use but cannot find the process.`);
+  return false;
+}
+
+/* ── Main ── */
 
 async function main() {
   console.log("");
@@ -85,13 +160,14 @@ async function main() {
   console.log("  \x1b[90m──────────────────────────────\x1b[0m");
   console.log("");
 
-  // ── Start API server ──
+  let apiReady = false;
+
+  // ── API Server ──
   if (!webOnly) {
-    // Check if already running
-    const alreadyHealthy = await checkApiHealth();
-    if (alreadyHealthy) {
-      log("api", `Already running on port ${API_PORT}`);
-    } else {
+    const apiPortStatus = await ensurePortFree(API_PORT, "api", checkApiHealth);
+    if (apiPortStatus === "reuse") {
+      apiReady = true;
+    } else if (apiPortStatus === true) {
       log("api", "Starting API server...");
 
       const pythonCmd = process.platform === "win32" ? "python" : "python3";
@@ -106,15 +182,6 @@ async function main() {
         env: { ...process.env, SCIENTRA_ROOT: PROJECT_ROOT },
       });
 
-      apiProcess.stdout.on("data", (d) => {
-        const lines = d.toString().trim().split("\n");
-        for (const line of lines) {
-          if (line.includes("Uvicorn running") || line.includes("Application startup")) {
-            log("api", "Server starting...");
-          }
-        }
-      });
-
       apiProcess.stderr.on("data", (d) => {
         const text = d.toString().trim();
         if (text && !text.includes("Warning")) {
@@ -123,67 +190,91 @@ async function main() {
       });
 
       apiProcess.on("error", (err) => {
-        log("api", `Failed to start: ${err.message}`);
-        log("api", "Make sure Python 3.11+ and dependencies are installed:");
-        log("api", "  pip install fastapi uvicorn pyyaml");
-      });
-
-      apiProcess.on("exit", (code) => {
-        if (code !== null && code !== 0 && !webProcess) {
-          log("api", `Process exited (code ${code})`);
-        }
+        log("api", `Startup error: ${err.message}`);
       });
 
       // Wait for health
       log("api", `Waiting for /health on port ${API_PORT}...`);
-      const ready = await waitForApi(30);
-      if (ready) {
-        log("api", `Ready — ${API_URL}/health`);
-      } else {
-        log("api", "WARNING: API did not respond within 30s. Check for errors above.");
-        log("api", "Web frontend will start anyway — some features will be unavailable.");
+      const start = Date.now();
+      while (Date.now() - start < 30000) {
+        if (await checkApiHealth()) {
+          apiReady = true;
+          break;
+        }
+        await new Promise((r) => setTimeout(r, 1500));
       }
+
+      if (apiReady) {
+        log("api", `Ready — ${API_URL}/health ✅`);
+      } else {
+        warn(`API did not respond within 30s. Check for errors.`);
+      }
+    } else {
+      warn("API port could not be freed. Skipping API startup.");
     }
   }
 
-  // ── Start Web frontend ──
+  // ── Web Frontend ──
   if (!apiOnly) {
-    // Small delay to let API settle
-    await new Promise((r) => setTimeout(r, 1000));
+    await new Promise((r) => setTimeout(r, 500));
 
-    const npmCmd = process.platform === "win32" ? "npm.cmd" : "npm";
-    log("web", "Starting Next.js dev server...");
-
-    webProcess = spawn(npmCmd, ["run", "next:dev"], {
-      cwd: path.join(PROJECT_ROOT, "web"),
-      stdio: "inherit",
-      env: {
-        ...process.env,
-        NEXT_PUBLIC_SCIENTRA_API_URL: API_URL,
-        NEXT_PUBLIC_SCIENTRA_API_PORT: API_PORT,
-      },
+    const webPortStatus = await ensurePortFree(WEB_PORT, "web", async () => {
+      const r = await httpGet(WEB_URL);
+      return r.ok;
     });
 
-    webProcess.on("error", (err) => {
-      log("web", `Failed to start: ${err.message}`);
-      log("web", "Make sure Node.js is installed. Try: npm run dev");
-    });
+    if (webPortStatus === "reuse") {
+      log("web", `Already running at ${WEB_URL} — reusing`);
+      log("launcher", `Open ${WEB_URL}/import in your browser`);
+    } else if (webPortStatus === true) {
+      const npmCmd = process.platform === "win32" ? "npm.cmd" : "npm";
+      log("web", "Starting Next.js dev server...");
 
-    webProcess.on("exit", (code) => {
-      if (code !== null && code !== 0) {
-        log("web", `Process exited (code ${code})`);
+      webProcess = spawn(npmCmd, ["run", "next:dev"], {
+        cwd: path.join(PROJECT_ROOT, "web"),
+        stdio: "inherit",
+        env: {
+          ...process.env,
+          NEXT_PUBLIC_SCIENTRA_API_URL: API_URL,
+          NEXT_PUBLIC_SCIENTRA_API_PORT: API_PORT,
+        },
+      });
+
+      webProcess.on("error", (err) => {
+        log("web", `Startup error: ${err.message}`);
+      });
+
+      webProcess.on("exit", (code) => {
+        if (code !== null && code !== 0) {
+          log("web", `Process exited (code ${code})`);
+        }
+        cleanup();
+      });
+
+      // Wait for web to be ready
+      log("web", "Waiting for Next.js to compile...");
+      const start = Date.now();
+      let webReady = false;
+      while (Date.now() - start < 120000) {
+        const r = await httpGet(WEB_URL);
+        if (r.ok) { webReady = true; break; }
+        await new Promise((res) => setTimeout(res, 2000));
       }
-      // If web exits, clean up everything
-      cleanup();
-    });
+      if (webReady) {
+        log("web", `Ready — ${WEB_URL} ✅`);
+        log("launcher", `API: ${API_URL}/health  |  Web: ${WEB_URL}/import`);
+      } else {
+        warn("Web did not respond within 120s. It may still be compiling.");
+      }
+    } else {
+      warn("Web port could not be freed. Skipping web startup.");
+    }
   }
 
-  // Keep process alive
-  if (apiOnly && apiProcess) {
-    process.stdin.resume();
-  } else if (!webProcess) {
-    log("launcher", "Nothing to run. Use --web-only or --api-only.");
-    process.exit(0);
+  if (!webProcess && !apiProcess) {
+    log("launcher", "Nothing to run. Services may already be running.");
+    log("launcher", `API:  ${API_URL}/health`);
+    log("launcher", `Web:  ${WEB_URL}/import`);
   }
 }
 

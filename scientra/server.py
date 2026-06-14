@@ -2006,6 +2006,62 @@ def create_app(root: Path | None = None) -> FastAPI:
             "reason": "No vector or sufficient text metadata available for related paper retrieval",
         }
 
+    # ── /paper/{id}/parse-report — Hybrid parser manifest ──
+
+    @api.get("/paper/{paper_id}/parse-report")
+    def paper_parse_report(paper_id: str) -> dict[str, Any]:
+        """Get the hybrid parse report for a paper, if available.
+
+        Returns the full parse manifest, quality report, parser usage,
+        output paths, warnings, and errors.
+
+        If no manifest exists, returns legacy-only status.
+        """
+        try:
+            from scientra.parsers.hybrid_merge import load_manifest
+            manifest = load_manifest(paper_id, root)
+            if manifest:
+                return {
+                    "paper_id": paper_id,
+                    "status": "hybrid_parsed",
+                    "manifest": manifest,
+                    "quality_report": manifest.get("quality_report"),
+                    "parser_used": {
+                        "metadata_source": manifest.get("metadata_source", "unknown"),
+                        "markdown_source": manifest.get("markdown_source", "unknown"),
+                        "layout_source": manifest.get("layout_source", "unknown"),
+                        "figures_source": manifest.get("figures_source", "unknown"),
+                        "tables_source": manifest.get("tables_source", "unknown"),
+                        "references_source": manifest.get("references_source", "unknown"),
+                    },
+                    "output_paths": {
+                        "final_markdown_path": manifest.get("final_markdown_path", ""),
+                        "manifest_path": manifest.get("manifest_path", ""),
+                    },
+                    "warnings": manifest.get("warnings", []),
+                    "errors": manifest.get("errors", []),
+                }
+
+            # No hybrid manifest — check for legacy parse files
+            legacy_text = root / "02_Parse" / "text" / f"{paper_id}.txt"
+            legacy_meta = root / "02_Parse" / "text" / f"{paper_id}.tei.xml"
+
+            legacy_files = []
+            if legacy_text.exists():
+                legacy_files.append(str(legacy_text.relative_to(root)))
+            if legacy_meta.exists():
+                legacy_files.append(str(legacy_meta.relative_to(root)))
+
+            return {
+                "paper_id": paper_id,
+                "status": "legacy_only",
+                "message": "No hybrid parse report available. Legacy parser only.",
+                "legacy_files": legacy_files,
+                "hint": "Set hybrid_parser.enabled=true in Config/workflow_config.yaml to enable hybrid parsing.",
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to load parse report: {e}")
+
     # ── Network / research-map stubs ──
 
     @api.get("/network/knowledge")
@@ -3146,6 +3202,7 @@ def create_app(root: Path | None = None) -> FastAPI:
                 "web_uploads": {
                     "staging": wu_staging, "imported": wu_imported, "failed": wu_failed,
                 },
+                "parser_availability": _get_parser_availability(),
                 "summary": {
                     "article_bundles_new": ab_new["count"],
                     "article_bundles_processed": ab_processed["count"],
@@ -3165,6 +3222,24 @@ def create_app(root: Path | None = None) -> FastAPI:
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
+    # ── Phase 2J-ext: /import/status parser_availability extension ──
+
+    def _get_parser_availability() -> dict[str, Any]:
+        """Get parser availability for /import/status extension."""
+        try:
+            from scientra.parsers.availability import check_parser_availability
+            avail = check_parser_availability(root)
+            return avail.to_dict()
+        except Exception:
+            return {
+                "grobid_available": False,
+                "opendataloader_available": False,
+                "marker_available": False,
+                "pymupdf_available": False,
+                "hybrid_parser_enabled": False,
+                "error": "Failed to check parser availability.",
+            }
+
     # ── Phase 2K: /import/process/dry-run ──
 
     @api.post("/import/process/dry-run")
@@ -3182,11 +3257,43 @@ def create_app(root: Path | None = None) -> FastAPI:
             return {
                 **result,
                 "dry_run": True,
-                "note": "This is a dry-run. No files were copied or modified. Use --process to execute.",
+                "note": "This is a dry-run. No files were copied or modified. Use POST /import/process to execute.",
                 "next_commands": [
                     "python Scripts/process_article_bundles.py --scan",
                     "python Scripts/process_article_bundles.py --process --dry-run",
                     "python Scripts/process_article_bundles.py --process --archive-mode copy",
+                ],
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.post("/import/process")
+    def import_process_endpoint():
+        """Execute article bundle processing in copy-only mode.
+
+        Safety guarantees:
+        - archive_mode is always "copy" (never "move")
+        - Files in 00_Inbox/article_bundles/new/ are copied to 01_Sources/
+        - Original inbox files are NOT deleted
+        - Failed bundles are NOT deleted
+        """
+        try:
+            from scientra.io.article_bundle_importer import ArticleBundleImporter
+            importer = ArticleBundleImporter(root)
+            result = importer.process(archive_mode="copy", dry_run=False)
+            # Ensure all paths are relative
+            for r in result.get("results", []):
+                for k in ("would_copy_main",):
+                    r.pop(k, None)  # remove dry-run-only keys
+            return {
+                **result,
+                "archive_mode": "copy",
+                "note": "Processing complete. Files were COPIED (not moved). Original inbox files are preserved.",
+                "safe": True,
+                "next_actions": [
+                    "Check /library for processed papers",
+                    "Check /assets for extracted figures, tables, entities",
+                    "Run embeddings update if needed: python Scripts/build_embeddings.py",
                 ],
             }
         except Exception as e:

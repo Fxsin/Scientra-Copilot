@@ -441,6 +441,15 @@ export function getPaperEvidence(paperId: string): Promise<PaperEvidence> {
   return fetchJson<PaperEvidence>(`/paper/${encodeURIComponent(paperId)}/evidence`).then((r) => r.data);
 }
 
+/* ── GET /paper/{paper_id}/parse-report ── */
+import type { ParseReportResponse } from "./types";
+
+export function getPaperParseReport(paperId: string): Promise<ParseReportResponse> {
+  return fetchJson<ParseReportResponse>(
+    `/paper/${encodeURIComponent(paperId)}/parse-report`,
+  ).then((r) => r.data);
+}
+
 export function getPaperEvidenceChunks(paperId: string): Promise<EvidenceChunksResponse> {
   return fetchJson<EvidenceChunksResponse>(`/paper/${encodeURIComponent(paperId)}/evidence-chunks`).then((r) => r.data);
 }
@@ -814,9 +823,12 @@ export interface DryRunResult {
   total_bundles: number;
   processed: number;
   failed: number;
-  dry_run: boolean;
+  dry_run?: boolean;
+  archive_mode?: string;
+  safe?: boolean;
   note: string;
-  next_commands: string[];
+  next_commands?: string[];
+  next_actions?: string[];
   results: {
     bundle_id: string;
     bundle_name: string;
@@ -830,6 +842,11 @@ export interface DryRunResult {
 /** Dry-run article bundle processing */
 export async function dryRunProcess(): Promise<DryRunResult> {
   return postJson<DryRunResult>("/import/process/dry-run");
+}
+
+/** Execute article bundle processing (copy-only, safe) */
+export async function executeProcess(): Promise<DryRunResult> {
+  return postJson<DryRunResult>("/import/process");
 }
 
 /* ── Low-level helpers ── */

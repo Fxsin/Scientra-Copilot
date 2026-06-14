@@ -7,8 +7,8 @@ import {
   Lightbulb, ListChecks, Microscope, AlertTriangle, Search, ChevronDown, ChevronRight, Info,
   Hash, Circle, Copy, Check,
 } from "lucide-react";
-import { getPaperMetadata, getPaperSummary, getPaperTags, getRelatedPapers, getPaperEvidence, API_BASE_URL } from "@/lib/api";
-import type { PaperEvidence } from "@/lib/types";
+import { getPaperMetadata, getPaperSummary, getPaperTags, getRelatedPapers, getPaperEvidence, getPaperParseReport, API_BASE_URL } from "@/lib/api";
+import type { PaperEvidence, ParseReportResponse } from "@/lib/types";
 import { generateBibTeX, generateRIS, copyToClipboard, type CitationData } from "@/lib/citation";
 import { parseAISummary, type ParsedSummary } from "@/lib/summary-parser";
 import type { PaperMetadata, PaperSummary, PaperTags, RelatedPaper } from "@/lib/types";
@@ -47,6 +47,7 @@ export default function PaperDetailPage() {
   const [summary, setSummary] = useState<PaperSummary | null>(null);
   const [tags, setTags] = useState<PaperTags | null>(null);
   const [parsed, setParsed] = useState<ParsedSummary | null>(null);
+  const [parseReport, setParseReport] = useState<ParseReportResponse | null>(null);
   const [state, setState] = useState<LoadState>("loading");
   const [errorMsg, setErrorMsg] = useState("");
   const [showAllSupporting, setShowAllSupporting] = useState(false);
@@ -61,16 +62,18 @@ export default function PaperDetailPage() {
     async function load() {
       setState("loading");
       try {
-        const [m, s, t] = await Promise.all([
+        const [m, s, t, pr] = await Promise.all([
           getPaperMetadata(paperId).catch(() => null),
           getPaperSummary(paperId).catch(() => null),
           getPaperTags(paperId).catch(() => null),
+          getPaperParseReport(paperId).catch(() => null),
         ]);
         if (cancelled) return;
         if (!m) { setErrorMsg("Paper not found."); setState("error"); return; }
         setMetadata(m);
         setSummary(s);
         setTags(t);
+        setParseReport(pr);
         setParsed(parseAISummary(s?.text));
         setState("ok");
       } catch {
@@ -150,6 +153,7 @@ export default function PaperDetailPage() {
             {hasSummary && <QuickNav parsed={parsed} classified={classified} activeSection={activeSection} sectionRefs={sectionRefs} />}
             <PaperInfoCard metadata={metadata} hasSummary={hasSummary} tagCount={allTags.length} />
             <TagsCard tags={allTags} />
+            <ParserStatusCard parseReport={parseReport} />
             <MetadataPanel metadata={metadata} tags={tags} />
             <RelatedPapersSection paperId={paperId} />
           </div>
@@ -652,5 +656,115 @@ function RelatedPapersSection({ paperId }: { paperId: string }) {
         </button>
       ))}
     </div>
+  );
+}
+
+/* ── Parser Status Card ── */
+
+function ParserStatusCard({ parseReport }: { parseReport: ParseReportResponse | null }) {
+  if (!parseReport) {
+    return (
+      <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <FileText className="size-3.5 text-slate-400" />
+          <span className="text-xs font-semibold tracking-tight text-foreground/80">Parser Status</span>
+        </div>
+        <p className="text-[11px] text-muted-foreground/60 italic">Loading parse report…</p>
+      </div>
+    );
+  }
+
+  const isHybrid = parseReport.status === "hybrid_parsed";
+  const qr = parseReport.quality_report;
+  const parserUsed = parseReport.parser_used;
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <FileText className="size-3.5 text-slate-400" />
+        <span className="text-xs font-semibold tracking-tight text-foreground/80">Parser Status</span>
+      </div>
+
+      {isHybrid && parserUsed ? (
+        <div className="space-y-2">
+          {/* Parser source lines */}
+          <ParserSourceLine label="Metadata" source={parserUsed.metadata_source} />
+          <ParserSourceLine label="Markdown" source={parserUsed.markdown_source} />
+          <ParserSourceLine label="Layout" source={parserUsed.layout_source} />
+          <ParserSourceLine label="Figures" source={parserUsed.figures_source} />
+          <ParserSourceLine label="Tables" source={parserUsed.tables_source} />
+
+          {/* Quality Score */}
+          {qr && (
+            <div className="pt-2 border-t border-border">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-muted-foreground/60">Overall Parse Quality</span>
+                <QualityBadge score={qr.overall_score} />
+              </div>
+            </div>
+          )}
+
+          {/* Warnings */}
+          {(parseReport.warnings && parseReport.warnings.length > 0) && (
+            <div className="pt-1">
+              <span className="text-[9px] font-medium text-amber-600">{parseReport.warnings.length} warning(s)</span>
+            </div>
+          )}
+          {/* Errors */}
+          {(parseReport.errors && parseReport.errors.length > 0) && (
+            <div className="pt-0.5">
+              <span className="text-[9px] font-medium text-red-500">{parseReport.errors.length} error(s)</span>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-1.5">
+          <p className="text-[11px] text-muted-foreground/70 leading-relaxed">
+            {parseReport.message || "Legacy parser only / No hybrid parse report available"}
+          </p>
+          {parseReport.hint && (
+            <p className="text-[10px] text-muted-foreground/50 italic">{parseReport.hint}</p>
+          )}
+          {parseReport.legacy_files && parseReport.legacy_files.length > 0 && (
+            <div className="text-[10px] text-muted-foreground/50 truncate">
+              Legacy: {parseReport.legacy_files[0]}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ParserSourceLine({ label, source }: { label: string; source: string }) {
+  const isActive = source && source !== "none" && source !== "unknown";
+  const colorClass = isActive
+    ? (source.includes("grobid") ? "text-emerald-600" :
+       source.includes("opendataloader") ? "text-blue-600" :
+       source.includes("marker") ? "text-purple-600" :
+       source.includes("pymupdf") ? "text-amber-600" :
+       "text-slate-500")
+    : "text-slate-300";
+
+  return (
+    <div className="flex items-center justify-between text-[10px]">
+      <span className="text-muted-foreground/60">{label}</span>
+      <span className={`font-medium ${colorClass}`}>
+        {isActive ? source.replace(/_/g, " ") : "—"}
+      </span>
+    </div>
+  );
+}
+
+function QualityBadge({ score }: { score: number }) {
+  let color = "bg-slate-100 text-slate-500";
+  let label = "Low";
+  if (score >= 0.7) { color = "bg-emerald-50 text-emerald-600"; label = "Good"; }
+  else if (score >= 0.4) { color = "bg-amber-50 text-amber-600"; label = "Fair"; }
+
+  return (
+    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${color}`}>
+      {label} ({(score * 100).toFixed(0)}%)
+    </span>
   );
 }

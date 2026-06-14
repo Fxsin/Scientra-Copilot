@@ -19,7 +19,7 @@ import {
 import {
   createUploadSession, getUploadSession,
   generateImportPlan, updateImportPlan, confirmImport,
-  getImportStatus, dryRunProcess,
+  getImportStatus, dryRunProcess, executeProcess,
   API_BASE_URL,
 } from "@/lib/api";
 import type { ImportStatusResponse, DryRunResult } from "@/lib/api";
@@ -65,6 +65,8 @@ export default function ImportPage() {
   const [importStatus, setImportStatus] = useState<ImportStatusResponse | null>(null);
   const [showStatus, setShowStatus] = useState(true);
   const [dryRunResult, setDryRunResult] = useState<DryRunResult | null>(null);
+  const [processResult, setProcessResult] = useState<DryRunResult | null>(null);
+  const [processStep, setProcessStep] = useState<"idle" | "dryrun" | "review" | "processing" | "done">("idle");
 
   /* ── Fetch import status on mount ── */
   useEffect(() => {
@@ -78,10 +80,13 @@ export default function ImportPage() {
     let cancelled = false;
     async function init() {
       try {
-        const s = await createUploadSession();
-        if (!cancelled) { setSession(s as unknown as UploadSession); setApiConnected(true); }
+        const created = await createUploadSession();
+        if (cancelled) return;
+        // Immediately fetch full session data (create response lacks `files`)
+        const full = await getUploadSession(created.upload_session_id);
+        if (!cancelled) { setSession(full); setApiConnected(true); }
       } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Failed to create session");
+        if (!cancelled) setApiConnected(false);
       }
     }
     init();
@@ -246,11 +251,13 @@ export default function ImportPage() {
   const handleReset = useCallback(async () => {
     setPlan(null);
     setConfirmResult(null);
+    setDryRunResult(null);
     setError(null);
     setStep("upload");
     try {
-      const s = await createUploadSession();
-      setSession(s as unknown as UploadSession);
+      const created = await createUploadSession();
+      const full = await getUploadSession(created.upload_session_id);
+      setSession(full);
     } catch {
       // keep old session
     }
@@ -263,8 +270,28 @@ export default function ImportPage() {
     try {
       const result = await dryRunProcess();
       setDryRunResult(result);
+      setProcessStep("review");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Dry-run failed");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  /* ── Execute real processing ── */
+  const handleExecuteProcess = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    setProcessStep("processing");
+    try {
+      const result = await executeProcess();
+      setProcessResult(result);
+      setProcessStep("done");
+      // Refresh status after processing
+      getImportStatus().then(setImportStatus).catch(() => {});
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Processing failed");
+      setProcessStep("review");
     } finally {
       setLoading(false);
     }
@@ -273,6 +300,7 @@ export default function ImportPage() {
   /* ── Derive stats ── */
   const uploadedFiles = session?.files?.filter(f => f.status === "uploaded") || [];
   const unsupportedCount = session?.files?.filter(f => f.status === "unsupported").length || 0;
+  const canGenerate = uploadedFiles.length > 0 && !!session?.upload_session_id;
 
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-6">
@@ -384,6 +412,20 @@ export default function ImportPage() {
           </button>
         </div>
       )}
+
+      {/* ══════════════════════════════════════════════════
+          INBOX BUNDLES — Already in article_bundles/new/
+          ══════════════════════════════════════════════════ */}
+      <InboxBundlesPanel
+        bundles={importStatus?.article_bundles?.new}
+        onDryRun={handleDryRun}
+        onProcess={handleExecuteProcess}
+        dryRunResult={dryRunResult}
+        processResult={processResult}
+        processStep={processStep}
+        loading={loading}
+        apiConnected={apiConnected}
+      />
 
       {/* ══════════════════════════════════════════════════
           1. DRAG-AND-DROP UPLOAD ZONE
@@ -1319,5 +1361,203 @@ function CopyableCommand({ cmd }: { cmd: string }) {
         {copied ? <CheckCircle2 className="size-3 text-emerald-400" /> : <Copy className="size-3" />}
       </button>
     </div>
+  );
+}
+
+/* ── Inbox Bundles Panel — Process bundles already in article_bundles/new/ ── */
+function InboxBundlesPanel({
+  bundles, onDryRun, onProcess, dryRunResult, processResult, processStep, loading, apiConnected,
+}: {
+  bundles?: { items: import("@/lib/api").ScanItem[]; count: number; path_key: string };
+  onDryRun: () => void;
+  onProcess: () => void;
+  dryRunResult: import("@/lib/api").DryRunResult | null;
+  processResult: import("@/lib/api").DryRunResult | null;
+  processStep: string;
+  loading: boolean;
+  apiConnected: boolean | null;
+}) {
+  const dirs = bundles?.items?.filter(i => i.type === "directory") || [];
+  const hasBundles = dirs.length > 0;
+
+  // API not connected — show CLI fallback
+  if (apiConnected === false) {
+    return (
+      <section className="rounded-lg border-2 border-slate-200 bg-slate-50/50 p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <FolderOpen className="size-5 text-slate-500" />
+          <h2 className="font-semibold text-sm">Process Inbox Bundles</h2>
+        </div>
+        <p className="text-xs text-muted-foreground mb-3">
+          Start the API server to process bundles from the web UI, or use the command line:
+        </p>
+        <div className="space-y-1.5">
+          <CopyableCommand cmd="python Scripts/process_article_bundles.py --scan" />
+          <CopyableCommand cmd="python Scripts/process_article_bundles.py --process --dry-run" />
+          <CopyableCommand cmd="python Scripts/process_article_bundles.py --process --archive-mode copy" />
+        </div>
+        <p className="text-[10px] text-muted-foreground mt-2">
+          Copy-only mode. No files are moved or deleted.
+        </p>
+      </section>
+    );
+  }
+
+  // API loading or no bundles yet
+  if (!hasBundles && processStep === "idle") return null;
+
+  return (
+    <section className="rounded-lg border-2 border-blue-200 bg-gradient-to-b from-blue-50/50 to-white">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-blue-100">
+        <div className="flex items-center gap-2">
+          <FolderOpen className="size-5 text-blue-600" />
+          <div>
+            <h2 className="font-semibold text-sm">
+              {hasBundles
+                ? `Inbox Bundles — ${dirs.length} Ready to Process`
+                : "Inbox Bundles"}
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              {hasBundles
+                ? `Found in 00_Inbox/article_bundles/new/ — 2-step safe processing`
+                : "Place article folders in 00_Inbox/article_bundles/new/, then process here"}
+            </p>
+          </div>
+        </div>
+
+        {/* Action buttons with step labels */}
+        <div className="flex items-center gap-3">
+          {/* Step 1: Dry-Run */}
+          <div className="flex items-center gap-2">
+            {processStep === "idle" && (
+              <>
+                <span className="hidden md:inline text-[10px] text-muted-foreground uppercase tracking-wider">Step 1</span>
+                <button
+                  onClick={onDryRun}
+                  disabled={loading}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-colors",
+                    loading
+                      ? "bg-muted text-muted-foreground cursor-not-allowed"
+                      : "bg-blue-600 text-white hover:bg-blue-700 shadow-sm",
+                  )}
+                >
+                  {loading ? <Loader2 className="size-3.5 animate-spin" /> : <Settings2 className="size-3.5" />}
+                  Dry-Run Scan
+                </button>
+              </>
+            )}
+
+            {/* Step 2: Process (only appears after dry-run) */}
+            {(processStep === "review" || processStep === "processing") && (
+              <>
+                <span className="hidden md:inline text-[10px] text-emerald-600 uppercase tracking-wider font-bold">Step 2</span>
+                <button
+                  onClick={onProcess}
+                  disabled={loading || processStep === "processing"}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold transition-colors shadow-sm",
+                    loading || processStep === "processing"
+                      ? "bg-muted text-muted-foreground cursor-not-allowed"
+                      : "bg-emerald-600 text-white hover:bg-emerald-700 animate-pulse",
+                  )}
+                >
+                  {processStep === "processing" ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <Send className="size-3.5" />
+                  )}
+                  {processStep === "processing"
+                    ? "Processing…"
+                    : `Process ${dryRunResult?.processed || 0} Bundle${dryRunResult?.processed !== 1 ? "s" : ""} Now`}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Bundle list */}
+      {hasBundles && (
+        <div className="max-h-64 overflow-y-auto">
+          {dirs.slice(0, 20).map((d, i) => (
+            <div key={i} className="flex items-center gap-3 px-4 py-2 text-xs border-b border-blue-50 last:border-b-0 hover:bg-blue-50/30">
+              <span className="text-base">📁</span>
+              <div className="flex-1 min-w-0">
+                <p className="font-mono text-[11px] truncate" title={d.name}>{d.name}</p>
+                <p className="text-[10px] text-muted-foreground">
+                  {d.file_count} file{d.file_count !== 1 ? "s" : ""}
+                  {d.pdf_count ? ` · ${d.pdf_count} PDF` : ""}
+                  {d.spreadsheet_count ? ` · ${d.spreadsheet_count} table` : ""}
+                </p>
+              </div>
+              <span className="text-[10px] text-muted-foreground truncate max-w-[180px] hidden md:block" title={d.relative_path}>
+                {d.relative_path}
+              </span>
+            </div>
+          ))}
+          {dirs.length > 20 && (
+            <p className="text-center text-xs text-muted-foreground py-2">
+              …and {dirs.length - 20} more bundles
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Dry-Run result */}
+      {processStep === "review" && dryRunResult && (
+        <div className="border-t-2 border-emerald-200 bg-emerald-50/50 px-4 py-3 space-y-2">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="size-5 text-emerald-600" />
+            <div>
+              <p className="font-semibold text-emerald-800">Step 1 Complete — Dry-Run Passed</p>
+              <p className="text-xs text-emerald-700">
+                {dryRunResult.processed} bundle{dryRunResult.processed !== 1 ? "s" : ""} ready to process
+                {dryRunResult.failed > 0 ? ` · ${dryRunResult.failed} skipped` : ""}
+              </p>
+            </div>
+          </div>
+          <div className="ml-7 bg-white rounded border border-emerald-100 p-2">
+            <p className="text-xs font-medium text-emerald-800 mb-1">👉 Now click <strong>Step 2: Process Bundles Now</strong> to execute.</p>
+            <p className="text-[10px] text-muted-foreground">
+              Files will be <strong>copied</strong> (not moved). Original inbox files are preserved.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Processing result */}
+      {processStep === "done" && processResult && (
+        <div className="border-t-2 border-emerald-300 bg-emerald-50/50 px-4 py-3 space-y-3">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="size-5 text-emerald-600" />
+            <span className="font-bold text-emerald-800">All Done — Processing Complete</span>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="rounded-lg bg-white border border-emerald-100 px-3 py-2 text-center">
+              <div className="text-xl font-bold text-emerald-700">{processResult.processed}</div>
+              <div className="text-[10px] text-muted-foreground">Processed</div>
+            </div>
+            <div className="rounded-lg bg-white border border-amber-100 px-3 py-2 text-center">
+              <div className="text-xl font-bold text-amber-700">{processResult.failed}</div>
+              <div className="text-[10px] text-muted-foreground">Failed</div>
+            </div>
+            <div className="rounded-lg bg-white border border-blue-100 px-3 py-2 text-center">
+              <div className="text-xl font-bold text-blue-700">{processResult.total_bundles}</div>
+              <div className="text-[10px] text-muted-foreground">Total</div>
+            </div>
+          </div>
+          {processResult.next_actions && (
+            <div className="text-xs space-y-1 bg-white rounded border p-2">
+              <p className="font-medium text-muted-foreground mb-1">Next Steps:</p>
+              {processResult.next_actions.map((a: string, i: number) => (
+                <p key={i} className="text-muted-foreground">→ {a}</p>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </section>
   );
 }

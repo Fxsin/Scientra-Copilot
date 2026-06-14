@@ -501,6 +501,64 @@ export const CHUNK_TYPE_COLORS: Record<string, string> = {
   claim: "bg-slate-100 text-slate-500 border-slate-200",
 };
 
+/* ── Hybrid Parse Report ── */
+
+export interface ParserAvailabilityStatus {
+  grobid_available: boolean;
+  opendataloader_available: boolean;
+  marker_available: boolean;
+  pymupdf_available: boolean;
+  hybrid_parser_enabled: boolean;
+  error?: string;
+}
+
+export interface ParserOutputItem {
+  parser_name: string;
+  status: "success" | "skipped" | "failed" | "fallback";
+  output_type: string;
+  output_paths: string[];
+  quality_score: number;
+  warnings: string[];
+  errors: string[];
+  created_at: string;
+}
+
+export interface ParseQualityReportData {
+  metadata_score: number;
+  markdown_score: number;
+  layout_score: number;
+  reference_score: number;
+  figure_score: number;
+  table_score: number;
+  overall_score: number;
+  problems: string[];
+  recommendations: string[];
+}
+
+export interface ParseReportResponse {
+  paper_id: string;
+  status: "hybrid_parsed" | "legacy_only";
+  message?: string;
+  manifest?: Record<string, unknown>;
+  quality_report?: ParseQualityReportData | null;
+  parser_used?: {
+    metadata_source: string;
+    markdown_source: string;
+    layout_source: string;
+    figures_source: string;
+    tables_source: string;
+    references_source: string;
+  };
+  output_paths?: {
+    final_markdown_path: string;
+    manifest_path: string;
+  };
+  warnings?: string[];
+  errors?: string[];
+  legacy_files?: string[];
+  hint?: string;
+}
+
 export interface RelatedPaper {
   paper_id: string;
   title: string;

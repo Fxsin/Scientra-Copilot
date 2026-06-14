@@ -28,9 +28,20 @@ paths:
 
   # ── 02_Parse: Parsed intermediates ──
   parse.text: "02_Parse/text"
+  parse.text.pymupdf: "02_Parse/text/pymupdf"
+  parse.text.grobid: "02_Parse/text/grobid"
+  parse.markdown.opendataloader: "02_Parse/markdown/opendataloader"
+  parse.markdown.marker: "02_Parse/markdown/marker"
+  parse.markdown.final: "02_Parse/markdown/final"
+  parse.layout.opendataloader: "02_Parse/layout/opendataloader"
   parse.figures: "02_Parse/figures"
+  parse.figures.raw_images: "02_Parse/figures/raw_images"
   parse.tables: "02_Parse/tables"
+  parse.tables.opendataloader: "02_Parse/tables/opendataloader"
   parse.supplementary: "02_Parse/supplementary"
+  parse.reports.pymupdf: "02_Parse/reports/pymupdf"
+  parse.reports.grobid: "02_Parse/reports/grobid"
+  parse.reports.hybrid: "02_Parse/reports/hybrid"
 
   # ── 03_Assets: Structured assets ──
   assets.paper_assets: "03_Assets/paper_assets"

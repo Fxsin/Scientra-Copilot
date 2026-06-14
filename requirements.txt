@@ -19,6 +19,15 @@ transformers>=4.30
 huggingface-hub>=0.16
 numpy>=1.24
 
+# ── Hybrid PDF Parser (optional — install via Scripts/setup_parsers.py) ──
+# PyMuPDF: PDF scanning + figure extraction
+pymupdf>=1.24
+# OpenDataLoader PDF: markdown + layout + tables (requires Java 11+)
+opendataloader-pdf>=2.4
+# Marker: high-quality markdown fallback (requires PyTorch, surya-ocr)
+# marker-pdf>=1.10
+# surya-ocr>=0.17  (auto-installed with marker-pdf)
+
 # Optional: GROBID Docker management
 # docker>=6.0
 

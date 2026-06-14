@@ -98,6 +98,22 @@ steps:
     description: "Write workflow index report."
     builtin: "index_update"
 
+# ── Hybrid PDF Parser Configuration ──
+# WARNING: enabled: false is the DEFAULT and SAFE setting.
+# Set to true only after verifying parser dependencies are installed.
+hybrid_parser:
+  enabled: false
+  use_grobid: true
+  use_opendataloader: true
+  use_marker: false          # Marker is optional — enable if installed
+  use_pymupdf: true
+  prefer_markdown_source: opendataloader    # "opendataloader" | "marker"
+  fallback_markdown_source: marker          # "marker" | "none"
+  save_layout_bbox: true
+  save_raw_figures: true
+  output_root: "02_Parse"
+  manifest_dir: "02_Parse/reports/hybrid"
+
 policy:
   agent_entrypoint: "literature_query"
   agent_pdf_access: "forbidden"
