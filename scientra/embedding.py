@@ -642,6 +642,17 @@ def find_raw_text_path(root: Path, key: str, paper_id: str, metadata: dict[str, 
 
 def find_chunk_paths(root: Path, paper_id: str, key: str) -> list[Path]:
     candidates: list[Path] = []
+
+    # P0 fix: Also scan 03_Evidence/ for evidence_chunks.json
+    evidence_chunk_path = root / "03_Evidence" / paper_id / "evidence_chunks.json"
+    if evidence_chunk_path.exists():
+        candidates.append(evidence_chunk_path)
+    # Also try with key if different
+    if key != paper_id:
+        evidence_chunk_path2 = root / "03_Evidence" / key / "evidence_chunks.json"
+        if evidence_chunk_path2.exists():
+            candidates.append(evidence_chunk_path2)
+
     for identifier in [paper_id, key]:
         chunk_dir = root / "03_Summary" / "chunks" / safe_path_name(identifier)
         if chunk_dir.exists():

@@ -71,6 +71,7 @@ STEP_ORDER = [
     "summary",
     "hybrid_parse",
     "evidence",
+    "evidence_chunks",
     "embedding",
     "lancedb",
     "index_update",
@@ -487,6 +488,10 @@ class WorkflowRunner:
             expanded.extend(["--root", str(self.root)])
             if self.options.changed_only and "--changed-only" not in expanded:
                 expanded.append("--changed-only")
+        elif step == "evidence_chunks":
+            expanded.extend(["--root", str(self.root)])
+            if self.options.force and "--force" not in expanded:
+                expanded.append("--force")
         elif step == "summary":
             expanded.extend(["--root", str(self.root)])
             if self.options.force and "--force" not in expanded:

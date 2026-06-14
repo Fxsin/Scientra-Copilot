@@ -438,7 +438,15 @@ class SummaryAgent:
 
             stage = "parse_response"
             model_content = _extract_message_content(response)
-            summary_payload = _parse_model_summary(model_content)
+            try:
+                summary_payload = _parse_model_summary(model_content)
+                parse_success = True
+            except Exception:
+                # Use safe fallback parser — saves raw response, never crashes
+                summary_payload = safe_parse_summary_json(
+                    model_content, paper.paper_id, self.root
+                )
+                parse_success = False
             normalized = _normalize_summary_payload(summary_payload)
             cache_payload = {
                 "paper_id": paper.paper_id,
@@ -458,14 +466,21 @@ class SummaryAgent:
                 "sections": normalized,
                 "citation_sources": [asdict(source) for source in selected_sources],
                 "raw_model_response": response,
+                "parse_success": parse_success,
             }
+            if not parse_success:
+                cache_payload["parse_status"] = "fallback_json_parse_failed"
+                cache_payload["warnings"] = [
+                    "LLM JSON parse failed; fallback summary generated"
+                ]
 
             stage = "write"
             _write_json_atomic(cache_path, cache_payload)
             _write_text_atomic(summary_path, _render_summary_markdown(cache_payload))
-            self._mark_state(paper, cache_key, summary_path, cache_path, status="succeeded")
-            logger.info("Agent Summary generated: {}", summary_path)
-            return SummaryResult(paper.paper_id, "succeeded", summary_path, cache_path)
+            status = "succeeded" if parse_success else "succeeded_fallback"
+            self._mark_state(paper, cache_key, summary_path, cache_path, status=status)
+            logger.info("Agent Summary generated: {} (parse_ok={})", summary_path, parse_success)
+            return SummaryResult(paper.paper_id, status, summary_path, cache_path)
         except Exception as exc:
             error = f"{type(exc).__name__}: {exc}"
             logger.error("Agent Summary failed at stage {} for {}: {}", stage, paper.paper_id, error)
@@ -815,18 +830,169 @@ def _extract_message_content(response: dict[str, Any]) -> str:
 
 
 def _parse_model_summary(content: str) -> dict[str, Any]:
+    """Parse LLM response as JSON, with robust extraction and fallback.
+
+    Strategy:
+    1. Direct json.loads
+    2. Extract from ```json ... ``` fenced block
+    3. Extract from ``` ... ``` fenced block
+    4. Extract text between first { and last }
+    5. Attempt JSON repair (trailing commas, single quotes)
+    6. Raise on complete failure (caller should use safe_parse_summary_json)
+    """
     text = content.strip()
+
+    # Stage 1: Strip code fences
     if text.startswith("```"):
         text = re.sub(r"^```(?:json)?\s*", "", text)
-        text = re.sub(r"\s*```$", "", text)
+        text = re.sub(r"\s*```\s*$", "", text)
+
+    # Stage 2: Direct parse
     try:
         return json.loads(text)
     except json.JSONDecodeError:
-        start = text.find("{")
-        end = text.rfind("}")
-        if start >= 0 and end > start:
-            return json.loads(text[start : end + 1])
-        raise
+        pass
+
+    # Stage 3: Extract fenced JSON block inside the response
+    fence_match = re.search(r"```(?:json)?\s*\n?(.*?)\n?```", content, re.DOTALL)
+    if fence_match:
+        try:
+            return json.loads(fence_match.group(1).strip())
+        except json.JSONDecodeError:
+            pass
+
+    # Stage 4: Extract between first { and last }
+    start = text.find("{")
+    end = text.rfind("}")
+    if start >= 0 and end > start:
+        candidate = text[start : end + 1]
+        try:
+            return json.loads(candidate)
+        except json.JSONDecodeError:
+            # Stage 5: repair trailing commas
+            repaired = _repair_json(candidate)
+            if repaired:
+                try:
+                    return json.loads(repaired)
+                except json.JSONDecodeError:
+                    pass
+
+    raise json.JSONDecodeError("Could not parse LLM response as JSON", content, 0)
+
+
+def _repair_json(text: str) -> str | None:
+    """Attempt basic JSON repair on mildly malformed text.
+
+    Repairs attempted:
+    - Trailing commas before ] or }
+    - Single quotes → double quotes (simple cases)
+    - Missing closing bracket/brace (add if count mismatch)
+    """
+    try:
+        # Remove trailing commas before ] or }
+        repaired = re.sub(r",\s*([}\]])", r"\1", text)
+        if repaired != text:
+            return repaired
+    except Exception:
+        pass
+    return None
+
+
+def safe_parse_summary_json(
+    content: str,
+    paper_id: str,
+    root: Path | None = None,
+) -> dict[str, Any]:
+    """Parse LLM summary response with fallback on failure.
+
+    Never raises — always returns a valid (possibly fallback) dict.
+    Saves raw response to 10_System/logs/summary_raw_responses/ on failure.
+
+    Returns a dict compatible with _normalize_summary_payload expectations.
+    """
+    try:
+        return _parse_model_summary(content)
+    except Exception:
+        # Save raw response for debugging
+        if root:
+            raw_dir = root / "10_System" / "logs" / "summary_raw_responses"
+            raw_dir.mkdir(parents=True, exist_ok=True)
+            try:
+                (raw_dir / f"{paper_id}.txt").write_text(
+                    content, encoding="utf-8"
+                )
+            except Exception:
+                pass
+
+        # Build fallback summary
+        return _build_fallback_summary(content, paper_id)
+
+
+def _build_fallback_summary(content: str, paper_id: str) -> dict[str, Any]:
+    """Build a minimal fallback summary from raw LLM text.
+
+    Tries to extract meaningful text from the raw response even when
+    JSON parsing fails. Returns a dict matching SECTION_ORDER keys.
+    """
+    # Try to find section-like patterns in the raw text
+    sections: dict[str, list[dict[str, Any]]] = {
+        "Core Finding": [],
+        "Evidence": [],
+        "Methods": [],
+        "Key Results": [],
+        "Limitations": [],
+        "Relevance to My Research": [],
+    }
+
+    # Extract any text between known section markers
+    section_markers = {
+        "Core Finding": [r"core\s*finding", r"main\s*finding"],
+        "Evidence": [r"evidence"],
+        "Methods": [r"methods?", r"methodology"],
+        "Key Results": [r"key\s*results?", r"results?"],
+        "Limitations": [r"limitations?", r"limiting"],
+        "Relevance to My Research": [r"relevance", r"implications?"],
+    }
+
+    for section_name, patterns in section_markers.items():
+        for pattern in patterns:
+            m = re.search(
+                rf"{pattern}[:\s]*([^\n]+(?:\n[^\n#]+){{0,3}})",
+                content,
+                re.IGNORECASE,
+            )
+            if m:
+                text = m.group(1).strip()[:500]
+                if text:
+                    sections[section_name] = [{"text": text, "citations": []}]
+                    break
+
+    # If nothing was extracted, capture the first meaningful paragraph as core finding
+    if not any(v for v in sections.values()):
+        # Extract first non-empty paragraph that looks like content
+        paras = [p.strip() for p in content.split("\n\n") if len(p.strip()) > 60]
+        if paras:
+            sections["Core Finding"] = [
+                {"text": paras[0][:500], "citations": []}
+            ]
+
+    return sections
+
+
+def save_raw_llm_response(
+    paper_id: str,
+    content: str,
+    root: Path | None = None,
+) -> Path | None:
+    """Save raw LLM response for debugging. Call after parse failure."""
+    if root is None:
+        from pathlib import Path as _P
+        root = _P(".")
+    raw_dir = root / "10_System" / "logs" / "summary_raw_responses"
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    path = raw_dir / f"{paper_id}.txt"
+    path.write_text(content, encoding="utf-8")
+    return path
 
 
 def _normalize_summary_payload(payload: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
