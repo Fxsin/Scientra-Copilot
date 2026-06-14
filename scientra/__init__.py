@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2024–2026 Scientra Copilot Contributors
 """Scientra Copilot — Your Literature, Structured.
 
 LLM-Powered Literature Knowledge OS for Researchers.

@@ -4,6 +4,12 @@ Hybrid PDF Parser — OpenDataLoader PDF Adapter.
 Encapsulates opendataloader-pdf (GitHub: opendataloader-project/opendataloader-pdf)
 for markdown, layout/bbox JSON, and table extraction.
 
+Third-Party Notice:
+  OpenDataLoader PDF — Copyright 2025–2026 Hancom, Inc.
+  Licensed under Apache License 2.0 (SPDX: Apache-2.0)
+  Original license: docs/licenses/opendataloader-pdf/LICENSE
+  Original NOTICE:  docs/licenses/opendataloader-pdf/NOTICE
+
 Real API (from source):
     import opendataloader_pdf
     opendataloader_pdf.convert(input_path="file.pdf", output_dir="out/", format="markdown,json")

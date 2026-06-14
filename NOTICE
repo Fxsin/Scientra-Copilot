@@ -1,0 +1,38 @@
+Scientra Copilot
+Copyright 2024–2026 Scientra Copilot Contributors
+
+This product includes software developed by third parties, distributed under
+their respective open source licenses. See THIRD_PARTY_NOTICES.md and the
+docs/licenses/ directory for full license texts and attribution details.
+
+---
+
+Third-Party Components Bundled in This Distribution
+====================================================
+
+1. OpenDataLoader PDF (external/opendataloader-pdf/)
+   Copyright 2025–2026 Hancom, Inc.
+   Licensed under the Apache License, Version 2.0
+   Full license: docs/licenses/opendataloader-pdf/LICENSE
+   Original NOTICE: docs/licenses/opendataloader-pdf/NOTICE
+
+2. Marker / Datalab (external/marker/)
+   Copyright Vik Paruchuri / Endless Labs, Inc.
+   Licensed under GNU General Public License v3.0 or later (GPL-3.0-or-later)
+   Model weights licensed under AI PUBS OPEN RAIL-M LICENSE (Modified)
+   Full license: docs/licenses/marker/LICENSE
+   Model license: docs/licenses/marker/MODEL_LICENSE
+   NOTE: Marker is an OPTIONAL dependency and is NOT linked into the core
+   Scientra Copilot binary. It is invoked only at runtime when explicitly
+   enabled by the user. No GPL-3.0 code is distributed in compiled form
+   with Scientra Copilot.
+
+3. shadcn/ui Components (web/components/ui/)
+   Components follow patterns from shadcn/ui (https://ui.shadcn.com/)
+   Licensed under the MIT License
+   Copyright (c) 2023 shadcn
+
+---
+
+For the complete list of third-party dependencies (npm packages, Python
+packages) and their respective licenses, see THIRD_PARTY_NOTICES.md.

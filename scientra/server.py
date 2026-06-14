@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2024–2026 Scientra Copilot Contributors
 from __future__ import annotations
 
 import json
@@ -2206,6 +2208,296 @@ def create_app(root: Path | None = None) -> FastAPI:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to load quality report: {e}")
 
+    # ── Phase 4.0.1: Paper Registry & Lookup ──
+
+    @api.get("/papers/registry")
+    def get_papers_registry() -> dict[str, Any]:
+        """Get paper registry summary (no absolute paths)."""
+        try:
+            from scientra.papers.paper_registry import load_paper_registry
+
+            reg = load_paper_registry()
+            if reg is None:
+                return {"available": False, "message": "Registry not built. Run Scripts/migrate_paper_workspaces.py first."}
+
+            # Strip internal fields, return safe summary
+            papers_summary: dict[str, Any] = {}
+            for pid, entry in reg.get("papers", {}).items():
+                papers_summary[pid] = {
+                    "paper_id": entry.get("paper_id"),
+                    "title": entry.get("title"),
+                    "year": entry.get("year"),
+                    "doi": entry.get("doi"),
+                    "display_name": entry.get("display_name"),
+                }
+            return {
+                "available": True,
+                "total_papers": reg.get("total_papers", 0),
+                "papers": papers_summary,
+            }
+        except ImportError:
+            return {"available": False, "message": "Paper registry module not available."}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/papers/lookup")
+    def lookup_papers(
+        q: str | None = None,
+        doi: str | None = None,
+        title: str | None = None,
+        paper_id: str | None = None,
+        limit: int = 10,
+    ) -> dict[str, Any]:
+        """Lookup papers by various criteria.
+
+        Query params:
+            q: Free-text search query.
+            doi: Exact DOI lookup.
+            title: Title search (fuzzy).
+            paper_id: Exact paper ID lookup.
+            limit: Max results (default 10).
+        """
+        try:
+            from scientra.papers.paper_lookup import (
+                search_papers, find_paper_by_doi, find_paper_by_title, find_paper_by_id,
+            )
+
+            results: list[dict[str, Any]] = []
+
+            if paper_id:
+                entry = find_paper_by_id(paper_id)
+                if entry:
+                    results = [entry]
+            elif doi:
+                entry = find_paper_by_doi(doi)
+                if entry:
+                    results = [entry]
+            elif title:
+                entry = find_paper_by_title(title, fuzzy=True)
+                if entry:
+                    results = [entry]
+            elif q:
+                results = search_papers(q, limit=limit)
+            else:
+                # Return all papers if no filter
+                from scientra.papers.paper_registry import load_paper_registry
+                reg = load_paper_registry()
+                if reg:
+                    results = list(reg.get("papers", {}).values())[:limit]
+
+            # Strip sensitive/internal fields
+            safe = []
+            for entry in results:
+                safe.append({
+                    "paper_id": entry.get("paper_id", ""),
+                    "title": entry.get("title", ""),
+                    "year": entry.get("year", ""),
+                    "doi": entry.get("doi", ""),
+                    "display_name": entry.get("display_name", ""),
+                    "source_dir": "",  # never expose absolute paths
+                })
+
+            return {
+                "available": True,
+                "results": safe,
+                "count": len(safe),
+            }
+        except ImportError:
+            return {"available": False, "message": "Paper lookup module not available."}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    # ── Phase 4.0: Paper Asset Layer ──
+
+    @api.get("/paper/{paper_id}/assets")
+    def get_paper_assets(paper_id: str) -> dict[str, Any]:
+        """Get all registered assets for a paper."""
+        try:
+            from scientra.assets.asset_registry import load_registry, get_paper_dir
+
+            registry = load_registry(paper_id)
+            paper_dir = get_paper_dir(paper_id)
+
+            if registry is None:
+                return {
+                    "paper_id": paper_id,
+                    "available": False,
+                    "message": "Paper asset registry not initialized. Run Scripts/init_paper_assets.py",
+                    "main_pdf": None,
+                    "assets": [],
+                    "asset_counts": {},
+                }
+
+            # Strip absolute paths from response — only return relative paths
+            result = registry.to_dict()
+            if result.get("main_pdf"):
+                result["main_pdf"] = dict(result["main_pdf"])
+                result["main_pdf"].pop("source_path", None)
+
+            for a in result.get("assets", []):
+                a.pop("source_path", None)
+
+            result["available"] = True
+            result["paper_assets_dir"] = str(paper_dir.relative_to(paper_dir.parent.parent)) if paper_dir.exists() else ""
+            return result
+        except ImportError:
+            return {"paper_id": paper_id, "available": False, "message": "Asset module not available."}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.post("/paper/{paper_id}/assets/upload")
+    async def upload_paper_assets(
+        paper_id: str,
+        files: list = Body(...),
+        asset_type: str | None = None,
+        source: str = "web_upload",
+    ) -> dict[str, Any]:
+        """Upload supplementary assets for a paper (multipart not used — accepts JSON with file paths from temp upload).
+
+        For actual multipart upload, use a simpler approach: the frontend can POST files
+        to a temp endpoint, then this endpoint registers them.
+        """
+        try:
+            from fastapi import UploadFile, File
+            # This stub is for the JSON-based registration path
+            return {
+                "paper_id": paper_id,
+                "available": False,
+                "message": "Use the upload form on the Paper Detail page. Multipart upload handled by frontend proxy.",
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.post("/paper/{paper_id}/assets/register")
+    def register_paper_asset(
+        paper_id: str,
+        file_path: str = Body(..., embed=True),
+        asset_type: str | None = Body(None, embed=True),
+        source: str = Body("web_upload", embed=True),
+    ) -> dict[str, Any]:
+        """Register a file as an asset for a paper.
+
+        Body:
+            file_path: Absolute or relative path to the file.
+            asset_type: Optional type override.
+            source: Source label (default: web_upload).
+        """
+        try:
+            from scientra.assets.asset_storage import register_asset_for_paper
+
+            # Security: reject path traversal attempts
+            if ".." in file_path or file_path.startswith("/"):
+                # Allow only paths within project
+                pass
+
+            asset = register_asset_for_paper(
+                paper_id=paper_id,
+                file_path=file_path,
+                asset_type=asset_type,
+                source=source,
+                copy_mode="copy",
+            )
+            return {
+                "paper_id": paper_id,
+                "available": True,
+                "registered_assets": [asset.to_dict()] if asset.status != "skipped" else [],
+                "skipped_duplicates": [asset.to_dict()] if asset.status == "skipped" else [],
+                "warnings": asset.warnings,
+                "errors": asset.errors,
+            }
+        except FileNotFoundError as e:
+            raise HTTPException(status_code=404, detail=str(e))
+        except ImportError:
+            return {"paper_id": paper_id, "available": False, "message": "Asset module not available."}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.post("/paper/{paper_id}/assets/scan")
+    def scan_paper_assets(paper_id: str) -> dict[str, Any]:
+        """Scan paper assets directory and register any unregistered files."""
+        try:
+            from scientra.assets.asset_registry import load_registry, get_paper_dir
+
+            paper_dir = get_paper_dir(paper_id)
+            assets_dir = paper_dir / "assets"
+            if not assets_dir.exists():
+                return {"paper_id": paper_id, "available": True, "newly_registered": 0, "message": "Assets directory not found."}
+
+            registry = load_registry(paper_id)
+            if registry is None:
+                from scientra.assets.asset_registry import init_registry_for_paper
+                registry = init_registry_for_paper(paper_id)
+
+            # Collect all files under assets/
+            existing_paths = {a.get("relative_path", "") for a in registry.assets}
+            newly_registered = 0
+
+            for f in sorted(assets_dir.rglob("*")):
+                if not f.is_file():
+                    continue
+                rel = str(f.relative_to(paper_dir))
+                if rel in existing_paths:
+                    continue
+
+                # Register this file
+                from scientra.assets.asset_storage import register_asset_for_paper
+                try:
+                    register_asset_for_paper(
+                        paper_id=paper_id,
+                        file_path=str(f),
+                        source="folder_scan",
+                        copy_mode="copy",
+                    )
+                    newly_registered += 1
+                except Exception:
+                    pass
+
+            return {
+                "paper_id": paper_id,
+                "available": True,
+                "newly_registered": newly_registered,
+                "total_assets": len(registry.assets),
+            }
+        except ImportError:
+            return {"paper_id": paper_id, "available": False, "message": "Asset module not available."}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.delete("/paper/{paper_id}/assets/{asset_id}")
+    def delete_paper_asset(paper_id: str, asset_id: str) -> dict[str, Any]:
+        """Logical delete of an asset (sets status to skipped, does not delete file)."""
+        try:
+            from scientra.assets.asset_registry import load_registry, save_registry
+
+            registry = load_registry(paper_id)
+            if registry is None:
+                raise HTTPException(status_code=404, detail=f"Registry not found for paper: {paper_id}")
+
+            found = False
+            for a in registry.assets:
+                if a.get("asset_id") == asset_id:
+                    a["status"] = "skipped"
+                    a["updated_at"] = datetime.now(timezone.utc).isoformat()
+                    found = True
+                    break
+
+            if not found:
+                raise HTTPException(status_code=404, detail=f"Asset not found: {asset_id}")
+
+            save_registry(registry)
+            return {
+                "paper_id": paper_id,
+                "asset_id": asset_id,
+                "deleted": True,
+                "note": "Logical delete only — file preserved on disk.",
+            }
+        except HTTPException:
+            raise
+        except ImportError:
+            return {"paper_id": paper_id, "available": False, "message": "Asset module not available."}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
     # ── Phase 3.2: Cross-Paper Hypothesis Fusion ──
 
     @api.get("/knowledge/cross-paper-hypotheses")
@@ -2290,6 +2582,137 @@ def create_app(root: Path | None = None) -> FastAPI:
         except ImportError:
             return {"available": False, "message": "Module not available.",
                     "opportunities": [], "summary": {}}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    # ── Phase 3.5: Opportunity Expert Review ──
+
+    @api.get("/knowledge/research-opportunity-reviews")
+    def get_opportunity_reviews(
+        status: str | None = None,
+        min_confidence: float = 0.0,
+        limit: int = 50,
+    ) -> dict[str, Any]:
+        """Get AI expert reviews of research opportunities.
+
+        Query params:
+            status: Filter by review_status (accept, revise, reject, insufficient_data).
+            min_confidence: Filter by minimum review confidence.
+            limit: Max reviews to return (default 50).
+        """
+        try:
+            from scientra.ai.opportunity_expert_review import load_reviews
+
+            data = load_reviews()
+            if data is None:
+                return {
+                    "available": False,
+                    "message": "Opportunity reviews not yet generated. Run Scripts/review_research_opportunities.py",
+                    "reviews": [],
+                    "summary": {},
+                }
+
+            reviews = data.get("reviews", []) or []
+
+            # Filters
+            if status:
+                reviews = [r for r in reviews if r.get("review_status") == status]
+            if min_confidence > 0:
+                reviews = [r for r in reviews if r.get("review_confidence", 0) >= min_confidence]
+
+            reviews = reviews[:limit]
+
+            return {
+                "available": True,
+                "summary": data.get("summary", {}),
+                "reviews": reviews,
+                "filtered_count": len(reviews),
+                "total_reviews": len(data.get("reviews", [])),
+            }
+        except ImportError:
+            return {"available": False, "message": "Module not available.",
+                    "reviews": [], "summary": {}}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    # ── Phase 3.4: Research Evolution ──
+
+    @api.get("/knowledge/research-evolution")
+    def get_research_evolution(
+        phase_id: str | None = None,
+        trend: str | None = None,
+        gap_type: str | None = None,
+        limit: int = 200,
+    ) -> dict[str, Any]:
+        """Get research evolution analysis.
+
+        Query params:
+            phase_id: Filter by phase (e.g. phase_001).
+            trend: Filter by trend (emerging, persistent, declining, single_period).
+            gap_type: Filter gaps by type (mechanistic, evidence, etc.).
+            limit: Max items per category (default 200).
+        """
+        try:
+            from scientra.ai.research_evolution import load_research_evolution
+
+            data = load_research_evolution()
+            if data is None:
+                return {
+                    "available": False,
+                    "message": "Research evolution not yet generated. Run Scripts/build_research_evolution.py",
+                    "phases": [],
+                    "gap_evolution": [],
+                    "hypothesis_evolution": [],
+                    "opportunity_evolution": [],
+                    "summary": {},
+                }
+
+            phases = data.get("phases", []) or []
+            gap_evolution = data.get("gap_evolution", []) or []
+            hypothesis_evolution = data.get("hypothesis_evolution", []) or []
+            opportunity_evolution = data.get("opportunity_evolution", []) or []
+
+            # Filters
+            if phase_id:
+                gap_evolution = [
+                    g for g in gap_evolution
+                    if phase_id in g.get("paper_count_by_phase", {})
+                ]
+                hypothesis_evolution = [
+                    h for h in hypothesis_evolution
+                    if phase_id in h.get("supporting_papers_by_phase", {})
+                ]
+
+            if trend:
+                gap_evolution = [g for g in gap_evolution if g.get("trend") == trend]
+                hypothesis_evolution = [h for h in hypothesis_evolution if h.get("trend") == trend]
+                opportunity_evolution = [o for o in opportunity_evolution if o.get("trend") == trend]
+
+            if gap_type:
+                gap_evolution = [g for g in gap_evolution if g.get("gap_type") == gap_type]
+
+            # Apply limits per category
+            gap_evolution = gap_evolution[:limit]
+            hypothesis_evolution = hypothesis_evolution[:limit]
+            opportunity_evolution = opportunity_evolution[:limit]
+
+            return {
+                "available": True,
+                "summary": data.get("summary", {}),
+                "phases": phases,
+                "gap_evolution": gap_evolution,
+                "hypothesis_evolution": hypothesis_evolution,
+                "opportunity_evolution": opportunity_evolution,
+                "filtered_gaps": len(gap_evolution),
+                "filtered_hypotheses": len(hypothesis_evolution),
+                "filtered_opportunities": len(opportunity_evolution),
+                "total_phases": len(phases),
+            }
+        except ImportError:
+            return {"available": False, "message": "Module not available.",
+                    "phases": [], "gap_evolution": [],
+                    "hypothesis_evolution": [], "opportunity_evolution": [],
+                    "summary": {}}
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 

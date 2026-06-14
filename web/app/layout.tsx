@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2024–2026 Scientra Copilot Contributors
 import type { Metadata } from "next";
 import { LayoutShell } from "@/components/layout-shell";
 import { QueryProvider } from "@/components/query-provider";

@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: MIT
+// Based on shadcn/ui Button component (https://ui.shadcn.com/)
+// Copyright (c) 2023 shadcn — MIT License
+// Adapted for Scientra Copilot: custom variants, sizing, and @base-ui/react primitive
+
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { cva, type VariantProps } from "class-variance-authority"
 

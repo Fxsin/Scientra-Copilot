@@ -5,6 +5,17 @@ Encapsulates Marker (GitHub: VikParuchuri/marker) as a high-quality backup
 markdown parser. Marker is NOT enabled by default — it serves as a fallback
 or quality enhancement when OpenDataLoader markdown quality is insufficient.
 
+Third-Party Notice:
+  Marker (Datalab) — Copyright Vik Paruchuri / Endless Labs, Inc.
+  Code licensed under GPL-3.0-or-later (SPDX: GPL-3.0-or-later)
+  Model weights licensed under AI PUBS OPEN RAIL-M LICENSE (Modified)
+  Original license: docs/licenses/marker/LICENSE
+  Original model license: docs/licenses/marker/MODEL_LICENSE
+
+  WARNING: Marker is GPL-3.0 licensed. It is an OPTIONAL dependency.
+  Do NOT statically link or distribute Marker with Scientra Copilot.
+  The adapter gracefully degrades when Marker is not installed.
+
 Real API (from source):
     from marker.models import create_model_dict
     from marker.config.parser import ConfigParser

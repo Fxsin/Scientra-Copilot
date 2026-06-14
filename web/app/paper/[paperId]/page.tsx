@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { ScientificText } from "@/components/scientific-text";
 import { PaperAskCard } from "@/components/agent/PaperAskCard";
 import { AIEnrichmentPanel } from "@/components/ai-enrichment-panel";
+import { PaperAssetsPanel } from "@/components/paper-assets-panel";
 
 type LoadState = "loading" | "ok" | "error";
 
@@ -157,6 +158,7 @@ export default function PaperDetailPage() {
             {hasSummary && <QuickNav parsed={parsed} classified={classified} activeSection={activeSection} sectionRefs={sectionRefs} />}
             <PaperInfoCard metadata={metadata} hasSummary={hasSummary} tagCount={allTags.length} />
             <TagsCard tags={allTags} />
+            <PaperAssetsPanel paperId={paperId} />
             <ParserStatusCard parseReport={parseReport} />
             <MetadataPanel metadata={metadata} tags={tags} />
             <RelatedPapersSection paperId={paperId} />

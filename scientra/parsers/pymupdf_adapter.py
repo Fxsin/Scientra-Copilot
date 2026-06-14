@@ -4,6 +4,17 @@ Hybrid PDF Parser — PyMuPDF Adapter.
 Provides fast PDF scanning (page count, text layer detection, image count),
 raw text extraction fallback, and image extraction.
 
+Third-Party Notice:
+  PyMuPDF (fitz) — Copyright Artifex Software, Inc.
+  Licensed under AGPL-3.0 (SPDX: AGPL-3.0) or a commercial license.
+  See https://pymupdf.readthedocs.io/en/latest/about.html#license
+
+  WARNING: PyMuPDF is AGPL-3.0 licensed. The AGPL requires that all
+  derivative works be licensed under AGPL-3.0, including when used
+  as a network service. Users distributing Scientra Copilot with
+  PyMuPDF should seek legal advice or obtain a commercial license
+  from Artifex (https://artifex.com/).
+
 All functions return ParserOutput with status="skipped" if PyMuPDF is
 not installed. No uncaught exceptions propagate.
 """
