@@ -93,3 +93,8 @@ Config/llm_config.yaml
 
 # ── External source dependencies (cloned repos) ──
 external/
+
+# ── Session planning files (local only) ──
+task_plan.md
+findings.md
+progress.md

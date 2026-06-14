@@ -2498,6 +2498,214 @@ def create_app(root: Path | None = None) -> FastAPI:
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
+    # ── Phase 4.0.4: Asset Linking Engine ──
+
+    @api.get("/paper/{paper_id}/asset-links")
+    def get_paper_asset_links(paper_id: str) -> dict[str, Any]:
+        """Get asset links for a paper (citation mentions, matched links, evidence links)."""
+        try:
+            from scientra.assets.linking import AssetGraphBuilder
+
+            builder = AssetGraphBuilder()
+            result = builder.get_asset_links(paper_id)
+
+            if not result.get("available"):
+                return {
+                    "paper_id": paper_id,
+                    "available": False,
+                    "message": "Asset links not yet built. Run: python Scripts/build_asset_links.py --paper-id " + paper_id,
+                    "citation_mentions": [],
+                    "asset_links": [],
+                    "evidence_asset_links": [],
+                    "unmatched_assets": [],
+                    "low_confidence_links": [],
+                    "summary": {},
+                }
+
+            return result
+        except ImportError:
+            return {"paper_id": paper_id, "available": False, "message": "Asset linking module not available."}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/paper/{paper_id}/asset-graph")
+    def get_paper_asset_graph(paper_id: str) -> dict[str, Any]:
+        """Get the full asset graph for a paper (links + graph structure for visualization)."""
+        try:
+            from scientra.assets.linking import AssetGraphBuilder
+
+            builder = AssetGraphBuilder()
+            links_data = builder.get_asset_links(paper_id)
+
+            if not links_data.get("available"):
+                return {
+                    "paper_id": paper_id,
+                    "available": False,
+                    "message": "Asset graph not yet built.",
+                    "nodes": [],
+                    "edges": [],
+                    "summary": {},
+                }
+
+            # Build graph structure
+            nodes: list[dict[str, Any]] = []
+            edges: list[dict[str, Any]] = []
+
+            # Citation nodes
+            for mention in links_data.get("citation_mentions", []):
+                nodes.append({
+                    "id": mention.get("mention_id", ""),
+                    "type": "citation",
+                    "label": mention.get("normalized_label", mention.get("citation_text", "")),
+                    "asset_type": mention.get("asset_type", ""),
+                    "source_type": mention.get("source_type", ""),
+                })
+
+            # Asset link edges (citation -> asset)
+            for link in links_data.get("asset_links", []):
+                edges.append({
+                    "source": link.get("citation_mention_id", ""),
+                    "target": link.get("asset_id", ""),
+                    "type": "links_to",
+                    "confidence": link.get("confidence", 0),
+                    "method": link.get("match_method", ""),
+                })
+
+            # Evidence-asset edges
+            for ev_link in links_data.get("evidence_asset_links", []):
+                edges.append({
+                    "source": ev_link.get("evidence_id", ""),
+                    "target": ev_link.get("asset_id", ""),
+                    "type": ev_link.get("relation", "unknown"),
+                    "confidence": ev_link.get("confidence", 0),
+                })
+
+            return {
+                "paper_id": paper_id,
+                "available": True,
+                "nodes": nodes,
+                "edges": edges,
+                "summary": links_data.get("summary", {}),
+            }
+        except ImportError:
+            return {"paper_id": paper_id, "available": False, "message": "Asset linking module not available."}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/paper/{paper_id}/unmatched-assets")
+    def get_paper_unmatched_assets(paper_id: str) -> dict[str, Any]:
+        """Get unmatched assets and low-confidence links for a paper."""
+        try:
+            from scientra.assets.linking import AssetGraphBuilder
+
+            builder = AssetGraphBuilder()
+            unmatched = builder.get_unmatched_assets(paper_id)
+
+            # Also get low confidence links
+            links_data = builder.get_asset_links(paper_id)
+            low_confidence = links_data.get("low_confidence_links", [])
+
+            return {
+                "paper_id": paper_id,
+                "available": unmatched.get("available", False) or len(low_confidence) > 0,
+                "unmatched_assets": unmatched.get("unmatched_assets", []),
+                "low_confidence_links": low_confidence,
+                "warning": (
+                    "Some assets could not be matched to citations. "
+                    "Review asset_notes.txt or filenames to improve matching."
+                ) if unmatched.get("unmatched_assets") or low_confidence else "",
+            }
+        except ImportError:
+            return {"paper_id": paper_id, "available": False, "message": "Asset linking module not available."}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    # ── Phase 4.1: Figure Intelligence ──
+
+    @api.get("/paper/{paper_id}/figure-cards")
+    def get_paper_figure_cards(paper_id: str) -> dict[str, Any]:
+        """Get all figure cards for a paper."""
+        try:
+            from scientra.assets.figure_intelligence import FigureIntelligenceRunner
+
+            runner = FigureIntelligenceRunner()
+            result = runner.get_figures(paper_id)
+            return result
+        except ImportError:
+            return {"paper_id": paper_id, "available": False, "message": "Figure intelligence module not available."}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/paper/{paper_id}/figures")
+    def get_paper_figures(paper_id: str) -> dict[str, Any]:
+        """Get all figure contexts and interpretations for a paper."""
+        try:
+            from scientra.assets.figure_intelligence import FigureIntelligenceRunner
+
+            runner = FigureIntelligenceRunner()
+            cards_data = runner.get_figures(paper_id)
+
+            if not cards_data.get("available"):
+                return cards_data
+
+            # Also load contexts and interpretations
+            output_dir = runner._get_output_dir(paper_id)
+            contexts = []
+            interpretations = []
+
+            ctx_path = output_dir / "figure_contexts.json"
+            if ctx_path.exists():
+                try:
+                    contexts = json.loads(ctx_path.read_text(encoding="utf-8"))
+                except Exception:
+                    pass
+
+            int_path = output_dir / "figure_interpretations.json"
+            if int_path.exists():
+                try:
+                    interpretations = json.loads(int_path.read_text(encoding="utf-8"))
+                except Exception:
+                    pass
+
+            return {
+                "paper_id": paper_id,
+                "available": True,
+                "figures": cards_data.get("figures", []),
+                "contexts": contexts,
+                "interpretations": interpretations,
+                "summary": cards_data.get("summary", {}),
+            }
+        except ImportError:
+            return {"paper_id": paper_id, "available": False, "message": "Figure intelligence module not available."}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/paper/{paper_id}/figure/{figure_id}")
+    def get_paper_figure_card(paper_id: str, figure_id: str) -> dict[str, Any]:
+        """Get a single figure card by figure_id."""
+        try:
+            from scientra.assets.figure_intelligence import FigureIntelligenceRunner
+
+            runner = FigureIntelligenceRunner()
+            return runner.get_figure_card(paper_id, figure_id)
+        except ImportError:
+            return {"available": False, "figure": None, "message": "Figure intelligence module not available."}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/paper/{paper_id}/figure-intelligence-summary")
+    def get_paper_figure_intelligence_summary(paper_id: str) -> dict[str, Any]:
+        """Get figure intelligence summary statistics for a paper."""
+        try:
+            from scientra.assets.figure_intelligence import FigureIntelligenceRunner
+
+            runner = FigureIntelligenceRunner()
+            return runner.get_summary(paper_id)
+        except ImportError:
+            return {"paper_id": paper_id, "available": False, "message": "Figure intelligence module not available."}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
     # ── Phase 3.2: Cross-Paper Hypothesis Fusion ──
 
     @api.get("/knowledge/cross-paper-hypotheses")
