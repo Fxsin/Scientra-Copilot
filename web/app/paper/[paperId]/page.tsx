@@ -19,6 +19,8 @@ import { AIEnrichmentPanel } from "@/components/ai-enrichment-panel";
 import { PaperAssetsPanel } from "@/components/paper-assets-panel";
 import { AssetLinksPanel } from "@/components/asset-links-panel";
 import { FigureCardsPanel } from "@/components/figure-cards-panel";
+import { TableCardsPanel } from "@/components/table-cards-panel";
+import { SupplementaryCardsPanel } from "@/components/supplementary-cards-panel";
 
 type LoadState = "loading" | "ok" | "error";
 
@@ -163,6 +165,8 @@ export default function PaperDetailPage() {
             <PaperAssetsPanel paperId={paperId} />
             <AssetLinksPanel paperId={paperId} />
             <FigureCardsPanel paperId={paperId} />
+            <TableCardsPanel paperId={paperId} />
+            <SupplementaryCardsPanel paperId={paperId} />
             <ParserStatusCard parseReport={parseReport} />
             <MetadataPanel metadata={metadata} tags={tags} />
             <RelatedPapersSection paperId={paperId} />

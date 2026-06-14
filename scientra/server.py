@@ -2706,6 +2706,150 @@ def create_app(root: Path | None = None) -> FastAPI:
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
+    # ── Phase 4.2: Table Intelligence ──
+
+    @api.get("/paper/{paper_id}/table-cards")
+    def get_paper_table_cards(paper_id: str) -> dict[str, Any]:
+        """Get all table cards for a paper."""
+        try:
+            from scientra.assets.table_intelligence import TableIntelligenceRunner
+            runner = TableIntelligenceRunner()
+            return runner.get_tables(paper_id)
+        except ImportError:
+            return {"paper_id": paper_id, "available": False, "message": "Table intelligence module not available."}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/paper/{paper_id}/tables")
+    def get_paper_tables(paper_id: str) -> dict[str, Any]:
+        """Get all table data including structures and schemas."""
+        try:
+            from scientra.assets.table_intelligence import TableIntelligenceRunner
+            runner = TableIntelligenceRunner()
+            cards_data = runner.get_tables(paper_id)
+            if not cards_data.get("available"):
+                return cards_data
+
+            output_dir = runner._get_output_dir(paper_id)
+            extras = {}
+            for fname, key in [("table_structures.json", "structures"),
+                               ("table_schemas.json", "schemas"),
+                               ("table_statistics.json", "statistics"),
+                               ("table_interpretations.json", "interpretations")]:
+                fp = output_dir / fname
+                if fp.exists():
+                    try:
+                        extras[key] = json.loads(fp.read_text(encoding="utf-8"))
+                    except Exception:
+                        extras[key] = []
+
+            return {"paper_id": paper_id, "available": True, "tables": cards_data.get("tables", []),
+                    **extras, "summary": cards_data.get("summary", {})}
+        except ImportError:
+            return {"paper_id": paper_id, "available": False, "message": "Table intelligence module not available."}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/paper/{paper_id}/table/{table_id}")
+    def get_paper_table_card(paper_id: str, table_id: str) -> dict[str, Any]:
+        """Get a single table card."""
+        try:
+            from scientra.assets.table_intelligence import TableIntelligenceRunner
+            runner = TableIntelligenceRunner()
+            return runner.get_table_card(paper_id, table_id)
+        except ImportError:
+            return {"available": False, "table": None, "message": "Table intelligence module not available."}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/paper/{paper_id}/table-intelligence-summary")
+    def get_paper_table_intelligence_summary(paper_id: str) -> dict[str, Any]:
+        """Get table intelligence summary statistics."""
+        try:
+            from scientra.assets.table_intelligence import TableIntelligenceRunner
+            runner = TableIntelligenceRunner()
+            return runner.get_summary(paper_id)
+        except ImportError:
+            return {"paper_id": paper_id, "available": False, "message": "Table intelligence module not available."}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    # ── Phase 4.3: Supplementary Intelligence ──
+
+    @api.get("/paper/{paper_id}/supplementaries")
+    def get_paper_supplementaries(paper_id: str) -> dict[str, Any]:
+        """Get all supplementary data (contexts, sections, evidence, chunks)."""
+        try:
+            from scientra.assets.supplementary_intelligence import SupplementaryIntelligenceRunner
+            runner = SupplementaryIntelligenceRunner()
+            cards = runner.get_supplementaries(paper_id)
+            if not cards.get("available"):
+                return cards
+            d = runner._v3_path("03_Assets/supplementary_intelligence")
+            extras = {}
+            for fname, key in [("sections", "sections"), ("evidence", "evidence"), ("chunks", "chunks")]:
+                fp = d / fname / f"{paper_id}.json"
+                if fp.exists():
+                    try:
+                        extras[key] = json.loads(fp.read_text(encoding="utf-8"))
+                    except Exception:
+                        extras[key] = []
+            return {"paper_id": paper_id, "available": True, "supplementaries": cards.get("supplementaries", []), **extras}
+        except ImportError:
+            return {"paper_id": paper_id, "available": False, "message": "Module not available."}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/paper/{paper_id}/supplementary-cards")
+    def get_paper_supplementary_cards(paper_id: str) -> dict[str, Any]:
+        try:
+            from scientra.assets.supplementary_intelligence import SupplementaryIntelligenceRunner
+            return SupplementaryIntelligenceRunner().get_supplementaries(paper_id)
+        except ImportError:
+            return {"paper_id": paper_id, "available": False, "message": "Module not available."}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/paper/{paper_id}/supplementary/{supplementary_id}")
+    def get_paper_supplementary_card(paper_id: str, supplementary_id: str) -> dict[str, Any]:
+        try:
+            from scientra.assets.supplementary_intelligence import SupplementaryIntelligenceRunner
+            return SupplementaryIntelligenceRunner().get_supplementary_card(paper_id, supplementary_id)
+        except ImportError:
+            return {"available": False, "card": None, "message": "Module not available."}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/paper/{paper_id}/supplementary-intelligence-summary")
+    def get_paper_supp_intelligence_summary(paper_id: str) -> dict[str, Any]:
+        try:
+            from scientra.assets.supplementary_intelligence import SupplementaryIntelligenceRunner
+            return SupplementaryIntelligenceRunner().get_summary(paper_id)
+        except ImportError:
+            return {"paper_id": paper_id, "available": False, "message": "Module not available."}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/paper/{paper_id}/supplementary-evidence")
+    def get_paper_supplementary_evidence(paper_id: str) -> dict[str, Any]:
+        try:
+            from scientra.assets.supplementary_intelligence import SupplementaryIntelligenceRunner
+            return SupplementaryIntelligenceRunner().get_evidence(paper_id)
+        except ImportError:
+            return {"paper_id": paper_id, "available": False, "message": "Module not available."}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/paper/{paper_id}/supplementary-chunks")
+    def get_paper_supplementary_chunks(paper_id: str) -> dict[str, Any]:
+        try:
+            from scientra.assets.supplementary_intelligence import SupplementaryIntelligenceRunner
+            return SupplementaryIntelligenceRunner().get_chunks(paper_id)
+        except ImportError:
+            return {"paper_id": paper_id, "available": False, "message": "Module not available."}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
     # ── Phase 3.2: Cross-Paper Hypothesis Fusion ──
 
     @api.get("/knowledge/cross-paper-hypotheses")
@@ -3247,6 +3391,135 @@ def create_app(root: Path | None = None) -> FastAPI:
             "gaps": gaps,
         }
 
+    # ── P5.1: Unified Evidence Graph ──
+
+    @api.get("/knowledge/unified-evidence-graph")
+    def get_unified_evidence_graph(node_type: str = "", edge_type: str = "", paper_id: str = "", min_confidence: float = 0.0, limit: int = 200) -> dict[str, Any]:
+        try:
+            from scientra.knowledge.unified_graph.graph_builder import V3_OUTPUT
+            p = _resolve_root() / V3_OUTPUT / "graph_nodes.json"
+            if not p.exists():
+                return {"available": False, "message": "Graph not yet built. Run: python Scripts/build_unified_evidence_graph.py", "nodes": [], "edges": []}
+            nodes = json.loads(p.read_text(encoding="utf-8"))
+            edges_p = _resolve_root() / V3_OUTPUT / "graph_edges.json"
+            edges = json.loads(edges_p.read_text(encoding="utf-8")) if edges_p.exists() else []
+            from scientra.knowledge.unified_graph.graph_query_engine import GraphQueryEngine
+            engine = GraphQueryEngine(nodes, edges)
+            filtered = engine.search(keyword="", node_type=node_type, paper_id=paper_id, min_confidence=min_confidence, limit=limit)
+            return {"available": True, "nodes": filtered, "total": len(filtered), "stats": engine.get_stats()}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/knowledge/unified-evidence-graph/stats")
+    def get_unified_graph_stats() -> dict[str, Any]:
+        try:
+            from scientra.knowledge.unified_graph.graph_builder import V3_OUTPUT
+            p = _resolve_root() / V3_OUTPUT / "graph_stats.json"
+            if not p.exists():
+                return {"available": False, "message": "Graph not yet built."}
+            return {"available": True, **json.loads(p.read_text(encoding="utf-8"))}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/knowledge/unified-evidence-graph/nodes")
+    def get_unified_graph_nodes(node_type: str = "", limit: int = 200) -> dict[str, Any]:
+        try:
+            from scientra.knowledge.unified_graph.graph_builder import V3_OUTPUT
+            p = _resolve_root() / V3_OUTPUT / "graph_nodes.json"
+            if not p.exists():
+                return {"available": False, "nodes": []}
+            nodes = json.loads(p.read_text(encoding="utf-8"))
+            if node_type:
+                nodes = [n for n in nodes if n.get("node_type") == node_type]
+            return {"available": True, "nodes": nodes[:limit], "total": len(nodes)}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/knowledge/unified-evidence-graph/edges")
+    def get_unified_graph_edges(edge_type: str = "", limit: int = 200) -> dict[str, Any]:
+        try:
+            from scientra.knowledge.unified_graph.graph_builder import V3_OUTPUT
+            p = _resolve_root() / V3_OUTPUT / "graph_edges.json"
+            if not p.exists():
+                return {"available": False, "edges": []}
+            edges = json.loads(p.read_text(encoding="utf-8"))
+            if edge_type:
+                edges = [e for e in edges if e.get("edge_type") == edge_type]
+            return {"available": True, "edges": edges[:limit], "total": len(edges)}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/knowledge/unified-evidence-graph/node/{node_id}")
+    def get_unified_graph_node(node_id: str) -> dict[str, Any]:
+        try:
+            from scientra.knowledge.unified_graph.graph_builder import V3_OUTPUT
+            p = _resolve_root() / V3_OUTPUT / "graph_nodes.json"
+            if not p.exists():
+                return {"available": False}
+            nodes = json.loads(p.read_text(encoding="utf-8"))
+            for n in nodes:
+                if n.get("node_id") == node_id:
+                    return {"available": True, "node": n}
+            return {"available": False, "message": f"Node not found: {node_id}"}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/knowledge/unified-evidence-graph/paper/{paper_id}")
+    def get_unified_graph_paper_subgraph(paper_id: str) -> dict[str, Any]:
+        try:
+            from scientra.knowledge.unified_graph.graph_builder import V3_OUTPUT
+            sp = _resolve_root() / V3_OUTPUT / "paper_subgraphs" / f"{paper_id}.json"
+            if sp.exists():
+                return {"available": True, **json.loads(sp.read_text(encoding="utf-8"))}
+            return {"available": False, "message": f"Subgraph not found for paper: {paper_id}"}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/knowledge/unified-evidence-graph/neighborhood/{node_id}")
+    def get_unified_graph_neighborhood(node_id: str, depth: int = 1) -> dict[str, Any]:
+        try:
+            from scientra.knowledge.unified_graph.graph_builder import V3_OUTPUT
+            p = _resolve_root() / V3_OUTPUT / "graph_nodes.json"
+            if not p.exists():
+                return {"available": False}
+            nodes = json.loads(p.read_text(encoding="utf-8"))
+            ep = _resolve_root() / V3_OUTPUT / "graph_edges.json"
+            edges = json.loads(ep.read_text(encoding="utf-8")) if ep.exists() else []
+            from scientra.knowledge.unified_graph.graph_query_engine import GraphQueryEngine
+            return GraphQueryEngine(nodes, edges).get_neighborhood(node_id, depth)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/knowledge/unified-evidence-graph/claim-support/{claim_node_id}")
+    def get_unified_graph_claim_support(claim_node_id: str) -> dict[str, Any]:
+        try:
+            from scientra.knowledge.unified_graph.graph_builder import V3_OUTPUT
+            p = _resolve_root() / V3_OUTPUT / "graph_nodes.json"
+            if not p.exists():
+                return {"available": False}
+            nodes = json.loads(p.read_text(encoding="utf-8"))
+            ep = _resolve_root() / V3_OUTPUT / "graph_edges.json"
+            edges = json.loads(ep.read_text(encoding="utf-8")) if ep.exists() else []
+            from scientra.knowledge.unified_graph.graph_query_engine import GraphQueryEngine
+            return GraphQueryEngine(nodes, edges).get_claim_support_chain(claim_node_id)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/knowledge/unified-evidence-graph/gap-hypothesis-chain/{gap_node_id}")
+    def get_unified_graph_gap_hypothesis_chain(gap_node_id: str) -> dict[str, Any]:
+        try:
+            from scientra.knowledge.unified_graph.graph_builder import V3_OUTPUT
+            p = _resolve_root() / V3_OUTPUT / "graph_nodes.json"
+            if not p.exists():
+                return {"available": False}
+            nodes = json.loads(p.read_text(encoding="utf-8"))
+            ep = _resolve_root() / V3_OUTPUT / "graph_edges.json"
+            edges = json.loads(ep.read_text(encoding="utf-8")) if ep.exists() else []
+            from scientra.knowledge.unified_graph.graph_query_engine import GraphQueryEngine
+            return GraphQueryEngine(nodes, edges).get_gap_hypothesis_chain(gap_node_id)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
     # ── /knowledge-network ──
 
     @api.get("/knowledge-network")
@@ -3694,6 +3967,61 @@ def create_app(root: Path | None = None) -> FastAPI:
     @api.post("/v1/scientra/hybrid_search", response_model=LiteratureQueryResponse)
     def v1_hybrid(request: LiteratureQueryRequest) -> LiteratureQueryResponse:
         return _route(request, QueryType.hybrid_search)
+
+    # ── P5.2: Cross-Asset Query Engine ──
+
+    @api.post("/query/cross-assets")
+    def query_cross_assets(payload: dict[str, Any] = Body(...)) -> dict[str, Any]:
+        """Cross-asset query across evidence, figures, tables, supplementary, graph."""
+        try:
+            from scientra.cross_asset_query import CrossAssetQueryEngine, make_query
+            engine = CrossAssetQueryEngine()
+            q = make_query(
+                query=payload.get("query", ""),
+                paper_id=payload.get("paper_id", ""),
+                asset_types=payload.get("asset_types", ["evidence", "figure", "table", "supplementary", "graph"]),
+                top_k=payload.get("top_k", 20),
+                use_vector=payload.get("use_vector", True),
+                use_graph=payload.get("use_graph", True),
+                use_llm=payload.get("use_llm", False),
+                min_confidence=payload.get("min_confidence", 0.0),
+            )
+            return engine.query(q)
+        except ImportError:
+            return {"available": False, "message": "Cross-asset query module not available.", "hits": [], "warnings": ["Module not available"]}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/query/cross-assets/examples")
+    def get_cross_asset_query_examples() -> dict[str, Any]:
+        return {
+            "examples": [
+                {"query": "MAP2K4 expression", "description": "Search for gene expression evidence"},
+                {"query": "LC50 bioassay", "description": "Find bioassay and toxicity data"},
+                {"query": "Vip3Aa receptor", "description": "Entity search across evidence and tables"},
+                {"query": "western blot evidence", "description": "Find western blot figures and evidence"},
+                {"query": "Which figures support claims about receptor binding?", "description": "Claim support search"},
+                {"query": "gene expression supplementary tables", "description": "Find supplementary gene expression data"},
+            ]
+        }
+
+    @api.get("/query/cross-assets/status")
+    def get_cross_asset_query_status() -> dict[str, Any]:
+        try:
+            from scientra.cross_asset_query import CrossAssetInputLoader, VectorRetriever, GraphRetriever
+            loader = CrossAssetInputLoader()
+            assets = loader.load_all()
+            vr = VectorRetriever()
+            gr = GraphRetriever()
+            return {
+                "available": True,
+                "data_sources": {k: len(v) for k, v in assets.items()},
+                "vector_available": vr.is_available(),
+                "graph_available": gr.is_available(),
+                "warnings": loader.warnings,
+            }
+        except Exception as e:
+            return {"available": False, "message": str(e)}
 
     # ── Phase 0.8: /query/assets + enhanced /v1/agent/ask ──
 
