@@ -55,6 +55,7 @@ def test_run_hybrid_parse_with_dummy_pdf():
         result = run_hybrid_parse(
             pdf_path=pdf_path,
             paper_id="test_dummy_001",
+            config={"enabled": True, "use_grobid": False, "use_opendataloader": False, "use_marker": False, "use_pymupdf": True},
         )
 
         assert result is not None
@@ -95,7 +96,7 @@ def test_parse_without_config_crash():
         result = run_hybrid_parse(
             pdf_path=pdf_path,
             paper_id="test_no_config",
-            config={"use_grobid": False, "use_opendataloader": False, "use_marker": False, "use_pymupdf": True},
+            config={"enabled": True, "use_grobid": False, "use_opendataloader": False, "use_marker": False, "use_pymupdf": True},
         )
         assert result is not None
         print(f"Run without external parsers: pdf_type={result.pdf_type.value}")
@@ -104,8 +105,37 @@ def test_parse_without_config_crash():
             os.unlink(pdf_path)
 
 
+def test_hybrid_parser_disabled_returns_skipped():
+    """When hybrid_parser.enabled=false, run_hybrid_parse should return a result with warning."""
+    from scientra.parsers.parser_router import run_hybrid_parse
+
+    # Pass config with enabled=false explicitly
+    result = run_hybrid_parse(
+        pdf_path="/tmp/nonexistent.pdf",
+        paper_id="test_disabled",
+        config={"enabled": False},
+    )
+
+    assert result is not None
+    assert result.paper_id == "test_disabled"
+    # When disabled, there should be a warning about it
+    has_disabled_warning = any(
+        "disabled" in w.lower() for w in result.warnings
+    )
+    assert has_disabled_warning, (
+        f"Expected a 'disabled' warning when hybrid_parser.enabled=false. "
+        f"Got warnings: {result.warnings}"
+    )
+    # Should not have run any parsers — no parser_outputs
+    assert len(result.parser_outputs) == 0, (
+        f"Expected no parser outputs when disabled, got {len(result.parser_outputs)}"
+    )
+    print("Hybrid parser disabled → correctly returned skipped.")
+
+
 if __name__ == "__main__":
     test_run_hybrid_parse_missing_pdf()
     test_run_hybrid_parse_with_dummy_pdf()
     test_parse_without_config_crash()
+    test_hybrid_parser_disabled_returns_skipped()
     print("\n[OK] All parser router tests passed!")

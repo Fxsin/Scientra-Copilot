@@ -69,6 +69,7 @@ STEP_ORDER = [
     "metadata",
     "tag",
     "summary",
+    "hybrid_parse",
     "evidence",
     "embedding",
     "lancedb",
@@ -285,6 +286,8 @@ class WorkflowRunner:
             report_path = self.paths["vector_db_dir"].parent / "embedding_report.json"
             status = "succeeded" if report_path.exists() else "failed"
             error = None if status == "succeeded" else f"embedding report not found: {report_path}"
+        elif builtin == "hybrid_parse":
+            return self._run_hybrid_parse_builtin(started_at, started)
         elif builtin == "index_update":
             self.write_index_update()
             status = "succeeded"
@@ -301,6 +304,122 @@ class WorkflowRunner:
             duration_seconds=round(time.perf_counter() - started, 3),
             error=error,
         )
+
+    def _run_hybrid_parse_builtin(
+        self,
+        started_at: str,
+        started: float,
+    ) -> StepResult:
+        """Builtin: run hybrid parser on all imported PDFs.
+
+        Only runs when hybrid_parser.enabled is True in workflow_config.yaml.
+        When disabled, the step is skipped gracefully with status="skipped".
+
+        Each PDF in pdf_dir (01_PDF or legacy 01_Sources/papers/) is processed
+        through the hyrid parser pipeline: PyMuPDF scan → GROBID + OpenDataLoader
+        → quality score → Marker fallback → merge → manifest.
+        """
+        hybrid_config = self.config.get("hybrid_parser", {})
+        hybrid_enabled = hybrid_config.get("enabled", False)
+
+        if not hybrid_enabled:
+            logger.info("Hybrid parser is disabled (hybrid_parser.enabled=false). Skipping.")
+            return StepResult(
+                step="hybrid_parse",
+                status="skipped",
+                started_at=started_at,
+                finished_at=utc_now(),
+                duration_seconds=round(time.perf_counter() - started, 3),
+                error="Hybrid parser disabled by config. Set hybrid_parser.enabled=true to enable.",
+            )
+
+        try:
+            from scientra.parsers.parser_router import run_hybrid_parse
+
+            pdf_dir = self.paths["pdf_dir"]
+            # Also check legacy 01_Sources/papers/ path
+            legacy_pdf_dir = self.root / "01_Sources" / "papers"
+            pdf_paths: list[Path] = []
+
+            if pdf_dir.exists():
+                pdf_paths.extend(sorted(pdf_dir.glob("*.pdf")))
+            if legacy_pdf_dir.exists():
+                pdf_paths.extend(sorted(legacy_pdf_dir.glob("**/*.pdf")))
+
+            if not pdf_paths:
+                return StepResult(
+                    step="hybrid_parse",
+                    status="skipped",
+                    started_at=started_at,
+                    finished_at=utc_now(),
+                    duration_seconds=round(time.perf_counter() - started, 3),
+                    error="No PDFs found to parse.",
+                )
+
+            success_count = 0
+            skip_count = 0
+            fail_count = 0
+            errors: list[str] = []
+
+            for pdf_path in pdf_paths:
+                # Derive paper_id from filename
+                paper_id = pdf_path.stem
+                try:
+                    result = run_hybrid_parse(
+                        pdf_path=pdf_path,
+                        paper_id=paper_id,
+                        config=hybrid_config,
+                        output_root=self.root,
+                    )
+                    if result.manifest_path:
+                        success_count += 1
+                    elif result.warnings and any(
+                        "disabled" in w.lower() for w in result.warnings
+                    ):
+                        skip_count += 1
+                    else:
+                        fail_count += 1
+                        if result.errors:
+                            errors.extend(result.errors[:3])
+                except Exception as exc:
+                    fail_count += 1
+                    errors.append(f"{paper_id}: {exc}")
+
+            status = "succeeded"
+            error_msg = None
+            if fail_count > 0 and success_count == 0:
+                status = "failed"
+                error_msg = f"All {fail_count} PDF(s) failed hybrid parsing."
+                if errors:
+                    error_msg += f" First errors: {'; '.join(errors[:3])}"
+            elif fail_count > 0:
+                error_msg = f"{success_count} succeeded, {fail_count} failed, {skip_count} skipped."
+                if errors:
+                    error_msg += f" Errors: {'; '.join(errors[:3])}"
+
+            logger.info(
+                "Hybrid parse complete: {} succeeded, {} failed, {} skipped",
+                success_count, fail_count, skip_count,
+            )
+
+            return StepResult(
+                step="hybrid_parse",
+                status=status,
+                started_at=started_at,
+                finished_at=utc_now(),
+                duration_seconds=round(time.perf_counter() - started, 3),
+                error=error_msg,
+            )
+
+        except Exception as exc:
+            return StepResult(
+                step="hybrid_parse",
+                status="failed",
+                started_at=started_at,
+                finished_at=utc_now(),
+                duration_seconds=round(time.perf_counter() - started, 3),
+                error=f"Hybrid parser error: {type(exc).__name__}: {exc}",
+            )
 
     def build_step_command(self, step: str) -> list[str]:
         step_config = self.config.get("steps", {}).get(step, {})

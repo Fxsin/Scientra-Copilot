@@ -68,6 +68,13 @@ steps:
     timeout_seconds: 7200
     optional: false
 
+  hybrid_parse:
+    enabled: true
+    description: "Run Hybrid Parser (PyMuPDF + GROBID + OpenDataLoader + Marker fallback) on all PDFs."
+    optional: true
+    builtin: "hybrid_parse"
+    timeout_seconds: 7200
+
   evidence:
     enabled: true
     description: "Extract structured evidence from sections and summaries (optional, non-blocking)."
@@ -105,10 +112,13 @@ hybrid_parser:
   enabled: false
   use_grobid: true
   use_opendataloader: true
-  use_marker: false          # Marker is optional — enable if installed
+  use_marker: auto            # "auto" | true | false. "auto" triggers Marker when ODL quality < marker_trigger_score
   use_pymupdf: true
   prefer_markdown_source: opendataloader    # "opendataloader" | "marker"
   fallback_markdown_source: marker          # "marker" | "none"
+  marker_trigger_score: 0.65  # Auto-trigger Marker when ODL markdown score is below this
+  prefer_hybrid_markdown_for_evidence: false  # P1: Use final markdown for evidence extraction (DEFAULT: false, legacy safe)
+  min_final_markdown_score_for_evidence: 0.65  # P1: Minimum quality score to use hybrid markdown for evidence
   save_layout_bbox: true
   save_raw_figures: true
   output_root: "02_Parse"

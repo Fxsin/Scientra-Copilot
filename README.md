@@ -350,6 +350,7 @@ print(r["answer"])
 | [Storage Layout Config](Config/storage_layout.yaml) | YAML | — |
 | [Article Bundle Import Guide](docs/article_bundle_import_v1.md) | Markdown | English |
 | [**Hybrid Parser Architecture**](docs/hybrid_parser_architecture.md) | Markdown | English |
+| [**Import & Parse Process Report**](docs/import_parse_process_report.md) | Markdown | English |
 | [**One-Click Setup Script**](Scripts/setup.py) | Python | English |
 
 ---

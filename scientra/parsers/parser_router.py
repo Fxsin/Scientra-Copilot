@@ -46,6 +46,66 @@ def _load_yaml_safe(path: Path) -> dict[str, Any]:
         return {}
 
 
+def _resolve_marker_decision(
+    use_marker: bool | str,
+    marker_available: bool,
+    od_output: Any,
+    paper_id: str,
+    root: Path,
+    trigger_score: float = 0.65,
+) -> bool:
+    """Decide whether Marker should run based on config and ODL quality.
+
+    Decision matrix:
+    - use_marker == True AND marker_available → True
+    - use_marker == "auto" AND marker_available → check ODL markdown quality
+    - use_marker == False → False
+    - marker not available → False
+
+    In "auto" mode, Marker runs when:
+    1. OpenDataLoader was skipped/failed, OR
+    2. OpenDataLoader markdown quality score is below trigger_score
+    """
+    if not marker_available:
+        return False
+
+    if use_marker is True:
+        return True
+
+    if use_marker == "auto":
+        # Check if OpenDataLoader produced usable markdown
+        if od_output is None:
+            return True  # No ODL output at all → try Marker
+
+        from scientra.parsers.types import ParserStatus
+        if od_output.status == ParserStatus.SKIPPED:
+            return True  # ODL was not available → try Marker
+
+        if od_output.status == ParserStatus.FAILED:
+            return True  # ODL failed → try Marker
+
+        # ODL succeeded — check quality
+        od_score = getattr(od_output, "quality_score", 0.0)
+        if od_score < trigger_score:
+            return True  # ODL quality below threshold → try Marker
+
+        # Also check actual markdown file
+        md_path = root / "02_Parse" / "markdown" / "opendataloader" / f"{paper_id}.md"
+        if not md_path.exists():
+            return True  # No markdown file produced → try Marker
+
+        try:
+            md_text = md_path.read_text(encoding="utf-8")
+            if len(md_text) < 500:
+                return True  # Markdown too short → try Marker
+        except Exception:
+            return True  # Can't read markdown → try Marker
+
+        return False  # ODL quality is sufficient
+
+    return False
+
+
 def run_hybrid_parse(
     pdf_path: str | Path,
     paper_id: str,
@@ -77,14 +137,35 @@ def run_hybrid_parse(
     if config is None:
         wf_path = root / "Config" / "workflow_config.yaml"
         if wf_path.exists():
-            config = _load_yaml_safe(wf_path).get("hybrid_parser", {})
+            full_config = _load_yaml_safe(wf_path)
+            config = full_config.get("hybrid_parser", {})
         else:
             config = {}
+    else:
+        # When user passes explicit config, still check workflow_config for
+        # the enabled flag if not provided in the override.
+        if "enabled" not in config:
+            wf_path = root / "Config" / "workflow_config.yaml"
+            if wf_path.exists():
+                full_config = _load_yaml_safe(wf_path)
+                base_hybrid = full_config.get("hybrid_parser", {})
+                config.setdefault("enabled", base_hybrid.get("enabled", False))
+
+    # ── CRITICAL GATE: hybrid_parser.enabled must be true ──
+    hybrid_enabled = config.get("enabled", False)
+    if not hybrid_enabled:
+        return HybridParseResult(
+            paper_id=paper_id,
+            pdf_path=str(pdf_path),
+            warnings=["Hybrid parser is disabled. Set hybrid_parser.enabled=true in Config/workflow_config.yaml to enable."],
+            errors=[],
+        )
 
     use_grobid = config.get("use_grobid", True)
     use_opendataloader = config.get("use_opendataloader", True)
     use_marker = config.get("use_marker", False)  # Default: disabled
     use_pymupdf = config.get("use_pymupdf", True)
+    marker_trigger_score = config.get("marker_trigger_score", 0.65)
 
     # ── Check availability ──
     avail = check_parser_availability(root)
@@ -149,7 +230,17 @@ def run_hybrid_parse(
         if use_opendataloader and avail.opendataloader_available:
             od_out = run_opendataloader(pdf_path, paper_id, root)
 
-        if use_marker and avail.marker_available:
+        # ── Marker: "auto" logic — trigger when ODL markdown quality is low ──
+        # use_marker can be True, False, or "auto"
+        should_run_marker = _resolve_marker_decision(
+            use_marker=use_marker,
+            marker_available=avail.marker_available,
+            od_output=od_out,
+            paper_id=paper_id,
+            root=root,
+            trigger_score=marker_trigger_score,
+        )
+        if should_run_marker:
             marker_out = run_marker(pdf_path, paper_id, root)
 
         if use_pymupdf and avail.pymupdf_available:

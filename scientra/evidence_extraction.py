@@ -668,5 +668,270 @@ def _link_results_to_discussion_enhanced(
     return links[:10]
 
 
+# ── Main Entry Point (P1: uses hybrid_input_selector) ──
+
+
+def _resolve_root() -> Path:
+    """Resolve project root."""
+    candidate = Path(__file__).resolve().parent
+    for _ in range(5):
+        if (candidate / "Config" / "workflow_config.yaml").exists():
+            return candidate
+        candidate = candidate.parent
+    return Path(__file__).resolve().parents[1]
+
+
+def _load_yaml_safe(path: Path) -> dict[str, Any]:
+    """Load a YAML file safely, returning empty dict on any failure."""
+    try:
+        import yaml
+        return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except Exception:
+        return {}
+
+
+def _discover_papers(root: Path) -> list[dict[str, Any]]:
+    """Discover papers from metadata and raw_text directories.
+
+    Returns a list of dicts with keys: paper_id, metadata_path, raw_text_path, summary_path.
+    """
+    papers: dict[str, dict[str, Any]] = {}
+
+    # Scan metadata YAML files
+    yaml_dir = root / "02_Metadata" / "yaml"
+    if yaml_dir.exists():
+        for path in sorted(yaml_dir.glob("*.metadata.yaml")):
+            key = path.name[: -len(".metadata.yaml")]
+            papers.setdefault(key, {})["paper_id"] = key
+            papers.setdefault(key, {})["metadata_path"] = path
+
+    # Scan metadata JSON files (alternative)
+    json_dir = root / "02_Metadata" / "papers"
+    if json_dir.exists():
+        for path in sorted(json_dir.glob("*.metadata.json")):
+            key = path.name[: -len(".metadata.json")]
+            papers.setdefault(key, {})["paper_id"] = key
+            if "metadata_path" not in papers.get(key, {}):
+                papers.setdefault(key, {})["metadata_path"] = path
+
+    # Scan raw text files
+    raw_text_dir = root / "03_Summary" / "raw_text"
+    if raw_text_dir.exists():
+        for path in sorted(raw_text_dir.glob("*.txt")):
+            key = path.stem
+            papers.setdefault(key, {})["paper_id"] = key
+            papers.setdefault(key, {})["raw_text_path"] = path
+
+    # Scan summary files
+    summary_dir = root / "03_Summary"
+    if summary_dir.exists():
+        for path in sorted(summary_dir.glob("*.md")):
+            key = path.stem
+            papers.setdefault(key, {})["paper_id"] = key
+            papers.setdefault(key, {})["summary_path"] = path
+        # Also check subdirectories
+        for subdir in summary_dir.iterdir():
+            if subdir.is_dir():
+                summary_md = subdir / "summary.md"
+                if summary_md.exists():
+                    key = subdir.name
+                    papers.setdefault(key, {})["paper_id"] = key
+                    papers.setdefault(key, {})["summary_path"] = summary_md
+
+    # If no papers found via metadata, use raw text as primary discovery
+    if not papers:
+        if raw_text_dir.exists():
+            for path in sorted(raw_text_dir.glob("*.txt")):
+                key = path.stem
+                papers[key] = {"paper_id": key, "raw_text_path": path}
+
+    return list(papers.values())
+
+
+def _load_metadata(metadata_path: Path | None) -> dict[str, Any]:
+    """Load metadata from YAML or JSON file."""
+    if metadata_path is None:
+        return {}
+    try:
+        if metadata_path.suffix in (".yaml", ".yml"):
+            import yaml
+            return yaml.safe_load(metadata_path.read_text(encoding="utf-8")) or {}
+        elif metadata_path.suffix == ".json":
+            return json.loads(metadata_path.read_text(encoding="utf-8"))
+    except Exception:
+        pass
+    return {}
+
+
+def _read_text_safe(path: Path | None) -> str | None:
+    """Read a text file, returning None on any failure."""
+    if path is None or not path.exists():
+        return None
+    try:
+        return path.read_text(encoding="utf-8")
+    except Exception:
+        return None
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Run evidence extraction on all discovered papers.
+
+    Uses hybrid_input_selector to choose the best text source for each paper.
+    When hybrid_parser is disabled or prefer_hybrid_markdown_for_evidence is
+    false, falls back to legacy raw_text (03_Summary/raw_text/) automatically.
+
+    Outputs per paper:
+        - 03_Evidence/{paper_id}/sections.json
+        - 03_Evidence/{paper_id}/evidence.json
+    """
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Scientra Evidence Extraction — V2.3 with hybrid markdown support (P1)"
+    )
+    parser.add_argument("--root", type=Path, default=None,
+                        help="Project root directory (auto-detected if not specified)")
+    parser.add_argument("--paper-id", type=str, default=None,
+                        help="Process a single paper by ID (default: all discovered papers)")
+    parser.add_argument("--limit", type=int, default=None,
+                        help="Limit number of papers to process")
+    parser.add_argument("--force", action="store_true",
+                        help="Re-extract even if output already exists")
+    args = parser.parse_args(argv)
+
+    root = args.root.resolve() if args.root else _resolve_root()
+    logger.info("Evidence extraction root: {}", root)
+
+    # ── Load hybrid parser config ──
+    wf_config_path = root / "Config" / "workflow_config.yaml"
+    hybrid_config: dict[str, Any] = {}
+    if wf_config_path.exists():
+        wf_config = _load_yaml_safe(wf_config_path)
+        hybrid_config = wf_config.get("hybrid_parser", {})
+
+    prefer_hybrid = hybrid_config.get("prefer_hybrid_markdown_for_evidence", False)
+    hybrid_enabled = hybrid_config.get("enabled", False)
+    logger.info(
+        "Hybrid parser: enabled={}, prefer_hybrid_markdown_for_evidence={}",
+        hybrid_enabled, prefer_hybrid,
+    )
+
+    # ── Discover papers ──
+    if args.paper_id:
+        # Single paper mode
+        raw_text_path = root / "03_Summary" / "raw_text" / f"{args.paper_id}.txt"
+        paper_list = [{
+            "paper_id": args.paper_id,
+            "raw_text_path": raw_text_path if raw_text_path.exists() else None,
+        }]
+    else:
+        paper_list = _discover_papers(root)
+
+    if args.limit:
+        paper_list = paper_list[: args.limit]
+
+    if not paper_list:
+        logger.warning("No papers found for evidence extraction.")
+        return 0
+
+    logger.info("Discovered {} paper(s) for evidence extraction.", len(paper_list))
+
+    # ── Process each paper ──
+    success_count = 0
+    skip_count = 0
+    fail_count = 0
+
+    for paper in paper_list:
+        paper_id = paper.get("paper_id", "unknown")
+        output_dir = root / "03_Evidence" / paper_id
+        sections_path = output_dir / "sections.json"
+        evidence_path = output_dir / "evidence.json"
+
+        # Skip if already processed (unless --force)
+        if not args.force and sections_path.exists() and evidence_path.exists():
+            logger.info("Skipping {} — evidence already exists.", paper_id)
+            skip_count += 1
+            continue
+
+        try:
+            # ── Select text source (P1: hybrid-aware) ──
+            from scientra.parsers.hybrid_input_selector import select_text_for_evidence
+
+            legacy_path = paper.get("raw_text_path")
+            selected = select_text_for_evidence(
+                paper_id=paper_id,
+                legacy_text_path=str(legacy_path) if legacy_path else None,
+                config=hybrid_config,
+                root=root,
+            )
+
+            raw_text = selected.get("text", "")
+            text_source = selected.get("source", "unknown")
+            text_source_path = selected.get("source_path", "")
+            text_quality_score = selected.get("quality_score", 0.0)
+            fallback_reason = selected.get("fallback_reason")
+
+            if not raw_text or not raw_text.strip():
+                logger.warning("No text available for {} (source={}). Skipping.", paper_id, text_source)
+                skip_count += 1
+                continue
+
+            logger.info(
+                "{} — text source: {} (score={:.2f}){}",
+                paper_id, text_source, text_quality_score,
+                f", fallback: {fallback_reason}" if fallback_reason else "",
+            )
+
+            # ── Load metadata ──
+            metadata_path = paper.get("metadata_path")
+            metadata = _load_metadata(metadata_path)
+
+            # ── Load summary text (if available) ──
+            summary_text = None
+            summary_path = paper.get("summary_path")
+            if summary_path:
+                summary_text = _read_text_safe(summary_path)
+
+            # ── Extract sections ──
+            sections = extract_sections(raw_text, paper_id)
+
+            # ── Record input source in sections ──
+            sections["text_source"] = text_source
+            sections["text_source_path"] = text_source_path
+            sections["text_quality_score"] = text_quality_score
+            if fallback_reason:
+                sections["fallback_reason"] = fallback_reason
+
+            # ── Extract evidence ──
+            evidence = extract_evidence(sections, summary_text, metadata, paper_id)
+
+            # ── Record input source in evidence ──
+            evidence["evidence_input_source"] = text_source
+            evidence["evidence_input_path"] = text_source_path
+            evidence["evidence_input_quality_score"] = text_quality_score
+            if fallback_reason:
+                evidence["fallback_reason"] = fallback_reason
+
+            # ── Save outputs ──
+            _safe_write_json(sections_path, sections)
+            _safe_write_json(evidence_path, evidence)
+
+            logger.info("{} — evidence extraction complete. Sections: {}, Evidence: {}",
+                        paper_id, len(sections.get("sections", {})), len(evidence.get("key_results", [])))
+            success_count += 1
+
+        except Exception as exc:
+            logger.error("{} — evidence extraction failed: {}", paper_id, exc)
+            fail_count += 1
+
+    # ── Summary ──
+    logger.info(
+        "Evidence extraction complete: {} succeeded, {} skipped, {} failed.",
+        success_count, skip_count, fail_count,
+    )
+
+    return 1 if fail_count > 0 and success_count == 0 else 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

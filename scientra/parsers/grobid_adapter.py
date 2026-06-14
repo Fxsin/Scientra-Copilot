@@ -57,6 +57,91 @@ def _check_grobid_health(base_url: str) -> bool:
         return False
 
 
+def locate_existing_grobid_outputs(
+    paper_id: str,
+    output_root: str | Path | None = None,
+) -> dict[str, Path | None]:
+    """Locate existing GROBID output files for a paper without calling GROBID.
+
+    This function ONLY reads existing files — it does NOT trigger a new
+    GROBID API call. It is safe to call at any time.
+
+    Returns a dict with keys:
+        - tei_xml: Path to TEI XML file, or None
+        - metadata_json: Path to metadata JSON file, or None
+        - text: Path to raw text file, or None
+    """
+    root = Path(output_root) if output_root else _resolve_root()
+
+    result: dict[str, Path | None] = {
+        "tei_xml": None,
+        "metadata_json": None,
+        "text": None,
+    }
+
+    # Check for TEI XML (saved by legacy GROBID flow or hybrid parser)
+    tei_path = root / "02_Parse" / "text" / "grobid" / f"{paper_id}.tei.xml"
+    if tei_path.exists():
+        result["tei_xml"] = tei_path
+
+    # Check for metadata JSON (saved by hybrid parser)
+    meta_path = root / "02_Parse" / "reports" / "grobid" / f"{paper_id}_metadata.json"
+    if meta_path.exists():
+        result["metadata_json"] = meta_path
+
+    # Check for raw text (legacy path)
+    text_path = root / "02_Parse" / "text" / f"{paper_id}.txt"
+    if text_path.exists():
+        result["text"] = text_path
+
+    # Also check legacy GROBID output in 02_Parse/text/ directly
+    legacy_tei = root / "02_Parse" / "text" / f"{paper_id}.tei.xml"
+    if legacy_tei.exists() and result["tei_xml"] is None:
+        result["tei_xml"] = legacy_tei
+
+    return result
+
+
+def read_grobid_metadata_if_available(
+    paper_id: str,
+    output_root: str | Path | None = None,
+) -> dict[str, Any] | None:
+    """Read GROBID metadata from existing outputs without calling GROBID.
+
+    Looks for:
+    1. 02_Parse/reports/grobid/{paper_id}_metadata.json (hybrid parser output)
+    2. 02_Parse/text/grobid/{paper_id}.tei.xml (legacy GROBID output — parsed on the fly)
+
+    Returns the metadata dict if found, None otherwise.
+    Never throws — all errors are caught and result in None.
+    """
+    root = Path(output_root) if output_root else _resolve_root()
+
+    # Try JSON metadata first (fast path)
+    meta_json_path = root / "02_Parse" / "reports" / "grobid" / f"{paper_id}_metadata.json"
+    if meta_json_path.exists():
+        try:
+            return json.loads(meta_json_path.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+
+    # Try TEI XML (legacy path — parse on the fly)
+    tei_path = root / "02_Parse" / "text" / "grobid" / f"{paper_id}.tei.xml"
+    if not tei_path.exists():
+        tei_path = root / "02_Parse" / "text" / f"{paper_id}.tei.xml"
+
+    if tei_path.exists():
+        try:
+            xml_data = tei_path.read_text(encoding="utf-8")
+            metadata = _parse_tei_metadata(xml_data)
+            if metadata:
+                return metadata
+        except Exception:
+            pass
+
+    return None
+
+
 def run_grobid_metadata(
     pdf_path: str | Path,
     paper_id: str,
