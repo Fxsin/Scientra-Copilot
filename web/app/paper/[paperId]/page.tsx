@@ -15,6 +15,7 @@ import type { PaperMetadata, PaperSummary, PaperTags, RelatedPaper } from "@/lib
 import { Button } from "@/components/ui/button";
 import { ScientificText } from "@/components/scientific-text";
 import { PaperAskCard } from "@/components/agent/PaperAskCard";
+import { AIEnrichmentPanel } from "@/components/ai-enrichment-panel";
 
 type LoadState = "loading" | "ok" | "error";
 
@@ -142,6 +143,9 @@ export default function PaperDetailPage() {
           ) : (
             <EmptySummary />
           )}
+          {/* ── AI Enrichment (Phase 2.2) ── */}
+          <AIEnrichmentPanel paperId={paperId} />
+
           {/* ── Ask this paper (Phase 0.9B) ── */}
           <PaperAskCard paperId={paperId} />
 

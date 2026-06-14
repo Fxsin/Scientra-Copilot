@@ -610,7 +610,7 @@ def generate_summary_via_agent(
     base_url: str | None = None,
     api_key: str | None = None,
 ) -> dict[str, Any]:
-    """Generate a structured summary via the configured agent model.
+    """Generate a structured summary via the LLM Gateway (Phase 2.1).
 
     This is the primary entry point for the Agent SDK and workflow runner
     when summary_mode is "agent".
@@ -626,10 +626,6 @@ def generate_summary_via_agent(
     Returns:
         A dict with keys: sections (dict), citation_sources (list), model, generated_at.
     """
-    resolved_model = model or os.environ.get("ANTHROPIC_MODEL", DEFAULT_MODEL)
-    resolved_base_url = base_url or os.environ.get("ANTHROPIC_BASE_URL", DEFAULT_BASE_URL)
-    resolved_api_key = api_key or _resolve_api_key()
-
     paper = PaperRecord(
         key=metadata.get("paper_id", "unknown"),
         paper_id=str(metadata.get("paper_id", "unknown")),
@@ -659,6 +655,76 @@ def generate_summary_via_agent(
         target_min_tokens=500,
         target_max_tokens=1000,
     )
+
+    if not api_key and not _resolve_api_key():
+        return {
+            "status": "pending_agent",
+            "paper_id": paper.paper_id,
+            "messages": messages,
+            "sources": [asdict(s) for s in sources],
+            "error": "No API key available; prompt prepared for agent resolution.",
+        }
+
+    # ── Phase 2.1: Use LLM Gateway ──
+    try:
+        from scientra.ai import call_llm as _gateway_call
+    except ImportError:
+        _gateway_call = None  # type: ignore
+
+    if _gateway_call is not None:
+        # Extract system prompt and user prompt from messages
+        system_prompt = ""
+        user_prompt = ""
+        for msg in messages:
+            if msg.get("role") == "system":
+                system_prompt = msg.get("content", "")
+            elif msg.get("role") == "user":
+                user_prompt = msg.get("content", "")
+
+        llm_response = _gateway_call(
+            prompt=user_prompt,
+            task_name="summary",
+            provider=None,  # Use configured provider from llm_config.yaml
+            model=model,  # Can be None; gateway resolves from config
+            temperature=0.2,
+            max_tokens=4096,
+            system_prompt=system_prompt,
+            paper_id=paper.paper_id,
+        )
+
+        if not llm_response.success:
+            return {
+                "status": "failed",
+                "paper_id": paper.paper_id,
+                "sources": [asdict(s) for s in sources],
+                "model": llm_response.model,
+                "error": f"LLM Gateway error: {llm_response.error}",
+            }
+
+        model_content = llm_response.text
+        summary_payload = _parse_model_summary(model_content)
+        normalized = _normalize_summary_payload(summary_payload)
+
+        return {
+            "status": "succeeded",
+            "paper_id": paper.paper_id,
+            "sections": normalized,
+            "citation_sources": [asdict(s) for s in sources],
+            "model": llm_response.model,
+            "generated_at": _utc_now(),
+            "provider": llm_response.provider,
+            "usage": {
+                "input_tokens": llm_response.input_tokens,
+                "output_tokens": llm_response.output_tokens,
+                "total_tokens": llm_response.total_tokens,
+                "cost_estimate": llm_response.cost_estimate,
+            },
+        }
+
+    # ── Fallback: legacy LLMClient path ──
+    resolved_model = model or os.environ.get("ANTHROPIC_MODEL", DEFAULT_MODEL)
+    resolved_base_url = base_url or os.environ.get("ANTHROPIC_BASE_URL", DEFAULT_BASE_URL)
+    resolved_api_key = api_key or _resolve_api_key()
 
     if not resolved_api_key:
         return {

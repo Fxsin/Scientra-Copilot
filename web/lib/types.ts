@@ -779,3 +779,216 @@ export function sanitizeResult(
   delete safe["_internal"];
   return safe;
 }
+
+/* ── Phase 2.1: AI Settings ── */
+
+export interface AISettingsResponse {
+  enabled: boolean;
+  provider: string;
+  model: string;
+  base_url: string;
+  temperature: number;
+  max_tokens: number;
+  enabled_tasks: Record<string, boolean>;
+  api_key_configured: boolean;
+  api_key_preview: string;
+}
+
+export interface AISettingsUpdate {
+  enabled?: boolean;
+  provider?: string;
+  model?: string;
+  api_key?: string;
+  base_url?: string;
+  temperature?: number;
+  max_tokens?: number;
+  enabled_tasks?: Record<string, boolean>;
+}
+
+export interface AITestResponse {
+  status: "ok" | "failed";
+  provider: string;
+  model: string;
+  error?: string;
+  latency_note?: string;
+  usage?: {
+    input_tokens: number;
+    output_tokens: number;
+  };
+}
+
+/* ── Phase 2.2: AI Enrichment ── */
+
+export interface AISummaryV2Response {
+  paper_id: string;
+  available: boolean;
+  message?: string;
+  status?: string;
+  title?: string;
+  research_question?: string;
+  core_finding?: string;
+  method_summary?: string[];
+  key_evidence?: {
+    claim: string;
+    evidence: string;
+    evidence_type: string;
+    source_hint?: string;
+  }[];
+  main_claims?: string[];
+  limitations?: string[];
+  future_directions?: string[];
+  important_entities?: {
+    name: string;
+    type: string;
+    role: string;
+  }[];
+  confidence?: number;
+  warnings?: string[];
+  model?: string;
+  provider?: string;
+  usage?: {
+    input_tokens: number;
+    output_tokens: number;
+    total_tokens: number;
+    cost_estimate: number;
+  };
+  generated_at?: string;
+}
+
+export interface EvidenceEnrichmentResponse {
+  paper_id: string;
+  available: boolean;
+  message?: string;
+  status?: string;
+  total_chunks?: number;
+  eligible_chunks?: number;
+  enriched_chunks?: number;
+  batch_count?: number;
+  failed_batches?: number;
+  chunks?: EnrichedChunk[];
+  usage?: {
+    input_tokens: number;
+    output_tokens: number;
+    total_tokens: number;
+    cost_estimate: number;
+  };
+  generated_at?: string;
+}
+
+export interface EnrichedChunk {
+  chunk_id: string;
+  original_text: string;
+  section: string;
+  evidence_type: string;
+  ai_claim: string;
+  ai_finding: string;
+  method_mentioned: string[];
+  entity_mentioned: string[];
+  supports_claim: boolean | null;
+  evidence_strength: string;
+  limitations: string[];
+  confidence: number;
+  warnings: string[];
+}
+
+/* ── Phase 2.3: Research Gaps & Hypotheses ── */
+
+export interface AIGapsResponse {
+  paper_id: string;
+  available: boolean;
+  message?: string;
+  status?: string;
+  gaps?: ResearchGap[];
+  warnings?: string[];
+  usage?: {
+    input_tokens: number;
+    output_tokens: number;
+    total_tokens: number;
+    cost_estimate: number;
+  };
+  generated_at?: string;
+}
+
+export interface ResearchGap {
+  gap_id: string;
+  gap_statement: string;
+  gap_type: string;
+  based_on_evidence: string[];
+  missing_information: string;
+  why_it_matters: string;
+  confidence: number;
+  warnings: string[];
+}
+
+export interface AIHypothesesResponse {
+  paper_id: string;
+  available: boolean;
+  message?: string;
+  status?: string;
+  hypotheses?: Hypothesis[];
+  warnings?: string[];
+  usage?: {
+    input_tokens: number;
+    output_tokens: number;
+    total_tokens: number;
+    cost_estimate: number;
+  };
+  generated_at?: string;
+}
+
+export interface Hypothesis {
+  hypothesis_id: string;
+  hypothesis_statement: string;
+  rationale: string;
+  linked_gap_id: string;
+  supporting_evidence: string[];
+  testable_prediction: string;
+  suggested_experiment: string;
+  risk_level: string;
+  confidence: number;
+  warnings: string[];
+}
+
+/* ── Phase 2.3.1: Gap-Hypothesis Quality ── */
+
+export interface GapHypothesisQualityResponse {
+  paper_id: string;
+  available: boolean;
+  message?: string;
+  status?: string;
+  gap_count?: number;
+  hypothesis_count?: number;
+  gap_scores?: GapScore[];
+  hypothesis_scores?: HypothesisScore[];
+  overall_quality_score?: number;
+  recommendation?: "accept" | "manual_review" | "reject" | "insufficient_data";
+  metrics?: {
+    invalid_linked_gap_count: number;
+    high_overclaim_risk_count: number;
+    safety_ethics_warnings: number;
+  };
+  top_warnings?: string[];
+  generated_at?: string;
+}
+
+export interface GapScore {
+  gap_id: string;
+  evidence_grounding_score: number;
+  specificity_score: number;
+  novelty_score: number;
+  overclaim_risk: "low" | "medium" | "high";
+  weighted_score: number;
+  warnings: string[];
+}
+
+export interface HypothesisScore {
+  hypothesis_id: string;
+  linked_gap_valid: boolean;
+  testability_score: number;
+  rationale_grounding_score: number;
+  experiment_feasibility_score: number;
+  over_specificity_risk: "low" | "medium" | "high";
+  safety_or_ethics_warning: string[];
+  weighted_score: number;
+  warnings: string[];
+}

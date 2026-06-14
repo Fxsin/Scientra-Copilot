@@ -6,6 +6,10 @@ import type {
   ResearchMapTopic, StatsResponse,
   AgentAskRequest, AgentAskResponse,
   QueryAssetsRequest, QueryAssetsResponse,
+  AISettingsResponse, AISettingsUpdate, AITestResponse,
+  AISummaryV2Response, EvidenceEnrichmentResponse,
+  AIGapsResponse, AIHypothesesResponse,
+  GapHypothesisQualityResponse,
 } from "./types";
 import { sanitizeResult } from "./types";
 
@@ -921,4 +925,97 @@ async function patchJson<T>(
   }
 
   return res.json() as Promise<T>;
+}
+
+/* ── Phase 2.1: AI Settings API ── */
+
+/** Get current AI settings (API key is masked). */
+export async function getAISettings(): Promise<AISettingsResponse> {
+  return fetchJson<AISettingsResponse>("/settings/ai").then((r) => r.data);
+}
+
+/** Update AI settings. */
+export async function updateAISettings(
+  body: AISettingsUpdate,
+): Promise<AISettingsResponse> {
+  return postJson<AISettingsResponse>("/settings/ai", body);
+}
+
+/** Test AI provider connection. Uses provided fields for the test — does NOT persist. */
+export async function testAIConnection(
+  body?: AISettingsUpdate,
+): Promise<AITestResponse> {
+  const url = `${API_BASE_URL}/settings/ai/test`;
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: body ? JSON.stringify(body) : "{}",
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof TypeError ? err.message : String(err);
+    throw new ApiError({
+      kind: "network_error",
+      message: `Cannot reach API at ${API_BASE_URL}.\n${msg}`,
+      status: 0,
+      url,
+    });
+  }
+  if (!res.ok) {
+    const text = await res.text().catch(() => null);
+    throw new ApiError({
+      kind: "http_error",
+      message: `API error (${res.status}): ${text ?? res.statusText}`,
+      status: res.status,
+      url,
+      responseText: text,
+    });
+  }
+  return res.json() as Promise<AITestResponse>;
+}
+
+/* ── Phase 2.2: AI Enrichment API ── */
+
+/** Get AI-enhanced Summary V2 for a paper. */
+export async function getAISummaryV2(
+  paperId: string,
+): Promise<AISummaryV2Response> {
+  return fetchJson<AISummaryV2Response>(
+    `/paper/${encodeURIComponent(paperId)}/ai-summary-v2`,
+  ).then((r) => r.data);
+}
+
+/** Get AI-enhanced evidence enrichment for a paper. */
+export async function getEvidenceEnrichment(
+  paperId: string,
+): Promise<EvidenceEnrichmentResponse> {
+  return fetchJson<EvidenceEnrichmentResponse>(
+    `/paper/${encodeURIComponent(paperId)}/evidence-enrichment`,
+  ).then((r) => r.data);
+}
+
+/* ── Phase 2.3: Research Gaps & Hypotheses ── */
+
+/** Get AI-extracted research gaps for a paper. */
+export async function getAIGaps(paperId: string): Promise<AIGapsResponse> {
+  return fetchJson<AIGapsResponse>(
+    `/paper/${encodeURIComponent(paperId)}/ai-gaps`,
+  ).then((r) => r.data);
+}
+
+/** Get AI-generated hypotheses for a paper. */
+export async function getAIHypotheses(paperId: string): Promise<AIHypothesesResponse> {
+  return fetchJson<AIHypothesesResponse>(
+    `/paper/${encodeURIComponent(paperId)}/ai-hypotheses`,
+  ).then((r) => r.data);
+}
+
+/** Get Gap-Hypothesis quality evaluation for a paper. */
+export async function getGapHypothesisQuality(
+  paperId: string,
+): Promise<GapHypothesisQualityResponse> {
+  return fetchJson<GapHypothesisQualityResponse>(
+    `/paper/${encodeURIComponent(paperId)}/ai-gap-hypothesis-quality`,
+  ).then((r) => r.data);
 }

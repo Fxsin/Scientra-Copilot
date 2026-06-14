@@ -1,0 +1,38 @@
+# ── Scientra LLM Configuration ──
+# Copy this file to llm_config.yaml and fill in your API key:
+#   cp Config/llm_config.template.yaml Config/llm_config.yaml
+#
+# Or run the setup wizard:
+#   python Scripts/setup_llm.py
+#
+# llm_config.yaml is gitignored — your API key is never committed.
+
+# Enable/disable all AI features
+enabled: true
+
+# Provider: deepseek | openai | anthropic | local
+provider: deepseek
+
+# Model name
+model: deepseek-chat
+
+# Your API key (REQUIRED for cloud providers)
+api_key: ""
+
+# Base URL (leave empty for default)
+base_url: ""
+
+# Generation parameters
+temperature: 0.2
+max_tokens: 4096
+
+# Task-level toggles — enable only what you need
+enabled_tasks:
+  summary: true
+  evidence_enrichment: false
+  figure_interpretation: false
+  table_interpretation: false
+  supplementary_interpretation: false
+  gap_extraction: false
+  hypothesis_generation: false
+  agent_chat: true

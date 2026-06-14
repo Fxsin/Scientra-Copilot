@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 try:
-    from fastapi import FastAPI, HTTPException
+    from fastapi import FastAPI, HTTPException, Body
     from fastapi.middleware.cors import CORSMiddleware
 except ModuleNotFoundError:  # pragma: no cover - depends on deployment env
     FastAPI = None  # type: ignore
@@ -23,6 +23,17 @@ except ModuleNotFoundError:
     from pydantic import BaseModel, Field
     from scientra.models import LiteratureQueryRequest, LiteratureQueryResponse, QueryFilters, QueryType
     from scientra.query import literature_query, LiteratureQueryService
+
+try:
+    from scientra.ai import get_config, reload_config, save_config, call_llm, LLMConfig
+    from scientra.ai.cost_tracker import get_usage_summary
+except ModuleNotFoundError:
+    get_config = None  # type: ignore
+    reload_config = None  # type: ignore
+    save_config = None  # type: ignore
+    call_llm = None  # type: ignore
+    LLMConfig = None  # type: ignore
+    get_usage_summary = None  # type: ignore
 
 
 # ── Helpers ──
@@ -1566,6 +1577,26 @@ class AgentAskResponse(BaseModel):
     token_usage: AgentTokenUsage | None = None
 
 
+# ── Phase 2.1: AI Settings Pydantic models (module-level for FastAPI compatibility) ──
+
+class _AISettingsUpdate(BaseModel):
+    enabled: bool | None = None
+    provider: str | None = None
+    model: str | None = None
+    api_key: str | None = None
+    base_url: str | None = None
+    temperature: float | None = None
+    max_tokens: int | None = None
+    enabled_tasks: dict[str, bool] | None = None
+
+
+# Rebuild model to resolve forward references from __future__ annotations
+try:
+    _AISettingsUpdate.model_rebuild()
+except Exception:
+    pass
+
+
 def create_app(root: Path | None = None) -> FastAPI:
     if FastAPI is None:
         raise RuntimeError("FastAPI is required. Install: pip install fastapi uvicorn")
@@ -2061,6 +2092,261 @@ def create_app(root: Path | None = None) -> FastAPI:
             }
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to load parse report: {e}")
+
+    # ── Phase 2.2: AI Enrichment endpoints ──
+
+    @api.get("/paper/{paper_id}/ai-summary-v2")
+    def get_ai_summary_v2(paper_id: str) -> dict[str, Any]:
+        """Get AI-enhanced Summary V2 for a paper if available."""
+        try:
+            from scientra.ai.summary_v2 import load_summary_v2
+
+            data = load_summary_v2(paper_id)
+            if data is None:
+                return {
+                    "paper_id": paper_id,
+                    "available": False,
+                    "message": "AI Summary V2 not yet generated. Enable ai_enrichment.summary_v2 in workflow config and run the workflow.",
+                }
+            return {
+                "paper_id": paper_id,
+                "available": True,
+                **data,
+            }
+        except ImportError:
+            return {
+                "paper_id": paper_id,
+                "available": False,
+                "message": "AI module not available.",
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to load AI Summary V2: {e}")
+
+    @api.get("/paper/{paper_id}/evidence-enrichment")
+    def get_evidence_enrichment(paper_id: str) -> dict[str, Any]:
+        """Get AI-enhanced evidence enrichment for a paper if available."""
+        try:
+            from scientra.ai.evidence_enrichment import load_evidence_enrichment
+
+            data = load_evidence_enrichment(paper_id)
+            if data is None:
+                return {
+                    "paper_id": paper_id,
+                    "available": False,
+                    "message": "Evidence enrichment not yet generated. Enable ai_enrichment.evidence_enrichment in workflow config and run the workflow.",
+                }
+            return {
+                "paper_id": paper_id,
+                "available": True,
+                **data,
+            }
+        except ImportError:
+            return {
+                "paper_id": paper_id,
+                "available": False,
+                "message": "AI module not available.",
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to load evidence enrichment: {e}")
+
+    @api.get("/paper/{paper_id}/ai-gaps")
+    def get_ai_gaps(paper_id: str) -> dict[str, Any]:
+        """Get AI-extracted research gaps for a paper if available."""
+        try:
+            from scientra.ai.gap_extraction import load_gaps
+
+            data = load_gaps(paper_id)
+            if data is None:
+                return {
+                    "paper_id": paper_id,
+                    "available": False,
+                    "message": "AI gaps not yet generated. Enable ai_enrichment.gap_extraction in workflow config and run the workflow.",
+                }
+            return {"paper_id": paper_id, "available": True, **data}
+        except ImportError:
+            return {"paper_id": paper_id, "available": False, "message": "AI module not available."}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to load AI gaps: {e}")
+
+    @api.get("/paper/{paper_id}/ai-hypotheses")
+    def get_ai_hypotheses(paper_id: str) -> dict[str, Any]:
+        """Get AI-generated hypotheses for a paper if available."""
+        try:
+            from scientra.ai.hypothesis_generation import load_hypotheses
+
+            data = load_hypotheses(paper_id)
+            if data is None:
+                return {
+                    "paper_id": paper_id,
+                    "available": False,
+                    "message": "AI hypotheses not yet generated. Enable ai_enrichment.hypothesis_generation in workflow config and run the workflow.",
+                }
+            return {"paper_id": paper_id, "available": True, **data}
+        except ImportError:
+            return {"paper_id": paper_id, "available": False, "message": "AI module not available."}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to load AI hypotheses: {e}")
+
+    @api.get("/paper/{paper_id}/ai-gap-hypothesis-quality")
+    def get_ai_gap_hypothesis_quality(paper_id: str) -> dict[str, Any]:
+        """Get Gap-Hypothesis quality evaluation for a paper if available."""
+        try:
+            from scientra.ai.gap_hypothesis_quality import load_quality
+
+            data = load_quality(paper_id)
+            if data is None:
+                return {
+                    "paper_id": paper_id,
+                    "available": False,
+                    "message": "Quality evaluation not yet run. Use Scripts/check_gap_hypothesis_quality.py.",
+                }
+            return {"paper_id": paper_id, "available": True, **data}
+        except ImportError:
+            return {"paper_id": paper_id, "available": False, "message": "AI module not available."}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to load quality report: {e}")
+
+    # ── Phase 3.2: Cross-Paper Hypothesis Fusion ──
+
+    @api.get("/knowledge/cross-paper-hypotheses")
+    def get_cross_paper_hypotheses(
+        min_paper_count: int = 1,
+        risk_level: str | None = None,
+        linked_gap_cluster_id: str | None = None,
+        limit: int = 100,
+    ) -> dict[str, Any]:
+        """Get cross-paper hypothesis fusion clusters."""
+        try:
+            from scientra.ai.cross_paper_hypothesis_fusion import load_cross_paper_hypotheses
+
+            data = load_cross_paper_hypotheses()
+            if data is None:
+                return {
+                    "available": False,
+                    "message": "Cross-paper hypothesis fusion not yet generated.",
+                    "hypothesis_clusters": [],
+                    "summary": {},
+                    "quality": {},
+                }
+
+            clusters = data.get("hypothesis_clusters", []) or []
+            if min_paper_count > 1:
+                clusters = [c for c in clusters if c.get("paper_count", 0) >= min_paper_count]
+            if risk_level:
+                clusters = [c for c in clusters
+                           if (c.get("risk_level_distribution", {}).get(risk_level, 0) > 0)]
+            if linked_gap_cluster_id:
+                clusters = [c for c in clusters
+                           if c.get("linked_gap_cluster_id") == linked_gap_cluster_id]
+            clusters = clusters[:limit]
+
+            return {
+                "available": True,
+                "summary": data.get("summary", {}),
+                "quality": data.get("quality", {}),
+                "hypothesis_clusters": clusters,
+                "filtered_count": len(clusters),
+                "total_clusters": data.get("total_hypothesis_clusters", 0),
+            }
+        except ImportError:
+            return {"available": False, "message": "Module not available.",
+                    "hypothesis_clusters": [], "summary": {}, "quality": {}}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    # ── Phase 3.3: Research Opportunity Ranking ──
+
+    @api.get("/knowledge/research-opportunities")
+    def get_research_opportunities(
+        category: str | None = None,
+        min_score: float = 0.0,
+        min_paper_count: int = 1,
+        risk_level: str | None = None,
+        limit: int = 50,
+    ) -> dict[str, Any]:
+        """Get ranked research opportunities."""
+        try:
+            from scientra.ai.opportunity_ranking import load_opportunities
+
+            data = load_opportunities()
+            if data is None:
+                return {"available": False, "message": "Not yet generated.",
+                        "opportunities": [], "summary": {}}
+
+            opps = data.get("opportunities", []) or []
+            if category:
+                opps = [o for o in opps if o.get("category") == category]
+            if min_score > 0:
+                opps = [o for o in opps if o.get("opportunity_score", 0) >= min_score]
+            if min_paper_count > 1:
+                opps = [o for o in opps if o.get("supporting_paper_count", 0) >= min_paper_count]
+            if risk_level:
+                opps = [o for o in opps if o.get("risk_level") == risk_level]
+            opps = opps[:limit]
+
+            return {"available": True, "summary": data.get("summary", {}),
+                    "opportunities": opps, "filtered_count": len(opps),
+                    "total_opportunities": data.get("total_opportunities", 0)}
+        except ImportError:
+            return {"available": False, "message": "Module not available.",
+                    "opportunities": [], "summary": {}}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    # ── Phase 3.1: Cross-Paper Gap Fusion ──
+
+    @api.get("/knowledge/cross-paper-gaps")
+    def get_cross_paper_gaps(
+        min_paper_count: int = 1,
+        gap_type: str | None = None,
+        limit: int = 100,
+    ) -> dict[str, Any]:
+        """Get cross-paper gap fusion clusters.
+
+        Query params:
+            min_paper_count: Filter by minimum paper count (default 1).
+            gap_type: Filter by gap type (e.g. mechanistic, evidence).
+            limit: Max clusters to return (default 100).
+        """
+        try:
+            from scientra.ai.cross_paper_gap_fusion import load_cross_paper_gaps
+
+            data = load_cross_paper_gaps()
+            if data is None:
+                return {
+                    "available": False,
+                    "message": "Cross-paper gap fusion not yet generated. Run Scripts/fuse_cross_paper_gaps.py",
+                    "clusters": [],
+                    "summary": {},
+                }
+
+            clusters = data.get("clusters", []) or []
+
+            # Filter
+            if min_paper_count > 1:
+                clusters = [c for c in clusters if c.get("paper_count", 0) >= min_paper_count]
+            if gap_type:
+                clusters = [c for c in clusters if c.get("gap_type") == gap_type]
+
+            # Limit
+            clusters = clusters[:limit]
+
+            return {
+                "available": True,
+                "summary": data.get("summary", {}),
+                "clusters": clusters,
+                "filtered_count": len(clusters),
+                "total_clusters": data.get("total_clusters", 0),
+            }
+        except ImportError:
+            return {
+                "available": False,
+                "message": "Cross-paper gap fusion module not available.",
+                "clusters": [],
+                "summary": {},
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to load cross-paper gaps: {e}")
 
     # ── Network / research-map stubs ──
 
@@ -3381,6 +3667,96 @@ def create_app(root: Path | None = None) -> FastAPI:
             context=context_pack,
             token_usage=AgentTokenUsage(**response.token_usage) if response.token_usage else None,
         )
+
+    # ── Phase 2.1: AI Settings API ──
+    # Note: AISettingsResponse and AISettingsUpdate are defined at module level
+    # further below (outside create_app) due to from __future__ import annotations
+    # interfering with Pydantic's ForwardRef resolution inside function scope.
+
+    @api.get("/settings/ai")
+    def get_ai_settings() -> dict[str, Any]:
+        """Get current AI settings (API key is masked)."""
+        if get_config is None:
+            raise HTTPException(status_code=500, detail="AI module not available")
+        try:
+            config = get_config()
+            return config.to_safe_dict()
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail=f"Failed to read AI config: {exc}")
+
+    @api.post("/settings/ai")
+    def update_ai_settings(body: _AISettingsUpdate = Body(...)) -> dict[str, Any]:
+        """Update AI settings. Only provided fields are changed."""
+        if get_config is None or save_config is None or LLMConfig is None:
+            raise HTTPException(status_code=500, detail="AI module not available")
+        try:
+            current = get_config()
+
+            # Build new config with updated fields
+            new_config = LLMConfig(
+                enabled=body.enabled if body.enabled is not None else current.enabled,
+                provider=body.provider if body.provider is not None else current.provider,
+                model=body.model if body.model is not None else current.model,
+                api_key=body.api_key if body.api_key is not None else current.api_key,
+                base_url=body.base_url if body.base_url is not None else current.base_url,
+                temperature=body.temperature if body.temperature is not None else current.temperature,
+                max_tokens=body.max_tokens if body.max_tokens is not None else current.max_tokens,
+                enabled_tasks=body.enabled_tasks if body.enabled_tasks is not None else dict(current.enabled_tasks),
+            )
+
+            save_config(new_config)
+            reload_config()
+            return get_config().to_safe_dict()
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail=f"Failed to save AI config: {exc}")
+
+    @api.post("/settings/ai/test")
+    def test_ai_connection(body: _AISettingsUpdate | None = Body(None)) -> dict[str, Any]:
+        """Test the AI provider connection.
+
+        Uses provided settings for the test if given; otherwise uses saved config.
+        Does NOT persist the provided settings.
+        """
+        if call_llm is None or get_config is None:
+            raise HTTPException(status_code=500, detail="AI module not available")
+        try:
+            config = get_config()
+
+            provider = body.provider if body and body.provider else config.provider
+            model = body.model if body and body.model else config.model
+            api_key = body.api_key if body and body.api_key else config.api_key
+            base_url = body.base_url if body and body.base_url else config.base_url
+
+            # Temporarily override config for the test call
+            response = call_llm(
+                prompt="Reply with exactly: OK",
+                task_name="connection_test",
+                provider=provider,
+                model=model,
+                max_tokens=10,
+                temperature=0.0,
+            )
+
+            if response.success:
+                return {
+                    "status": "ok",
+                    "provider": response.provider,
+                    "model": response.model,
+                    "latency_note": "Connection test successful",
+                    "usage": {
+                        "input_tokens": response.input_tokens,
+                        "output_tokens": response.output_tokens,
+                    },
+                }
+            else:
+                return {
+                    "status": "failed",
+                    "provider": provider,
+                    "model": model,
+                    "error": response.error,
+                }
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail=f"Connection test failed: {exc}")
 
     return api
 

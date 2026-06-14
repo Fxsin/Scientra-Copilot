@@ -72,6 +72,10 @@ STEP_ORDER = [
     "hybrid_parse",
     "evidence",
     "evidence_chunks",
+    "ai_summary_v2",
+    "ai_evidence_enrichment",
+    "ai_gap_extraction",
+    "ai_hypothesis_generation",
     "embedding",
     "lancedb",
     "index_update",
@@ -293,6 +297,14 @@ class WorkflowRunner:
             self.write_index_update()
             status = "succeeded"
             error = None
+        elif builtin == "ai_summary_v2":
+            return self._run_ai_summary_v2_builtin(started_at, started)
+        elif builtin == "ai_evidence_enrichment":
+            return self._run_ai_evidence_enrichment_builtin(started_at, started)
+        elif builtin == "ai_gap_extraction":
+            return self._run_ai_gap_extraction_builtin(started_at, started)
+        elif builtin == "ai_hypothesis_generation":
+            return self._run_ai_hypothesis_generation_builtin(started_at, started)
         else:
             status = "failed"
             error = f"unknown builtin step: {builtin}"
@@ -420,6 +432,388 @@ class WorkflowRunner:
                 finished_at=utc_now(),
                 duration_seconds=round(time.perf_counter() - started, 3),
                 error=f"Hybrid parser error: {type(exc).__name__}: {exc}",
+            )
+
+    def _run_ai_summary_v2_builtin(
+        self,
+        started_at: str,
+        started: float,
+        limit: int | None = None,
+    ) -> StepResult:
+        """Builtin: generate AI-enhanced Summary V2 for all papers.
+
+        Reads evidence_chunks.json and paper text, generates structured summary
+        via LLM Gateway. Output written to 03_Assets/ai/summary_v2/.
+
+        Gated by ai_enrichment.enabled and ai_enrichment.summary_v2.
+        """
+        ai_config = self.config.get("ai_enrichment", {})
+        ai_enabled = ai_config.get("enabled", False)
+        summary_v2_enabled = ai_config.get("summary_v2", False)
+        paper_limit = ai_config.get("paper_limit", 0) or None
+
+        if not ai_enabled or not summary_v2_enabled:
+            logger.info("AI Summary V2 is disabled. Skipping.")
+            return StepResult(
+                step="ai_summary_v2",
+                status="skipped",
+                started_at=started_at,
+                finished_at=utc_now(),
+                duration_seconds=round(time.perf_counter() - started, 3),
+                error="AI enrichment disabled. Set ai_enrichment.enabled=true and ai_enrichment.summary_v2=true.",
+            )
+
+        try:
+            from scientra.ai.summary_v2 import generate_summary_v2
+
+            evidence_dir = self.root / "03_Evidence"
+            metadata_dir = self.root / "02_Metadata" / "yaml"
+
+            if not evidence_dir.exists():
+                return StepResult(
+                    step="ai_summary_v2",
+                    status="skipped",
+                    started_at=started_at,
+                    finished_at=utc_now(),
+                    duration_seconds=round(time.perf_counter() - started, 3),
+                    error="No evidence directory found.",
+                )
+
+            import yaml
+
+            generated = 0
+            skipped_chunks = 0
+            failed = 0
+            paper_ids = sorted(
+                d.name for d in evidence_dir.iterdir()
+                if d.is_dir() and (d / "evidence_chunks.json").exists()
+            )
+            if limit:
+                paper_ids = paper_ids[:limit]
+
+            for pid in paper_ids:
+                try:
+                    chunks_path = evidence_dir / pid / "evidence_chunks.json"
+                    chunks_data = json.loads(
+                        chunks_path.read_text(encoding="utf-8")
+                    )
+                    chunks = chunks_data.get("chunks", [])
+
+                    # Load metadata
+                    metadata: dict[str, Any] = {}
+                    meta_yaml = metadata_dir / f"{pid}.metadata.yaml"
+                    if meta_yaml.exists():
+                        metadata = yaml.safe_load(
+                            meta_yaml.read_text(encoding="utf-8")
+                        ) or {}
+
+                    # Load paper text (try multiple sources)
+                    text = ""
+                    raw_text = evidence_dir / pid / "sections.json"
+                    if raw_text.exists():
+                        sections = json.loads(
+                            raw_text.read_text(encoding="utf-8")
+                        )
+                        text = "\n\n".join(
+                            s.get("text", "")
+                            for s in sections.get("sections", [])
+                        )[:24000]
+                    if not text:
+                        meta_json = metadata_dir.parent / "json" / f"{pid}.metadata.json"
+                        if meta_json.exists():
+                            meta_data = json.loads(
+                                meta_json.read_text(encoding="utf-8")
+                            )
+                            text = meta_data.get("abstract", "") or ""
+
+                    result = generate_summary_v2(
+                        paper_id=pid,
+                        text=text,
+                        metadata=metadata,
+                        evidence_chunks=chunks if chunks else None,
+                    )
+
+                    if result.get("status") == "generated":
+                        generated += 1
+                    elif result.get("status") == "skipped":
+                        skipped_chunks += 1
+                    else:
+                        failed += 1
+
+                except Exception as exc:
+                    logger.error(f"Summary V2 failed for {pid}: {exc}")
+                    failed += 1
+
+            status = "succeeded" if failed == 0 else "partial"
+            return StepResult(
+                step="ai_summary_v2",
+                status=status,
+                started_at=started_at,
+                finished_at=utc_now(),
+                duration_seconds=round(time.perf_counter() - started, 3),
+                error=(
+                    f"generated={generated}, skipped={skipped_chunks}, "
+                    f"failed={failed}, total={len(paper_ids)}"
+                ) if failed > 0 else None,
+            )
+
+        except Exception as exc:
+            return StepResult(
+                step="ai_summary_v2",
+                status="failed",
+                started_at=started_at,
+                finished_at=utc_now(),
+                duration_seconds=round(time.perf_counter() - started, 3),
+                error=f"AI Summary V2 error: {type(exc).__name__}: {exc}",
+            )
+
+    def _run_ai_evidence_enrichment_builtin(
+        self,
+        started_at: str,
+        started: float,
+        limit: int | None = None,
+    ) -> StepResult:
+        """Builtin: enrich evidence chunks with AI analysis for all papers.
+
+        Gated by ai_enrichment.enabled and ai_enrichment.evidence_enrichment.
+        """
+        ai_config = self.config.get("ai_enrichment", {})
+        ai_enabled = ai_config.get("enabled", False)
+        enrichment_enabled = ai_config.get("evidence_enrichment", False)
+        batch_size = ai_config.get("batch_size", 8)
+        max_chunks = ai_config.get("max_chunks_per_paper", 40)
+        min_chunk_length = ai_config.get("min_chunk_length", 80)
+        paper_limit = ai_config.get("paper_limit", 0) or None
+
+        if not ai_enabled or not enrichment_enabled:
+            logger.info("AI Evidence Enrichment is disabled. Skipping.")
+            return StepResult(
+                step="ai_evidence_enrichment",
+                status="skipped",
+                started_at=started_at,
+                finished_at=utc_now(),
+                duration_seconds=round(time.perf_counter() - started, 3),
+                error="AI enrichment disabled. Set ai_enrichment.enabled=true and ai_enrichment.evidence_enrichment=true.",
+            )
+
+        try:
+            from scientra.ai.evidence_enrichment import enrich_evidence_chunks
+
+            evidence_dir = self.root / "03_Evidence"
+            if not evidence_dir.exists():
+                return StepResult(
+                    step="ai_evidence_enrichment",
+                    status="skipped",
+                    started_at=started_at,
+                    finished_at=utc_now(),
+                    duration_seconds=round(time.perf_counter() - started, 3),
+                    error="No evidence directory found.",
+                )
+
+            generated = 0
+            skipped = 0
+            failed = 0
+            paper_ids = sorted(
+                d.name for d in evidence_dir.iterdir()
+                if d.is_dir() and (d / "evidence_chunks.json").exists()
+            )
+            if limit:
+                paper_ids = paper_ids[:limit]
+
+            for pid in paper_ids:
+                try:
+                    result = enrich_evidence_chunks(
+                        paper_id=pid,
+                        batch_size=batch_size,
+                        max_chunks=max_chunks,
+                        min_chunk_length=min_chunk_length,
+                    )
+
+                    status = result.get("status", "")
+                    if status == "enriched":
+                        generated += 1
+                    elif status == "skipped":
+                        skipped += 1
+                    else:
+                        failed += 1
+
+                except Exception as exc:
+                    logger.error(f"Evidence enrichment failed for {pid}: {exc}")
+                    failed += 1
+
+            overall = "succeeded" if failed == 0 else "partial"
+            return StepResult(
+                step="ai_evidence_enrichment",
+                status=overall,
+                started_at=started_at,
+                finished_at=utc_now(),
+                duration_seconds=round(time.perf_counter() - started, 3),
+                error=(
+                    f"generated={generated}, skipped={skipped}, "
+                    f"failed={failed}, total={len(paper_ids)}"
+                ) if failed > 0 else None,
+            )
+
+        except Exception as exc:
+            return StepResult(
+                step="ai_evidence_enrichment",
+                status="failed",
+                started_at=started_at,
+                finished_at=utc_now(),
+                duration_seconds=round(time.perf_counter() - started, 3),
+                error=f"Evidence enrichment error: {type(exc).__name__}: {exc}",
+            )
+
+    def _run_ai_gap_extraction_builtin(
+        self,
+        started_at: str,
+        started: float,
+    ) -> StepResult:
+        """Builtin: extract research gaps from Summary V2 and Evidence Enrichment.
+
+        Gated by ai_enrichment.enabled and ai_enrichment.gap_extraction.
+        """
+        ai_config = self.config.get("ai_enrichment", {})
+        ai_enabled = ai_config.get("enabled", False)
+        gap_enabled = ai_config.get("gap_extraction", False)
+        max_gaps = ai_config.get("max_gaps_per_paper", 8)
+        paper_limit = ai_config.get("paper_limit", 0) or None
+
+        if not ai_enabled or not gap_enabled:
+            logger.info("AI Gap Extraction is disabled. Skipping.")
+            return StepResult(
+                step="ai_gap_extraction",
+                status="skipped",
+                started_at=started_at,
+                finished_at=utc_now(),
+                duration_seconds=round(time.perf_counter() - started, 3),
+                error="AI enrichment disabled. Set ai_enrichment.enabled=true and ai_enrichment.gap_extraction=true.",
+            )
+
+        try:
+            from scientra.ai.gap_extraction import extract_research_gaps
+
+            evidence_dir = self.root / "03_Evidence"
+            if not evidence_dir.exists():
+                return StepResult(
+                    step="ai_gap_extraction", status="skipped",
+                    started_at=started_at, finished_at=utc_now(),
+                    duration_seconds=round(time.perf_counter() - started, 3),
+                    error="No evidence directory found.",
+                )
+
+            paper_ids = sorted(
+                d.name for d in evidence_dir.iterdir()
+                if d.is_dir() and (d / "evidence_chunks.json").exists()
+            )
+            if paper_limit:
+                paper_ids = paper_ids[:paper_limit]
+
+            generated = 0
+            failed = 0
+            for pid in paper_ids:
+                try:
+                    result = extract_research_gaps(paper_id=pid, max_gaps=max_gaps)
+                    if result.get("status") == "generated":
+                        generated += 1
+                    else:
+                        failed += 1
+                except Exception as exc:
+                    logger.error(f"Gap extraction failed for {pid}: {exc}")
+                    failed += 1
+
+            overall = "succeeded" if failed == 0 else "partial"
+            return StepResult(
+                step="ai_gap_extraction", status=overall,
+                started_at=started_at, finished_at=utc_now(),
+                duration_seconds=round(time.perf_counter() - started, 3),
+                error=(
+                    f"generated={generated}, failed={failed}, total={len(paper_ids)}"
+                ) if failed > 0 else None,
+            )
+
+        except Exception as exc:
+            return StepResult(
+                step="ai_gap_extraction", status="failed",
+                started_at=started_at, finished_at=utc_now(),
+                duration_seconds=round(time.perf_counter() - started, 3),
+                error=f"Gap extraction error: {type(exc).__name__}: {exc}",
+            )
+
+    def _run_ai_hypothesis_generation_builtin(
+        self,
+        started_at: str,
+        started: float,
+    ) -> StepResult:
+        """Builtin: generate hypotheses from identified gaps.
+
+        Gated by ai_enrichment.enabled and ai_enrichment.hypothesis_generation.
+        """
+        ai_config = self.config.get("ai_enrichment", {})
+        ai_enabled = ai_config.get("enabled", False)
+        hyp_enabled = ai_config.get("hypothesis_generation", False)
+        max_hyps = ai_config.get("max_hypotheses_per_paper", 8)
+        paper_limit = ai_config.get("paper_limit", 0) or None
+
+        if not ai_enabled or not hyp_enabled:
+            logger.info("AI Hypothesis Generation is disabled. Skipping.")
+            return StepResult(
+                step="ai_hypothesis_generation",
+                status="skipped",
+                started_at=started_at,
+                finished_at=utc_now(),
+                duration_seconds=round(time.perf_counter() - started, 3),
+                error="AI enrichment disabled. Set ai_enrichment.enabled=true and ai_enrichment.hypothesis_generation=true.",
+            )
+
+        try:
+            from scientra.ai.hypothesis_generation import generate_hypotheses
+
+            evidence_dir = self.root / "03_Evidence"
+            if not evidence_dir.exists():
+                return StepResult(
+                    step="ai_hypothesis_generation", status="skipped",
+                    started_at=started_at, finished_at=utc_now(),
+                    duration_seconds=round(time.perf_counter() - started, 3),
+                    error="No evidence directory found.",
+                )
+
+            paper_ids = sorted(
+                d.name for d in evidence_dir.iterdir()
+                if d.is_dir() and (d / "evidence_chunks.json").exists()
+            )
+            if paper_limit:
+                paper_ids = paper_ids[:paper_limit]
+
+            generated = 0
+            failed = 0
+            for pid in paper_ids:
+                try:
+                    result = generate_hypotheses(paper_id=pid, max_hypotheses=max_hyps)
+                    if result.get("status") == "generated":
+                        generated += 1
+                    else:
+                        failed += 1
+                except Exception as exc:
+                    logger.error(f"Hypothesis generation failed for {pid}: {exc}")
+                    failed += 1
+
+            overall = "succeeded" if failed == 0 else "partial"
+            return StepResult(
+                step="ai_hypothesis_generation", status=overall,
+                started_at=started_at, finished_at=utc_now(),
+                duration_seconds=round(time.perf_counter() - started, 3),
+                error=(
+                    f"generated={generated}, failed={failed}, total={len(paper_ids)}"
+                ) if failed > 0 else None,
+            )
+
+        except Exception as exc:
+            return StepResult(
+                step="ai_hypothesis_generation", status="failed",
+                started_at=started_at, finished_at=utc_now(),
+                duration_seconds=round(time.perf_counter() - started, 3),
+                error=f"Hypothesis generation error: {type(exc).__name__}: {exc}",
             )
 
     def build_step_command(self, step: str) -> list[str]:

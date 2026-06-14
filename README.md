@@ -1,7 +1,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.11+-blue?style=flat-square" alt="Python">
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License">
-  <img src="https://img.shields.io/badge/version-v1.5-blue?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/version-v2.3-blue?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/status-active%20development-orange?style=flat-square" alt="Status">
 </p>
 
@@ -157,9 +157,63 @@ Multi-engine PDF parsing with graceful degradation. Four parsers collaborate —
 10_System/     Config, logs, migrations, backups, legacy archive
 ```
 
+### 🤖 AI Enrichment Layer (Phases 2.1–3.3)
+
+Multi-provider LLM Gateway powering structured paper analysis and cross-paper discovery. **All AI features default to OFF** (safe mode).
+
+#### LLM Gateway (Phase 2.1)
+
+Unified interface supporting DeepSeek, OpenAI, Anthropic, and local models. Cost tracking, task gating, and API key management.
+
+```bash
+# Interactive setup (30 seconds)
+python Scripts/setup_llm.py
+
+# Or configure via Web UI: Settings → AI Provider
+```
+
+- **API Key never stored in git** — `Config/llm_config.yaml` is gitignored
+- Per-task toggles: summary, evidence_enrichment, gap_extraction, hypothesis_generation, agent_chat
+- Cost tracking: `10_System/logs/ai_usage/usage_YYYY-MM.jsonl`
+
+#### Summary V2 + Evidence Enrichment (Phase 2.2)
+
+Structured paper summarization with evidence-driven claims and confidence scoring. Evidence chunks enriched with AI claim analysis, entity extraction, and evidence strength assessment.
+
+- **54/54 papers** processed across test corpus
+- Output: `03_Assets/ai/summary_v2/` and `03_Assets/ai/evidence_enrichment/`
+
+#### Gap Extraction + Hypothesis Generation (Phase 2.3)
+
+AI-powered research gap identification (7 types: mechanistic, methodological, evidence, scope, contradiction, translation, unknown) and testable hypothesis formulation with suggested experiments and risk assessment.
+
+- Quality check: rule-based scoring with accept/manual_review/reject recommendations
+- Output: `03_Assets/ai/gaps/`, `03_Assets/ai/hypotheses/`, `03_Assets/ai/quality/gap_hypothesis/`
+
+#### Cross-Paper Discovery (Phases 3.1–3.3)
+
+| Phase | Module | Output |
+|-------|--------|--------|
+| 3.1 | Cross-Paper Gap Fusion | 298 gaps → 134 unified clusters (BGE-M3 + community_detection) |
+| 3.2 | Cross-Paper Hypothesis Fusion | 273 hypotheses → 182 unified clusters |
+| 3.3 | Research Opportunity Ranking | 134 opportunities ranked by evidence×feasibility×novelty×impact |
+
+- **Zero API cost** for fusion/ranking — all local BGE-M3 embedding
+- Output: `05_Knowledge/cross_paper_gaps/`, `05_Knowledge/cross_paper_hypotheses/`, `05_Knowledge/research_opportunities/`
+
+### 🛠️ CLI Tools (NEW)
+
+| Script | Purpose |
+|--------|---------|
+| `Scripts/setup_llm.py` | One-click AI provider configuration |
+| `Scripts/fuse_cross_paper_gaps.py` | Run cross-paper gap clustering |
+| `Scripts/fuse_cross_paper_hypotheses.py` | Run cross-paper hypothesis fusion |
+| `Scripts/rank_research_opportunities.py` | Generate ranked research opportunities |
+| `Scripts/check_gap_hypothesis_quality.py` | Rule-based quality evaluation |
+
 ### 🌐 Web Interface
 
-13 pages across Analysis and Data categories. See [Web Interface](#9-web-interface) for full list.
+16 pages across Analysis and Data categories. See [Web Interface](#9-web-interface) for full list.
 
 ### 🔒 Local-first & Traceable
 
@@ -193,10 +247,14 @@ python Scripts/dev_restart.py
 python -m scientra.server          # API → http://127.0.0.1:8710
 cd web && npm run dev              # Web → http://127.0.0.1:3000
 
-# Optional: configure LLM for AI chat
-python Scripts/setup_llm.py        # DeepSeek or Anthropic
+# 4. Configure AI provider (optional — enables all AI features)
+python Scripts/setup_llm.py        # Interactive wizard (DeepSeek/OpenAI/Anthropic/Local)
 
-# Optional: enable hybrid PDF parser (multi-engine: PyMuPDF + OpenDataLoader + GROBID)
+# 5. Enable AI enrichment (optional — generate summaries, gaps, hypotheses)
+# Set ai_enrichment.enabled: true in Config/workflow_config.yaml
+# Then run: python workflow.py run --from-step ai_summary_v2 --force
+
+# 6. Optional: enable hybrid PDF parser
 # Set hybrid_parser.enabled: true in Config/workflow_config.yaml
 ```
 
@@ -335,7 +393,10 @@ print(r["answer"])
 | `/topic-explorer` | Browse topics by research facet | ✅ |
 | `/import` | Import dashboard — article bundles, supplementary status | 🔨 Planned |
 | `/assets` | Assets viewer — browse figures, tables, entities | 🔨 Planned |
-| `/settings` | Application settings | ✅ |
+| `/settings` | Application settings + AI Provider configuration | ✅ |
+| `/cross-paper-gaps` | Unified research gaps across all papers | ✅ |
+| `/cross-paper-hypotheses` | Unified hypotheses linked to gap clusters | ✅ |
+| `/research-opportunities` | Ranked research opportunities by evidence×feasibility | ✅ |
 
 ---
 
@@ -343,12 +404,13 @@ print(r["answer"])
 
 | Document | Format | Language |
 |---|---|---|
+| [AI Setup Guide](docs/AI_SETUP.md) | Markdown | English + 中文 |
 | [User Manual v2.0](Scientra_Copilot_User_Manual_v2_bilingual.docx) | Word | English + 中文 |
-| [User Manual v2.0 (Markdown)](docs/manual/Scientra_Copilot_User_Manual_v2_bilingual.md) | Markdown | English + 中文 |
 | [File Placement Guide / 文件存放指引](docs/manual/Scientra_Copilot_文件存放指引_v1.md) | Markdown | English + 中文 |
 | [File Placement Guide / 文件存放指引 (DOCX)](docs/manual/Scientra_Copilot_文件存放指引_v1.docx) | Word | English + 中文 |
 | [Storage Layout Config](Config/storage_layout.yaml) | YAML | — |
 | [Article Bundle Import Guide](docs/article_bundle_import_v1.md) | Markdown | English |
+| [Hybrid Parser Architecture](docs/hybrid_parser_architecture.md) | Markdown | English |
 | [**Hybrid Parser Architecture**](docs/hybrid_parser_architecture.md) | Markdown | English |
 | [**Import & Parse Process Report**](docs/import_parse_process_report.md) | Markdown | English |
 | [**One-Click Setup Script**](Scripts/setup.py) | Python | English |
@@ -382,22 +444,35 @@ python Scripts/setup.py --json
 
 ## 12. Roadmap
 
-**Short-term (v1.6)**
+**Completed (v2.0–v2.3)**
+- ✅ LLM Gateway — unified DeepSeek/OpenAI/Anthropic/Local interface
+- ✅ Summary V2 + Evidence Enrichment (54 papers)
+- ✅ Gap Extraction + Hypothesis Generation (7 gap types, testable hypotheses)
+- ✅ Gap-Hypothesis Quality Check (rule-based scoring)
+- ✅ Cross-Paper Gap Fusion (BGE-M3 + community_detection)
+- ✅ Cross-Paper Hypothesis Fusion (gap→hypothesis linking)
+- ✅ Research Opportunity Ranking (8 categories, multi-factor scoring)
+- ✅ AI Settings page + Test Connection
 - ✅ Hybrid PDF Parser (PyMuPDF + OpenDataLoader PDF + GROBID + Marker)
 - ✅ Parser Status Card on Paper Detail page
+- ✅ Cross-Paper Gaps / Hypotheses / Opportunities web pages
+
+**Short-term (v2.4)**
+- Research Evolution — time-series tracking of gap closure
+- AI Quality Review — LLM review of top opportunities
+- Figure/Table AI — structured interpretation
 - Import Dashboard and Assets Viewer web pages
-- Manual Binding UI for loose supplementary files
 
-**Mid-term (v1.7–1.8)**
-- Corpus builders: expression, introduction, discussion, method, claim, gap
-- Dataset / Gene Evidence expansion
-- Cross-study entity comparison enhancements
-
-**Long-term (v2.0+)**
+**Mid-term (v3.0)**
+- Cross-Paper Entity Network (gene/protein/pathway co-occurrence)
 - Knowledge Graph (nodes, edges, snapshots)
+- Dataset / Gene Evidence expansion
 - Scientific Memory (field, project, topic)
+
+**Long-term (v4.0+)**
 - Scientific Reasoning Engine
 - Experimental Design Agent
+- Grant Proposal Generator
 - AI Reviewer Agent
 
 ---
@@ -505,6 +580,22 @@ MIT License — see [LICENSE](LICENSE) file.
 
 **3 种回答模式：** Auto（自动判断）、LLM synthesis（LLM 综合）、Evidence-only（纯证据，无 API 调用，<100ms）。
 
+### 🤖 AI 增强层（Phase 2.1–3.3）
+
+多 Provider LLM Gateway，支持 DeepSeek/OpenAI/Anthropic/Local。所有 AI 功能默认关闭。
+
+- **LLM Gateway**：统一接口，成本追踪，任务开关
+- **Summary V2 + Evidence Enrichment**：结构化摘要，证据驱动的声明分析（54/54 篇）
+- **Gap Extraction + Hypothesis Generation**：7 种研究空白类型，可测试假说生成
+- **Cross-Paper Gap Fusion**：298 gaps → 134 unified clusters（BGE-M3 嵌入 + community_detection）
+- **Cross-Paper Hypothesis Fusion**：273 hypotheses → 182 unified clusters
+- **Research Opportunity Ranking**：8 分类，多因子评分排序
+
+```bash
+# 30 秒配置 AI
+python Scripts/setup_llm.py
+```
+
 ### 📊 PDF 数据资产化
 
 10 种资产类型，11 种 LanceDB 片段类型。质量过滤，实体去噪。
@@ -540,10 +631,14 @@ python Scripts/dev_restart.py
 python -m scientra.server          # API → http://127.0.0.1:8710
 cd web && npm run dev              # Web → http://127.0.0.1:3000
 
-# 配置 LLM（可选）：AI 对话功能
-python Scripts/setup_llm.py        # DeepSeek 或 Anthropic
+# 4. 配置 AI（可选 — 启用所有 AI 功能）
+python Scripts/setup_llm.py        # 交互式向导（DeepSeek/OpenAI/Anthropic/Local）
 
-# 启用混合 PDF 解析器（可选）：多引擎协作解析
+# 5. 启用 AI 增强（可选 — 生成摘要、研究空白、假说）
+# 在 Config/workflow_config.yaml 中设置 ai_enrichment.enabled: true
+# 然后运行: python workflow.py run --from-step ai_summary_v2 --force
+
+# 6. 启用混合 PDF 解析器（可选）
 # 在 Config/workflow_config.yaml 中设置 hybrid_parser.enabled: true
 ```
 
@@ -553,19 +648,21 @@ python Scripts/setup_llm.py        # DeepSeek 或 Anthropic
 
 | 文档 | 格式 | 语言 |
 |---|---|---|
+| [AI 部署指南](docs/AI_SETUP.md) | Markdown | English + 中文 |
 | [用户手册 v2.0](Scientra_Copilot_User_Manual_v2_bilingual.docx) | Word | English + 中文 |
-| [用户手册 v2.0 (Markdown)](docs/manual/Scientra_Copilot_User_Manual_v2_bilingual.md) | Markdown | English + 中文 |
 | [文件存放指引](docs/manual/Scientra_Copilot_文件存放指引_v1.md) | Markdown | English + 中文 |
 | [文件存放指引 (DOCX)](docs/manual/Scientra_Copilot_文件存放指引_v1.docx) | Word | English + 中文 |
 | [Storage Layout 配置](Config/storage_layout.yaml) | YAML | — |
 
 ## 7. 路线图
 
-**近期（v1.6）**：导入仪表盘、资产查看器、手动绑定界面
+**已完成（v2.0–2.3）**：LLM Gateway、Summary V2、Evidence Enrichment、Gap Extraction、Hypothesis Generation、Cross-Paper Gap/Hypothesis Fusion、Research Opportunity Ranking、AI Settings 页面
 
-**中期（v1.7–1.8）**：语料构建器、基因证据扩展、跨研究比较增强
+**近期（v2.4）**：Research Evolution、AI Quality Review、Figure/Table AI、导入仪表盘
 
-**远期（v2.0+）**：知识图谱、科学记忆、推理引擎、实验设计助手、AI 审稿助手
+**中期（v3.0）**：跨论文实体网络、知识图谱、基因证据扩展
+
+**远期（v4.0+）**：科学推理引擎、实验设计助手、Grant Proposal Generator、AI 审稿助手
 
 ## 8. 数据安全
 
