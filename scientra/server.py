@@ -4914,6 +4914,82 @@ def create_app(root: Path | None = None) -> FastAPI:
     # further below (outside create_app) due to from __future__ import annotations
     # interfering with Pydantic's ForwardRef resolution inside function scope.
 
+    # ── P6.6.1: System Health & Environment ──
+
+    @api.get("/system/health")
+    def system_health() -> dict[str, Any]:
+        """Get full system health report."""
+        try:
+            from scientra.environment.diagnostics import run_diagnostics
+            from scientra.environment.repair import generate_repair_suggestions
+            diag = run_diagnostics(root)
+            repair = generate_repair_suggestions(root)
+            return {
+                "available": True,
+                "health_score": diag["health_score"],
+                "status": diag["status"],
+                "summary": {
+                    "total_checks": diag["total_checks"],
+                    "passed": diag["passed"],
+                    "warnings": diag["warnings"],
+                    "failed": diag["failed"],
+                },
+                "checks": diag["checks"],
+                "repair_suggestions": repair,
+            }
+        except Exception as exc:
+            return {"available": False, "message": str(exc), "health_score": 0, "status": "unknown"}
+
+    @api.get("/system/environment")
+    def system_environment() -> dict[str, Any]:
+        """Get raw environment check results."""
+        try:
+            from scientra.environment.checks import run_all_checks
+            checks = run_all_checks(root)
+            return {"available": True, "checks": checks, "total": len(checks)}
+        except Exception as exc:
+            return {"available": False, "message": str(exc), "checks": []}
+
+    @api.get("/system/startup-status")
+    def system_startup_status() -> dict[str, Any]:
+        """Check if Scientra services are running."""
+        import socket
+        api_port = 8710
+        api_running = False
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(1.0)
+                api_running = s.connect_ex(("127.0.0.1", api_port)) == 0
+        except Exception:
+            pass
+
+        web_port = 3000
+        web_running = False
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(1.0)
+                web_running = s.connect_ex(("127.0.0.1", web_port)) == 0
+        except Exception:
+            pass
+
+        from scientra.environment.diagnostics import run_diagnostics
+        try:
+            diag = run_diagnostics(root)
+            health_score = diag["health_score"]
+            health_status = diag["status"]
+        except Exception:
+            health_score = 0
+            health_status = "unknown"
+
+        return {
+            "api_running": api_running,
+            "api_url": f"http://127.0.0.1:{api_port}" if api_running else None,
+            "web_running": web_running,
+            "web_url": f"http://localhost:{web_port}" if web_running else None,
+            "health_score": health_score,
+            "health_status": health_status,
+        }
+
     @api.get("/settings/ai")
     def get_ai_settings() -> dict[str, Any]:
         """Get current AI settings (API key is masked)."""
@@ -4998,6 +5074,193 @@ def create_app(root: Path | None = None) -> FastAPI:
                 }
         except Exception as exc:
             raise HTTPException(status_code=500, detail=f"Connection test failed: {exc}")
+
+    # ── P6.5: Performance Benchmark & Runtime Profiling ──
+
+    @api.get("/benchmark/status")
+    def benchmark_status() -> dict[str, Any]:
+        """Get benchmark availability status."""
+        p = root / "10_System/benchmarks/benchmark_summary.json"
+        if not p.exists():
+            return {
+                "available": False,
+                "message": "No benchmark results found. Run: python Scripts/run_benchmark.py --all --verbose",
+                "last_run": None,
+            }
+        try:
+            import json as _json
+            data = _json.loads(p.read_text(encoding="utf-8"))
+            return {
+                "available": True,
+                "last_run": data.get("completed_at"),
+                "run_id": data.get("run_id"),
+                "total_tasks": data.get("total_tasks", 0),
+                "total_passed": data.get("total_passed", 0),
+                "total_warnings": data.get("total_warnings", 0),
+                "total_failed": data.get("total_failed", 0),
+            }
+        except Exception:
+            return {"available": False, "message": "Failed to read benchmark results.", "last_run": None}
+
+    @api.get("/benchmark/summary")
+    def benchmark_summary() -> dict[str, Any]:
+        """Get full benchmark summary."""
+        p = root / "10_System/benchmarks/benchmark_summary.json"
+        if not p.exists():
+            return {"available": False, "message": "No benchmark results found.", "warnings": ["Run: python Scripts/run_benchmark.py --all --verbose"]}
+        try:
+            import json as _json
+            data = _json.loads(p.read_text(encoding="utf-8"))
+            # Strip any absolute paths from the response
+            return {"available": True, **data}
+        except Exception as exc:
+            return {"available": False, "message": f"Failed to read: {exc}", "warnings": []}
+
+    @api.get("/benchmark/modules")
+    def benchmark_modules() -> dict[str, Any]:
+        """Get module runtime benchmark results."""
+        p = root / "10_System/benchmarks/benchmark_summary.json"
+        if not p.exists():
+            return {"available": False, "message": "No benchmark results found.", "modules": [], "warnings": ["Run: python Scripts/run_benchmark.py --modules"]}
+        try:
+            import json as _json
+            data = _json.loads(p.read_text(encoding="utf-8"))
+            mod_data = data.get("results", {}).get("module", {})
+            return {
+                "available": True,
+                "category": "module",
+                "passed": mod_data.get("passed", 0),
+                "warning_count": mod_data.get("warning_count", 0),
+                "failed": mod_data.get("failed", 0),
+                "total_duration_ms": mod_data.get("total_duration_ms", 0),
+                "metrics": mod_data.get("runtime_metrics", []),
+                "warnings": mod_data.get("warnings", []),
+            }
+        except Exception as exc:
+            return {"available": False, "message": str(exc), "modules": [], "warnings": []}
+
+    @api.get("/benchmark/queries")
+    def benchmark_queries() -> dict[str, Any]:
+        """Get query latency benchmark results."""
+        p = root / "10_System/benchmarks/benchmark_summary.json"
+        if not p.exists():
+            return {"available": False, "message": "No benchmark results found.", "queries": [], "warnings": ["Run: python Scripts/run_benchmark.py --queries"]}
+        try:
+            import json as _json
+            data = _json.loads(p.read_text(encoding="utf-8"))
+            q_data = data.get("results", {}).get("query", {})
+            return {
+                "available": True,
+                "category": "query",
+                "passed": q_data.get("passed", 0),
+                "warning_count": q_data.get("warning_count", 0),
+                "failed": q_data.get("failed", 0),
+                "total_duration_ms": q_data.get("total_duration_ms", 0),
+                "queries": q_data.get("query_metrics", []),
+                "warnings": q_data.get("warnings", []),
+            }
+        except Exception as exc:
+            return {"available": False, "message": str(exc), "queries": [], "warnings": []}
+
+    @api.get("/benchmark/graph")
+    def benchmark_graph() -> dict[str, Any]:
+        """Get graph benchmark results."""
+        p = root / "10_System/benchmarks/benchmark_summary.json"
+        if not p.exists():
+            return {"available": False, "message": "No benchmark results found.", "metrics": [], "warnings": ["Run: python Scripts/run_benchmark.py --graph"]}
+        try:
+            import json as _json
+            data = _json.loads(p.read_text(encoding="utf-8"))
+            g_data = data.get("results", {}).get("graph", {})
+            return {
+                "available": True,
+                "category": "graph",
+                "passed": g_data.get("passed", 0),
+                "warning_count": g_data.get("warning_count", 0),
+                "failed": g_data.get("failed", 0),
+                "total_duration_ms": g_data.get("total_duration_ms", 0),
+                "metrics": g_data.get("runtime_metrics", []),
+                "warnings": g_data.get("warnings", []),
+            }
+        except Exception as exc:
+            return {"available": False, "message": str(exc), "metrics": [], "warnings": []}
+
+    @api.get("/benchmark/datasets")
+    def benchmark_datasets() -> dict[str, Any]:
+        """Get dataset benchmark results."""
+        p = root / "10_System/benchmarks/benchmark_summary.json"
+        if not p.exists():
+            return {"available": False, "message": "No benchmark results found.", "metrics": [], "warnings": ["Run: python Scripts/run_benchmark.py --datasets"]}
+        try:
+            import json as _json
+            data = _json.loads(p.read_text(encoding="utf-8"))
+            d_data = data.get("results", {}).get("dataset", {})
+            return {
+                "available": True,
+                "category": "dataset",
+                "passed": d_data.get("passed", 0),
+                "warning_count": d_data.get("warning_count", 0),
+                "failed": d_data.get("failed", 0),
+                "total_duration_ms": d_data.get("total_duration_ms", 0),
+                "metrics": d_data.get("runtime_metrics", []),
+                "warnings": d_data.get("warnings", []),
+            }
+        except Exception as exc:
+            return {"available": False, "message": str(exc), "metrics": [], "warnings": []}
+
+    @api.get("/benchmark/agent")
+    def benchmark_agent() -> dict[str, Any]:
+        """Get agent benchmark results."""
+        p = root / "10_System/benchmarks/benchmark_summary.json"
+        if not p.exists():
+            return {"available": False, "message": "No benchmark results found.", "metrics": [], "warnings": ["Run: python Scripts/run_benchmark.py --agent"]}
+        try:
+            import json as _json
+            data = _json.loads(p.read_text(encoding="utf-8"))
+            a_data = data.get("results", {}).get("agent", {})
+            return {
+                "available": True,
+                "category": "agent",
+                "passed": a_data.get("passed", 0),
+                "warning_count": a_data.get("warning_count", 0),
+                "failed": a_data.get("failed", 0),
+                "total_duration_ms": a_data.get("total_duration_ms", 0),
+                "metrics": a_data.get("runtime_metrics", []),
+                "warnings": a_data.get("warnings", []),
+            }
+        except Exception as exc:
+            return {"available": False, "message": str(exc), "metrics": [], "warnings": []}
+
+    @api.get("/benchmark/recommendations")
+    def benchmark_recommendations() -> dict[str, Any]:
+        """Get cache and incremental update recommendations."""
+        p = root / "10_System/benchmarks/benchmark_summary.json"
+        if not p.exists():
+            return {
+                "available": False,
+                "message": "No benchmark results found.",
+                "cache_recommendations": [],
+                "incremental_update_recommendations": [],
+                "p7_readiness_warnings": [],
+                "warnings": ["Run: python Scripts/run_benchmark.py --all --verbose"],
+            }
+        try:
+            import json as _json
+            data = _json.loads(p.read_text(encoding="utf-8"))
+            return {
+                "available": True,
+                "cache_recommendations": data.get("cache_recommendations", []),
+                "incremental_update_recommendations": data.get("incremental_update_recommendations", []),
+                "p7_readiness_warnings": data.get("p7_readiness_warnings", []),
+            }
+        except Exception as exc:
+            return {
+                "available": False,
+                "message": str(exc),
+                "cache_recommendations": [],
+                "incremental_update_recommendations": [],
+                "p7_readiness_warnings": [],
+            }
 
     return api
 
