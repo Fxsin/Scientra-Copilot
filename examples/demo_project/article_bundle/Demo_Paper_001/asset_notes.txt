@@ -1,0 +1,11 @@
+## Title: Table S1 — Synthetic gene expression table
+Differential expression results for demo salt stress experiment.
+
+## Title: Table S2 — Synthetic bioassay result table
+LC50 determination for demo compound X.
+
+## Title: Figure S1 — Synthetic workflow diagram
+Experimental design overview.
+
+## Title: Supplementary Methods — Synthetic supplementary methods
+Detailed protocols and dataset descriptions.

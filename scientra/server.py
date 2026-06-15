@@ -3968,6 +3968,92 @@ def create_app(root: Path | None = None) -> FastAPI:
     def v1_hybrid(request: LiteratureQueryRequest) -> LiteratureQueryResponse:
         return _route(request, QueryType.hybrid_search)
 
+    # ── P5.3: Dataset Intelligence ──
+
+    @api.get("/paper/{paper_id}/datasets")
+    def get_paper_datasets(paper_id: str) -> dict[str, Any]:
+        try:
+            from scientra.datasets.intelligence import DatasetIntelligenceRunner
+            return DatasetIntelligenceRunner().get_cards(paper_id)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/paper/{paper_id}/dataset-cards")
+    def get_paper_dataset_cards(paper_id: str) -> dict[str, Any]:
+        try:
+            from scientra.datasets.intelligence import DatasetIntelligenceRunner
+            return DatasetIntelligenceRunner().get_cards(paper_id)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/paper/{paper_id}/dataset/{dataset_id}")
+    def get_paper_dataset_card(paper_id: str, dataset_id: str) -> dict[str, Any]:
+        try:
+            from scientra.datasets.intelligence import DatasetIntelligenceRunner
+            return DatasetIntelligenceRunner().get_card(paper_id, dataset_id)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/datasets")
+    def get_all_datasets() -> dict[str, Any]:
+        try:
+            d = _resolve_root() / "03_Assets/dataset_intelligence/dataset_cards"
+            if not d.exists(): return {"available": False, "datasets": []}
+            all_cards = []
+            for f in sorted(d.glob("*.json")):
+                try: all_cards.extend(json.loads(f.read_text(encoding="utf-8")))
+                except: pass
+            return {"available": True, "datasets": all_cards, "count": len(all_cards)}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/datasets/search")
+    def search_datasets(q: str = "", dataset_type: str = "", limit: int = 50) -> dict[str, Any]:
+        try:
+            from scientra.datasets.intelligence import CrossPaperDatasetIndexer
+            idx = CrossPaperDatasetIndexer()
+            if dataset_type: results = idx.query_type(dataset_type)
+            else: results = idx.query_entity(q) if q else []
+            return {"available": True, "results": results[:limit], "count": len(results)}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/datasets/entity/{entity_text}")
+    def get_dataset_entity(entity_text: str) -> dict[str, Any]:
+        try:
+            from scientra.datasets.intelligence import DatasetComparisonEngine
+            return DatasetComparisonEngine().compare_entity(entity_text)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/datasets/type/{dataset_type}")
+    def get_datasets_by_type(dataset_type: str) -> dict[str, Any]:
+        try:
+            from scientra.datasets.intelligence import CrossPaperDatasetIndexer
+            results = CrossPaperDatasetIndexer().query_type(dataset_type)
+            return {"available": True, "dataset_type": dataset_type, "results": results, "count": len(results)}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/datasets/compare/entity/{entity_text}")
+    def compare_dataset_entity(entity_text: str) -> dict[str, Any]:
+        try:
+            from scientra.datasets.intelligence import DatasetComparisonEngine
+            return DatasetComparisonEngine().compare_entity(entity_text)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/datasets/status")
+    def get_datasets_status() -> dict[str, Any]:
+        try:
+            from scientra.datasets.intelligence import CrossPaperDatasetIndexer, DatasetComparisonEngine
+            idx = CrossPaperDatasetIndexer()
+            eng = DatasetComparisonEngine()
+            types = eng.compare_dataset_types()
+            return {"available": True, "dataset_types": types, "total_datasets": sum(types.values())}
+        except Exception as e:
+            return {"available": False, "message": str(e)}
+
     # ── P5.2: Cross-Asset Query Engine ──
 
     @api.post("/query/cross-assets")
@@ -4561,6 +4647,202 @@ def create_app(root: Path | None = None) -> FastAPI:
             return viewer.search(query=query, asset_type=type, paper_id=paper_id, limit=min(limit, 50))
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
+
+    # ── P6.2: Demo Project ──
+
+    @api.get("/demo/status")
+    def get_demo_status() -> dict[str, Any]:
+        try:
+            from scientra.demo import DemoStatusChecker
+            return {"available": True, **DemoStatusChecker().check()}
+        except Exception as e:
+            return {"available": False, "message": str(e)}
+
+    @api.get("/demo/queries")
+    def get_demo_queries() -> dict[str, Any]:
+        import json
+        p = _resolve_root() / "09_Exports/demo_project/demo_query_results.json"
+        if not p.exists(): return {"available": False, "message": "Demo queries not yet run. Use: python Scripts/run_demo_queries.py"}
+        return {"available": True, **json.loads(p.read_text(encoding="utf-8"))}
+
+    @api.get("/demo/expected-results")
+    def get_demo_expected_results() -> dict[str, Any]:
+        d = _resolve_root() / "examples/demo_project/expected_outputs"
+        results = {}
+        for fname in ["expected_entities.json", "expected_dataset_types.json"]:
+            fp = d / fname
+            if fp.exists():
+                try: results[fname] = json.loads(fp.read_text(encoding="utf-8"))
+                except: pass
+        return {"available": bool(results), "expected": results}
+
+    # ── P6.1: Quality Dashboard ──
+
+    @api.get("/quality-dashboard/summary")
+    def get_quality_dashboard_summary() -> dict[str, Any]:
+        try:
+            from scientra.validation.dashboard import DashboardDataLoader, DashboardAggregator
+            loader = DashboardDataLoader()
+            if not loader.is_available():
+                return {"available": False, "message": "No P6.0 validation data. Run: python Scripts/run_e2e_validation.py --all"}
+            agg = DashboardAggregator()
+            return {"available": True, **agg.aggregate(loader.load_all())}
+        except Exception as e:
+            return {"available": False, "message": str(e)}
+
+    @api.get("/quality-dashboard/papers")
+    def get_quality_dashboard_papers(sort_by: str = "completion_score", sort_desc: bool = True,
+                                      filter_warnings: bool = False, filter_stage: str = "",
+                                      search: str = "", limit: int = 100) -> dict[str, Any]:
+        try:
+            from scientra.validation.dashboard import DashboardDataLoader, PaperQualityTableBuilder
+            loader = DashboardDataLoader()
+            if not loader.is_available():
+                return {"available": False, "papers": [], "message": "No P6.0 data."}
+            data = loader.load_all()
+            papers = data.get("paper_details") or []
+            tb = PaperQualityTableBuilder()
+            result = tb.build(papers, sort_by, sort_desc, filter_warnings, filter_stage, search, limit)
+            return {"available": True, "papers": result, "total": len(result)}
+        except Exception as e:
+            return {"available": False, "papers": [], "message": str(e)}
+
+    @api.get("/quality-dashboard/modules")
+    def get_quality_dashboard_modules() -> dict[str, Any]:
+        try:
+            from scientra.validation.dashboard import DashboardDataLoader
+            loader = DashboardDataLoader()
+            if not loader.is_available(): return {"available": False, "message": "No P6.0 data."}
+            data = loader.load_all()
+            return {"available": True, "modules": data.get("modules") or {}}
+        except Exception as e:
+            return {"available": False, "message": str(e)}
+
+    @api.get("/quality-dashboard/recommendations")
+    def get_quality_dashboard_recommendations() -> dict[str, Any]:
+        try:
+            from scientra.validation.dashboard import DashboardDataLoader, RecommendationViewBuilder
+            loader = DashboardDataLoader()
+            if not loader.is_available(): return {"available": False, "message": "No P6.0 data."}
+            data = loader.load_all()
+            recs = RecommendationViewBuilder().build(data.get("recommendations") or {})
+            return {"available": True, "recommendations": recs}
+        except Exception as e:
+            return {"available": False, "message": str(e)}
+
+    @api.get("/quality-dashboard/storage")
+    def get_quality_dashboard_storage() -> dict[str, Any]:
+        try:
+            from scientra.validation.dashboard import DashboardDataLoader
+            loader = DashboardDataLoader()
+            if not loader.is_available(): return {"available": False, "message": "No P6.0 data."}
+            data = loader.load_all()
+            return {"available": True, "storage": data.get("storage") or {}}
+        except Exception as e:
+            return {"available": False, "message": str(e)}
+
+    @api.get("/quality-dashboard/query-eval")
+    def get_quality_dashboard_query_eval() -> dict[str, Any]:
+        try:
+            from scientra.validation.dashboard import DashboardDataLoader
+            loader = DashboardDataLoader()
+            if not loader.is_available(): return {"available": False, "message": "No P6.0 data."}
+            data = loader.load_all()
+            return {"available": True, "query_eval": data.get("query_eval") or {}}
+        except Exception as e:
+            return {"available": False, "message": str(e)}
+
+    @api.get("/quality-dashboard/agent-eval")
+    def get_quality_dashboard_agent_eval() -> dict[str, Any]:
+        try:
+            from scientra.validation.dashboard import DashboardDataLoader
+            loader = DashboardDataLoader()
+            if not loader.is_available(): return {"available": False, "message": "No P6.0 data."}
+            data = loader.load_all()
+            return {"available": True, "agent_eval": data.get("agent_eval") or {}}
+        except Exception as e:
+            return {"available": False, "message": str(e)}
+
+    @api.get("/quality-dashboard/export")
+    def export_quality_dashboard(fmt_json: bool = True, fmt_md: bool = False, fmt_csv: bool = False) -> dict[str, Any]:
+        try:
+            from scientra.validation.dashboard import DashboardDataLoader, DashboardAggregator, PaperQualityTableBuilder, RecommendationViewBuilder, DashboardExporter
+            loader = DashboardDataLoader()
+            if not loader.is_available(): return {"available": False, "message": "No P6.0 data."}
+            data = loader.load_all(); agg = DashboardAggregator(); r = agg.aggregate(data)
+            recs = RecommendationViewBuilder().build(data.get("recommendations") or {})
+            exporter = DashboardExporter()
+            paths = exporter.export(r["summary"], r["pipeline_health"], data.get("paper_details") or [], recs, fmt_json, fmt_md, fmt_csv)
+            return {"available": True, "paths": {k: str(v) for k, v in paths.items()}}
+        except Exception as e:
+            return {"available": False, "message": str(e)}
+
+    # ── P6.0: E2E Validation ──
+
+    @api.get("/validation/e2e/status")
+    def get_validation_status() -> dict[str, Any]:
+        try:
+            from scientra.validation.e2e import E2EValidationRunner
+            return E2EValidationRunner().get_summary()
+        except Exception:
+            return {"available": False, "message": "Validation module not available."}
+
+    @api.get("/validation/e2e/summary")
+    def get_validation_summary() -> dict[str, Any]:
+        try:
+            from scientra.validation.e2e import E2EValidationRunner
+            return E2EValidationRunner().get_summary()
+        except Exception:
+            return {"available": False}
+
+    @api.get("/validation/e2e/papers")
+    def get_validation_papers() -> dict[str, Any]:
+        import json
+        p = _resolve_root() / "10_System/validation/e2e/paper_status_details.json"
+        if not p.exists(): return {"available": False, "message": "Not yet run."}
+        return {"available": True, "papers": json.loads(p.read_text(encoding="utf-8"))}
+
+    @api.get("/validation/e2e/recommendations")
+    def get_validation_recommendations() -> dict[str, Any]:
+        import json
+        p = _resolve_root() / "10_System/validation/e2e/hardening_recommendations.json"
+        if not p.exists(): return {"available": False, "message": "Not yet run."}
+        return {"available": True, **json.loads(p.read_text(encoding="utf-8"))}
+
+    # ── P5.4: Graph-Augmented Research Agent ──
+
+    @api.post("/v1/research-agent/ask")
+    def v1_research_agent_ask(payload: dict[str, Any] = Body(...)) -> dict[str, Any]:
+        try:
+            from scientra.agents.research_agent import ResearchAgentRunner, make_request
+            runner = ResearchAgentRunner()
+            req = make_request(query=payload.get("query", ""), paper_id=payload.get("paper_id", ""),
+                               mode=payload.get("mode", "evidence_only"),
+                               use_graph=payload.get("use_graph", True),
+                               use_cross_asset=payload.get("use_cross_asset", True),
+                               use_dataset=payload.get("use_dataset", True),
+                               top_k=payload.get("top_k", 20), return_trace=payload.get("return_trace", False))
+            return runner.ask(req)
+        except ImportError:
+            return {"available": False, "answer": "Research agent module not available.", "warnings": ["Module not available"]}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api.get("/v1/research-agent/status")
+    def v1_research_agent_status() -> dict[str, Any]:
+        try:
+            from scientra.agents.research_agent.agent_tool_registry import list_tools
+            return {"available": True, "tools": list_tools(), "tool_count": len(list_tools())}
+        except Exception as e:
+            return {"available": False, "message": str(e)}
+
+    @api.get("/v1/research-agent/trace/{trace_id}")
+    def v1_research_agent_trace(trace_id: str) -> dict[str, Any]:
+        import json
+        p = _resolve_root() / "07_Agents/research_agent/traces" / f"{trace_id}.json"
+        if not p.exists():
+            return {"available": False, "message": f"Trace not found: {trace_id}"}
+        return {"available": True, "trace": json.loads(p.read_text(encoding="utf-8"))}
 
     # ── /v1/agent/ask (enhanced) ──
 

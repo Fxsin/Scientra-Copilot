@@ -80,6 +80,35 @@ reports/**/*
 
 # ── LLM config (contains API key — NEVER commit) ──
 Config/llm_config.yaml
+Config/*.yaml
+!Config/storage_layout.yaml
+!Config/*.example.yaml
+
+# ── Secrets & credentials ──
+*.key
+*.pem
+*.p12
+*.pfx
+
+# ── Large model / data files ──
+*.lancedb/**
+*.parquet
+*.faiss
+*.pkl
+*.pickle
+*.pt
+*.safetensors
+*.onnx
+*.bin  # model weights
+!examples/**/*.bin
+
+# ── Release artifacts ──
+10_System/release/
+10_System/logs/**
+10_System/backups/**
+10_System/validation/**
+10_System/legacy_archive/**
+!10_System/**/.gitkeep
 
 # ── Generated documents ──
 ~$*.docx

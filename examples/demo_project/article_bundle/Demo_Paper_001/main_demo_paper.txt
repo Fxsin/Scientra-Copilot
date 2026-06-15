@@ -1,0 +1,47 @@
+Demo Plant Stress Response Study: Transcriptomic and Bioassay Analysis
+=====================================================================
+
+Authors: Demo Author, Demo Co-Author
+Year: 2026
+Note: SYNTHETIC DEMO DATA — for functionality testing only.
+
+Abstract
+--------
+This study investigates the transcriptional response of demo plants under salt stress.
+RNA-seq analysis identified DEMO_GENE_A, DEMO_GENE_B, and DEMO_GENE_C as key stress-responsive genes.
+Bioassay results confirmed dose-dependent effects of demo compounds.
+
+Introduction
+------------
+Demo plants are an established model for abiotic stress research.
+The molecular mechanisms remain incompletely understood.
+This study uses transcriptomic profiling and bioassay approaches.
+
+Methods
+-------
+RNA-seq was performed on demo leaf tissue under control and salt stress conditions.
+Differential expression analysis identified significantly regulated genes (Table S1).
+Bioassay experiments measured the lethal concentration (LC50) of demo compound X (Table S2).
+Supplementary Methods provide detailed protocols.
+
+Results
+-------
+Figure S1 shows the experimental workflow.
+Differential expression analysis revealed 500 significantly regulated genes (Table S1),
+including DEMO_GENE_A (log2FC = 3.2, padj = 0.001), DEMO_GENE_B (log2FC = -2.1, padj = 0.008),
+and DEMO_GENE_C (log2FC = 1.5, padj = 0.03).
+
+Bioassay results (Table S2) show that demo compound X has an LC50 of 12.5 μg/mL
+against demo test organisms with 95% CI of [10.2, 14.8].
+
+Discussion
+----------
+DEMO_GENE_A shows the strongest upregulation under salt stress,
+suggesting a role in stress adaptation. The bioassay data demonstrate
+concentration-dependent effects of demo compound X.
+
+The expression data in Table S1 provide a comprehensive view of the transcriptomic
+response. The LC50 results in Table S2 confirm the bioactivity of demo compound X.
+
+Supplementary Methods provide additional experimental details,
+including primer sequences, statistical methods, and dataset descriptions.

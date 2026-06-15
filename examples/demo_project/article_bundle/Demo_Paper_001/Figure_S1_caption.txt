@@ -1,0 +1,4 @@
+Figure S1. Experimental Workflow Diagram
+Caption: Schematic overview of the experimental design. Demo plant leaf tissue was collected
+under control and salt stress conditions. RNA-seq and bioassay experiments were performed
+as described in Supplementary Methods. DEMO: synthetic data for functionality testing.

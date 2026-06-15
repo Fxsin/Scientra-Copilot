@@ -444,33 +444,32 @@ python Scripts/setup.py --json
 
 ## 12. Roadmap
 
-**Completed (v2.0–v2.3)**
-- ✅ LLM Gateway — unified DeepSeek/OpenAI/Anthropic/Local interface
-- ✅ Summary V2 + Evidence Enrichment (54 papers)
-- ✅ Gap Extraction + Hypothesis Generation (7 gap types, testable hypotheses)
-- ✅ Gap-Hypothesis Quality Check (rule-based scoring)
-- ✅ Cross-Paper Gap Fusion (BGE-M3 + community_detection)
-- ✅ Cross-Paper Hypothesis Fusion (gap→hypothesis linking)
-- ✅ Research Opportunity Ranking (8 categories, multi-factor scoring)
-- ✅ AI Settings page + Test Connection
-- ✅ Hybrid PDF Parser (PyMuPDF + OpenDataLoader PDF + GROBID + Marker)
-- ✅ Parser Status Card on Paper Detail page
-- ✅ Cross-Paper Gaps / Hypotheses / Opportunities web pages
+**Completed — P4 Asset Intelligence (v2.4)**
+- ✅ P4.0.4 Asset Linking Engine — citation→Figure/Table/Supplementary/Dataset links
+- ✅ P4.1 Figure Intelligence — Figure Cards with evidence type classification + quality scoring
+- ✅ P4.2 Table Intelligence — xlsx/csv/tsv parsing, 17 table types, statistical field detection
+- ✅ P4.3 Supplementary Intelligence — PDF/DOCX/TXT parsing, section detection, evidence extraction
 
-**Short-term (v2.4)**
-- Research Evolution — time-series tracking of gap closure
-- AI Quality Review — LLM review of top opportunities
-- Figure/Table AI — structured interpretation
-- Import Dashboard and Assets Viewer web pages
+**Completed — P5 Knowledge Layer (v2.5)**
+- ✅ P5.1 Unified Evidence Graph — paper/evidence/claim/figure/table/supplementary/gap/hypothesis nodes + 22 edge types
+- ✅ P5.2 Cross-Asset Query Engine — unified query across evidence, figures, tables, supplementary, graph
+- ✅ P5.3 Dataset Intelligence — entity extraction, numeric profiling, cross-paper comparison
+- ✅ P5.4 Graph-Augmented Research Agent — tool-executing agent with evidence chains + research plans
+
+**Completed — P6 Quality & Demo (v2.6)**
+- ✅ P6.0 End-to-End Validation — system audit, paper status matrix, storage layout validation
+- ✅ P6.1 Quality Dashboard — pipeline health, paper quality table, P0-P3 recommendations
+- ✅ P6.2 Demo Project — synthetic demo dataset for quick evaluation
+
+**Short-term (v2.7)**
+- P6.3 Documentation & User Workflow Polish
+- P6.4 CI/CD & Release Hardening
+- P6.5 Performance Benchmarking
 
 **Mid-term (v3.0)**
 - Cross-Paper Entity Network (gene/protein/pathway co-occurrence)
-- Knowledge Graph (nodes, edges, snapshots)
-- Dataset / Gene Evidence expansion
+- Research Evolution — time-series tracking of gap closure
 - Scientific Memory (field, project, topic)
-
-**Long-term (v4.0+)**
-- Scientific Reasoning Engine
 - Experimental Design Agent
 - Grant Proposal Generator
 - AI Reviewer Agent
